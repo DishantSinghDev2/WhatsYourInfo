@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { NextRequest } from 'next/server';
 import clientPromise from './mongodb';
+import { ObjectId } from 'mongodb';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
@@ -53,6 +54,7 @@ export function verifyToken(token: string): any {
 export async function getUserFromToken(request: NextRequest): Promise<User | null> {
   try {
     const token = request.cookies.get('auth-token')?.value;
+    console.log("auth token from getUserFromToken", token)
     if (!token) return null;
 
     const decoded = verifyToken(token);
@@ -60,11 +62,12 @@ export async function getUserFromToken(request: NextRequest): Promise<User | nul
 
     const client = await clientPromise;
     const db = client.db('whatsyourinfo');
-    
+
     const user = await db.collection('users').findOne(
-      { _id: decoded.userId },
+      { _id: new ObjectId(decoded.userId) },
       { projection: { password: 0 } }
     );
+
 
     return user as User | null;
   } catch (error) {
@@ -82,13 +85,13 @@ export async function createUser(userData: {
 }): Promise<User> {
   const client = await clientPromise;
   const db = client.db('whatsyourinfo');
-  
+
   const hashedPassword = await hashPassword(userData.password);
-  
+
   // Generate email verification token
   const emailVerificationToken = require('crypto').randomBytes(32).toString('hex');
   const emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-  
+
   const user = {
     ...userData,
     password: hashedPassword,
@@ -104,10 +107,10 @@ export async function createUser(userData: {
   };
 
   const result = await db.collection('users').insertOne(user);
-  
+
   // TODO: Send verification email
   // This would integrate with your email service
-  
+
   return {
     ...user,
     _id: result.insertedId.toString(),
@@ -118,7 +121,7 @@ export async function authenticateUser(email: string, password: string): Promise
   try {
     const client = await clientPromise;
     const db = client.db('whatsyourinfo');
-    
+
     const user = await db.collection('users').findOne({ email });
     if (!user) return null;
 

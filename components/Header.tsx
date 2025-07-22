@@ -6,6 +6,7 @@ import { Button } from './ui/Button';
 import { Globe, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 const navigation = [
   { name: 'Home', href: '/' },
@@ -24,8 +25,13 @@ export default function Header() {
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
         <div className="flex lg:flex-1">
           <Link href="/" className="-m-1.5 p-1.5 flex items-center space-x-2">
-            <Globe className="h-8 w-8 text-blue-600" />
-            <span className="text-xl font-bold text-gray-900">What'sYour<span className="text-blue-600">.Info</span></span>
+            <Image 
+            src="/logo.png"
+            alt='WhatsYour.Info'
+            width={32}
+            height={32}
+            />
+            <span className="text-xl font-bold text-gray-900">WhatsYour<span className="text-blue-600">.Info</span></span>
           </Link>
         </div>
         

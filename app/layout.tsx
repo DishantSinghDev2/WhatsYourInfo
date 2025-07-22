@@ -7,8 +7,8 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: {
-    default: 'What\'sYour.Info - Your Unified Digital Identity Platform',
-    template: '%s | What\'sYour.Info',
+    default: 'WhatsYour.Info - Your Unified Digital Identity Platform',
+    template: '%s | WhatsYour.Info',
   },
   description: 'Create your professional profile, manage your digital identity, and connect with developers worldwide. Free public profiles with advanced features for Pro users.',
   keywords: ['profile', 'identity', 'digital identity', 'professional profile', 'developer tools', 'API', 'SSO'],
@@ -24,25 +24,28 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/',
   },
+  icons: {
+    icon: "/favicon.ico"
+  },
   openGraph: {
     type: 'website',
     locale: 'en_US',
     url: 'https://whatsyour.info',
     siteName: 'What\'sYour.Info',
-    title: 'What\'sYour.Info - Your Unified Digital Identity Platform',
+    title: 'WhatsYour.Info - Your Unified Digital Identity Platform',
     description: 'Create your professional profile, manage your digital identity, and connect with developers worldwide.',
     images: [
       {
         url: '/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: 'What\'sYour.Info',
+        alt: 'WhatsYour.Info',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'What\'sYour.Info - Your Unified Digital Identity Platform',
+    title: 'WhatsYour.Info - Your Unified Digital Identity Platform',
     description: 'Create your professional profile, manage your digital identity, and connect with developers worldwide.',
     images: ['/og-image.jpg'],
   },

@@ -22,6 +22,7 @@ import {
   Sparkles,
   Crown,
   Eye,
+  Users
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { generateBio } from '@/lib/gemini';
@@ -81,7 +82,10 @@ export default function DashboardPage() {
 
   const fetchUserProfile = async () => {
     try {
-      const response = await fetch('/api/auth/user');
+      const response = await fetch('/api/auth/user', {
+  credentials: 'include',
+});
+
       if (response.ok) {
         const userData = await response.json();
         setUser(userData.user);
