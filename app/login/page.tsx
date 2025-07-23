@@ -22,11 +22,38 @@ export default function LoginPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    fetchUserProfile();
     const message = searchParams.get('message');
     if (message) {
       toast.success(message);
     }
   }, [searchParams]);
+
+
+    const fetchUserProfile = async () => {
+    setIsLoading(true)
+      try {
+        const response = await fetch('/api/auth/user', {
+          credentials: 'include',
+        });
+  
+        if (response.ok) {
+          const userData = await response.json();
+          if (!userData.user.emailVerified){
+            toast.error("Email not verified. Please verify your email.")
+            router.push('/verify-otp')
+          } else {
+            setIsLoading(false)
+            router.push("/dashboard")
+          }
+        } else if (response.status === 401) {
+          return;
+        }
+      } catch (error) {
+        toast.error('Failed to load profile');
+      } 
+    };
+  
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -64,6 +91,10 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
+        if(data.emailVerified === false){
+          toast.error("Email not verified. Please verify your email.")
+          router.push("/verify-otp")
+        }
         toast.success('Welcome back!');
         router.push('/dashboard');
       } else {

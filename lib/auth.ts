@@ -16,6 +16,7 @@ export interface User {
   avatar?: string;
   isProUser: boolean;
   customDomain?: string;
+  emailVerified: boolean;
   socialLinks: {
     twitter?: string;
     linkedin?: string;
@@ -54,7 +55,6 @@ export function verifyToken(token: string): any {
 export async function getUserFromToken(request: NextRequest): Promise<User | null> {
   try {
     const token = request.cookies.get('auth-token')?.value;
-    console.log("auth token from getUserFromToken", token)
     if (!token) return null;
 
     const decoded = verifyToken(token);
@@ -88,10 +88,6 @@ export async function createUser(userData: {
 
   const hashedPassword = await hashPassword(userData.password);
 
-  // Generate email verification token
-  const emailVerificationToken = require('crypto').randomBytes(32).toString('hex');
-  const emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-
   const user = {
     ...userData,
     password: hashedPassword,
@@ -99,8 +95,6 @@ export async function createUser(userData: {
     avatar: '',
     isProUser: false,
     emailVerified: false,
-    emailVerificationToken,
-    emailVerificationExpires,
     socialLinks: {},
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -108,8 +102,16 @@ export async function createUser(userData: {
 
   const result = await db.collection('users').insertOne(user);
 
-  // TODO: Send verification email
-  // This would integrate with your email service
+  const response = await fetch("api/auth/send-otp", {
+    method: "POST",
+    body: JSON.stringify({
+      email: user.email
+    })
+  })
+
+  if (!response.ok){
+    throw new Error("Failed to send OTP")
+  }
 
   return {
     ...user,

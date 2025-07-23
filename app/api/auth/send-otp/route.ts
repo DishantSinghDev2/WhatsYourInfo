@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { z } from 'zod';
 import crypto from 'crypto';
+import { sendOtpEmail } from '@/lib/email';
 
 const sendOtpSchema = z.object({
   email: z.string().email('Valid email is required'),
@@ -41,9 +42,8 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    // TODO: Send OTP via email
-    // This would integrate with your email service (SendGrid, etc.)
-    console.log(`OTP for ${email}: ${otp}`); // For development
+    await sendOtpEmail({ to: email, otp });
+
 
     return NextResponse.json({
       message: 'OTP sent successfully'

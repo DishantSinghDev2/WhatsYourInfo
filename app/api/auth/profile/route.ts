@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromToken } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
 import { z } from 'zod';
+import { ObjectId } from 'mongodb';
 
 const updateProfileSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -20,6 +21,15 @@ const updateProfileSchema = z.object({
   }).optional(),
 });
 
+interface User {
+  firstName: string;
+  lastName: string;
+  bio: string;
+  socialLinks: { twitter?: string; linkedin?: string; github?: string; website?: string; };
+  updatedAt: Date;
+  spotlightButton?: { text?: string; url?: string; color?: string; };
+}
+
 export async function PUT(request: NextRequest) {
   try {
     const user = await getUserFromToken(request);
@@ -37,7 +47,7 @@ export async function PUT(request: NextRequest) {
     const client = await clientPromise;
     const db = client.db('whatsyourinfo');
 
-    const updateData: any = {
+    const updateData: User = {
       firstName: validatedData.firstName,
       lastName: validatedData.lastName,
       bio: validatedData.bio || '',
@@ -51,7 +61,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const result = await db.collection('users').findOneAndUpdate(
-      { _id: user._id },
+      { _id: new ObjectId(user._id) },
       { $set: updateData },
       { returnDocument: 'after', projection: { password: 0 } }
     );

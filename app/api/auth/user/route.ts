@@ -4,7 +4,6 @@ import { getUserFromToken } from '@/lib/auth';
 export async function GET(request: NextRequest) {
   try {
     const user = await getUserFromToken(request);
-    console.log("autho token from /auth/user", request.cookies.get("auth-token"))
 
     if (!user) {
       return NextResponse.json(
@@ -21,6 +20,7 @@ export async function GET(request: NextRequest) {
         firstName: user.firstName,
         lastName: user.lastName,
         bio: user.bio,
+        emailVerified: user.emailVerified,
         avatar: user.avatar,
         isProUser: user.isProUser,
         customDomain: user.customDomain,

@@ -11,7 +11,6 @@ import {
   Linkedin,
   Github,
   ExternalLink,
-  MapPin,
   Calendar,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -251,7 +250,7 @@ export default async function ProfilePage({
                       } else {
                         alert('Failed to send message. Please try again.');
                       }
-                    } catch (error) {
+                    } catch {
                       alert('Failed to send message. Please try again.');
                     }
                   }}>

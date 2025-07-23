@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createUser } from '@/lib/auth';
+import { createUser, User } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
 import { isValidEmail, isValidUsername } from '@/lib/utils';
 import { z } from 'zod';
@@ -15,7 +15,7 @@ const registerSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
+
     // Validate input
     const validatedData = registerSchema.parse(body);
     const { email, password, username, firstName, lastName } = validatedData;
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     // Check if user already exists
     const client = await clientPromise;
     const db = client.db('whatsyourinfo');
-    
+
     const existingUser = await db.collection('users').findOne({
       $or: [{ email }, { username }]
     });
@@ -61,12 +61,12 @@ export async function POST(request: NextRequest) {
     });
 
     // Remove password from response
-    const { password: _, ...userResponse } = user as any;
+    const { ...userResponse } = user as User;
 
     return NextResponse.json(
-      { 
+      {
         message: 'User created successfully',
-        user: userResponse 
+        user: { ...userResponse, password: null }
       },
       { status: 201 }
     );

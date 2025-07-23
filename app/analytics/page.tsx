@@ -15,6 +15,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { User } from '@/lib/auth';
 
 interface AnalyticsData {
   totalViews: number;
@@ -30,10 +31,10 @@ interface AnalyticsData {
 
 export default function AnalyticsPage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User>(null);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState('30d');
+  // const [timeRange, setTimeRange] = useState('30d');
 
   useEffect(() => {
     fetchUserProfile();
@@ -49,7 +50,7 @@ export default function AnalyticsPage() {
       } else if (response.status === 401) {
         router.push('/login');
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to load profile');
     } finally {
       setIsLoading(false);
@@ -65,7 +66,7 @@ export default function AnalyticsPage() {
       } else {
         toast.error('Failed to load analytics');
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to load analytics');
     }
   };
@@ -179,7 +180,7 @@ export default function AnalyticsPage() {
                 <CardContent>
                   <div className="space-y-2">
                     {analytics.viewsByDay.slice(-7).map((day, index) => (
-                      <div key={day.date} className="flex items-center justify-between">
+                      <div key={day.date || index} className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">
                           {new Date(day.date).toLocaleDateString('en-US', { 
                             weekday: 'short', 
@@ -219,7 +220,7 @@ export default function AnalyticsPage() {
                 <CardContent>
                   <div className="space-y-3">
                     {analytics.referrerStats.slice(0, 8).map((referrer, index) => (
-                      <div key={referrer.referrer} className="flex items-center justify-between">
+                      <div key={referrer.referrer || index} className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                           <div className="w-2 h-2 bg-blue-600 rounded-full" />
                           <span className="text-sm text-gray-900 truncate max-w-[200px]">

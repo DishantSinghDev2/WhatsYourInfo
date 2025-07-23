@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
@@ -63,6 +63,35 @@ export default function RegisterPage() {
     return Object.keys(newErrors).length === 0;
   };
 
+  useEffect(() =>{
+    fetchUserProfile();
+  }, [router])
+
+  const fetchUserProfile = async () => {
+    setIsLoading(true)
+      try {
+        const response = await fetch('/api/auth/user', {
+          credentials: 'include',
+        });
+  
+        if (response.ok) {
+          const userData = await response.json();
+          if (!userData.user.emailVerified){
+            toast.error("Email not verified. Please verify your email.")
+            router.push('/verify-otp')
+          } else {
+            setIsLoading(false)
+            router.push("/dashboard")
+          }
+        } else if (response.status === 401) {
+          return;
+        }
+      } catch (error) {
+        toast.error('Failed to load profile');
+      } 
+    };
+  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -90,8 +119,8 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (response.ok) {
-        toast.success('Account created successfully!');
-        router.push('/login?message=Account created successfully. Please sign in.');
+        toast.success('Account created! Please check your email to verify your account.');
+        router.push(`/verify-otp`);
       } else {
         toast.error(data.error || 'Registration failed');
         if (data.details) {

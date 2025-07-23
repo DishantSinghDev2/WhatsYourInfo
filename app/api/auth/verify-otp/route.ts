@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateUser, generateToken } from '@/lib/auth';
+import { generateToken } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
 import { z } from 'zod';
 
@@ -39,7 +39,8 @@ export async function POST(request: NextRequest) {
           loginOtpExpires: 1
         },
         $set: {
-          updatedAt: new Date()
+          updatedAt: new Date(),
+          emailVerified: true
         }
       }
     );

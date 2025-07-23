@@ -39,6 +39,8 @@ export async function POST(request: NextRequest) {
           firstName: user.firstName,
           lastName: user.lastName,
           isProUser: user.isProUser,
+    emailVerified: user.emailVerified,
+
         }
       },
       { status: 200 }
@@ -52,7 +54,6 @@ export async function POST(request: NextRequest) {
       maxAge: 7 * 24 * 60 * 60, // 7 days
       path: '/',
     });
-    console.log("auth token from /login", token)
 
     return response;
 

@@ -83,36 +83,40 @@ export default function DashboardPage() {
   const fetchUserProfile = async () => {
     try {
       const response = await fetch('/api/auth/user', {
-  credentials: 'include',
-});
+        credentials: 'include',
+      });
 
       if (response.ok) {
         const userData = await response.json();
-        setUser(userData.user);
-        setFormData({
-          firstName: userData.user.firstName,
-          lastName: userData.user.lastName,
-          bio: userData.user.bio || '',
-          socialLinks: userData.user.socialLinks || {
-            twitter: '',
-            linkedin: '',
-            github: '',
-            website: '',
-          },
-          spotlightButton: userData.user.spotlightButton || {
-            text: '',
-            url: '',
-            color: '#3B82F6',
-          },
-        });
+        if (!userData.user.emailVerified){
+          toast.error("Email not verified. Please verify your email.")
+          router.push('/verify-otp')
+        } else {
+          setIsLoading(false)
+          setUser(userData.user);
+          setFormData({
+            firstName: userData.user.firstName,
+            lastName: userData.user.lastName,
+            bio: userData.user.bio || '',
+            socialLinks: userData.user.socialLinks || {
+              twitter: '',
+              linkedin: '',
+              github: '',
+              website: '',
+            },
+            spotlightButton: userData.user.spotlightButton || {
+              text: '',
+              url: '',
+              color: '#3B82F6',
+            },
+          });
+        }
       } else if (response.status === 401) {
         router.push('/login');
       }
     } catch (error) {
       toast.error('Failed to load profile');
-    } finally {
-      setIsLoading(false);
-    }
+    } 
   };
 
   const handleSave = async () => {
@@ -144,7 +148,7 @@ export default function DashboardPage() {
 
   const handleGenerateBio = async () => {
     if (!user) return;
-    
+
     setIsGeneratingBio(true);
     try {
       const generatedBio = await generateBio({
@@ -154,7 +158,7 @@ export default function DashboardPage() {
         interests: [], // Could be enhanced with interests
         experience: 'Experienced professional',
       });
-      
+
       setFormData(prev => ({ ...prev, bio: generatedBio }));
       toast.success('Bio generated successfully!');
     } catch (error) {
@@ -203,7 +207,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -544,8 +548,8 @@ export default function DashboardPage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Profile Views:</span>
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="sm"
                       onClick={() => router.push('/analytics')}
                       className="text-blue-600 hover:text-blue-700"
@@ -556,8 +560,8 @@ export default function DashboardPage() {
                   {user.isProUser && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">Leads:</span>
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         size="sm"
                         onClick={() => router.push('/leads')}
                         className="text-blue-600 hover:text-blue-700"
@@ -568,8 +572,8 @@ export default function DashboardPage() {
                   )}
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">Email Signature:</span>
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="sm"
                       onClick={() => router.push('/tools/email-signature')}
                       className="text-blue-600 hover:text-blue-700"
