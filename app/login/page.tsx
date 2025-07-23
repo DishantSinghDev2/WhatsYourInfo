@@ -31,7 +31,6 @@ export default function LoginPage() {
 
 
     const fetchUserProfile = async () => {
-    setIsLoading(true)
       try {
         const response = await fetch('/api/auth/user', {
           credentials: 'include',

@@ -69,7 +69,7 @@ export async function getUserFromToken(request: NextRequest): Promise<User | nul
     );
 
 
-    return user as User | null;
+    return user as unknown as User;
   } catch (error) {
     console.error('Auth error:', error);
     return null;
@@ -102,7 +102,7 @@ export async function createUser(userData: {
 
   const result = await db.collection('users').insertOne(user);
 
-  const response = await fetch("api/auth/send-otp", {
+  const response = await fetch(`${process.env.FRONTEND_URL || `localhost:3000`}/api/auth/send-otp`, {
     method: "POST",
     body: JSON.stringify({
       email: user.email
@@ -135,7 +135,7 @@ export async function authenticateUser(email: string, password: string): Promise
     return {
       ...userWithoutPassword,
       _id: user._id.toString(),
-    } as User;
+    } as unknown as User;
   } catch (error) {
     console.error('Authentication error:', error);
     return null;

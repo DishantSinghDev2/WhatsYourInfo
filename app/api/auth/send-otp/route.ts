@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    await sendOtpEmail({ to: email, otp });
+    await sendOtpEmail({ to: email, otp, name: user.username });
 
 
     return NextResponse.json({

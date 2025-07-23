@@ -10,7 +10,7 @@ const loginSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
+
     // Validate input
     const validatedData = loginSchema.parse(body);
     const { email, password } = validatedData;
@@ -39,12 +39,23 @@ export async function POST(request: NextRequest) {
           firstName: user.firstName,
           lastName: user.lastName,
           isProUser: user.isProUser,
-    emailVerified: user.emailVerified,
-
+          emailVerified: user.emailVerified,
         }
       },
       { status: 200 }
     );
+
+    if (!user.emailVerified) {
+      const response = await fetch(`${process.env.FRONTEND_URL || `localhost:3000`}/api/auth/send-otp`, {
+        method: "POST",
+        body: JSON.stringify({
+          email: user.email
+        })
+      })
+      if (!response.ok){
+        throw new Error("Failed to send OTP")
+      }
+    }
 
     // Set HTTP-only cookie
     response.cookies.set('auth-token', token, {
