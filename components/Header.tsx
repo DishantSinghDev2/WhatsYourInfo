@@ -83,14 +83,11 @@ export default function Header() {
         <div className="flex lg:flex-1">
           <Link href="/" className="-m-1.5 p-1.5 flex items-center space-x-2">
             <Image
-              src="/logo.png"
+              src="/logotext.svg"
               alt="WhatsYour.Info"
-              width={32}
+              width={200}
               height={32}
             />
-            <span className="text-xl font-bold text-gray-900">
-              WhatsYour<span className="text-blue-600">.Info</span>
-            </span>
           </Link>
         </div>
 

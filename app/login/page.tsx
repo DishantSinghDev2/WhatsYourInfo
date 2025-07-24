@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import Header from '@/components/Header';
 import { Globe, Eye, EyeOff, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -30,29 +31,29 @@ export default function LoginPage() {
   }, [searchParams]);
 
 
-    const fetchUserProfile = async () => {
-      try {
-        const response = await fetch('/api/auth/user', {
-          credentials: 'include',
-        });
-  
-        if (response.ok) {
-          const userData = await response.json();
-          if (!userData.user.emailVerified){
-            toast.error("Email not verified. Please verify your email.")
-            router.push('/verify-otp')
-          } else {
-            setIsLoading(false)
-            router.push("/dashboard")
-          }
-        } else if (response.status === 401) {
-          return;
+  const fetchUserProfile = async () => {
+    try {
+      const response = await fetch('/api/auth/user', {
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        if (!userData.user.emailVerified) {
+          toast.error("Email not verified. Please verify your email.")
+          router.push('/verify-otp')
+        } else {
+          setIsLoading(false)
+          router.push("/dashboard")
         }
-      } catch (error) {
-        toast.error('Failed to load profile');
-      } 
-    };
-  
+      } else if (response.status === 401) {
+        return;
+      }
+    } catch (error) {
+      toast.error('Failed to load profile');
+    }
+  };
+
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -71,7 +72,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -90,7 +91,7 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
-        if(data.emailVerified === false){
+        if (data.emailVerified === false) {
           toast.error("Email not verified. Please verify your email.")
           router.push("/verify-otp")
         }
@@ -123,11 +124,17 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <div className="flex min-h-[calc(100vh-80px)] items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
-            <Globe className="mx-auto h-12 w-12 text-blue-600" />
+            <Image
+              src="/logo.svg"
+              alt="WhatsYour.Info"
+              width={42}
+              height={42}
+              className='mx-auto'
+            />
             <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-900">
               Welcome back
             </h2>

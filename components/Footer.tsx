@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Globe, Twitter, Linkedin, Github } from 'lucide-react';
+import Image from 'next/image';
 
 const footerNavigation = {
   main: [
@@ -35,10 +36,12 @@ export default function Footer() {
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
             <div className="lg:col-span-1">
               <Link href="/" className="flex items-center space-x-2">
-                <Globe className="h-8 w-8 text-blue-600" />
-                <span className="text-xl font-bold text-gray-900">
-                  What'sYour<span className="text-blue-600">.Info</span>
-                </span>
+                <Image
+                  src="/logotext.svg"
+                  alt="WhatsYour.Info"
+                  width={200}
+                  height={32}
+                />
               </Link>
               <p className="mt-4 text-sm text-gray-600">
                 Your unified digital identity platform. Create, manage, and share your professional profile across the web.
@@ -56,7 +59,7 @@ export default function Footer() {
                 ))}
               </div>
             </div>
-            
+
             <div>
               <h3 className="text-sm font-semibold text-gray-900">Product</h3>
               <ul className="mt-4 space-y-2">
@@ -69,7 +72,7 @@ export default function Footer() {
                 ))}
               </ul>
             </div>
-            
+
             <div>
               <h3 className="text-sm font-semibold text-gray-900">Developers</h3>
               <ul className="mt-4 space-y-2">
@@ -82,7 +85,7 @@ export default function Footer() {
                 ))}
               </ul>
             </div>
-            
+
             <div>
               <h3 className="text-sm font-semibold text-gray-900">Support</h3>
               <ul className="mt-4 space-y-2">
@@ -96,7 +99,7 @@ export default function Footer() {
               </ul>
             </div>
           </div>
-          
+
           <div className="mt-12 border-t border-gray-200 pt-8 md:flex md:items-center md:justify-between">
             <p className="text-sm text-gray-600">
               &copy; 2025 DishIs Technologies. All rights reserved.
