@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
-import { getAvatarUrl } from '@/lib/utils';
 
 export async function GET(
   request: NextRequest,
@@ -43,7 +42,7 @@ export async function GET(
       firstName: user.firstName,
       lastName: user.lastName,
       bio: user.bio || '',
-      avatar: user.avatar || getAvatarUrl(user.email || '', 200),
+      avatar: `https://whatsyour.info/api/avatars/${username}`,
       isProUser: user.isProUser || false,
       customDomain: user.customDomain || null,
       socialLinks: user.socialLinks || {},

@@ -67,7 +67,7 @@ async function getProfile(username: string): Promise<User | null> {
 }
 
 export async function generateMetadata({
-  params,
+  params, // Keep params as is, Next.js handles this
 }: {
   params: { username: string };
 }): Promise<Metadata> {
@@ -120,11 +120,14 @@ export async function generateMetadata({
   };
 }
 
+type ProfilePageProps = {
+  params: { username: string };
+  searchParams?: { [key: string]: string | string[] | undefined };
+};
+
 export default async function ProfilePage({
   params,
-}: {
-  params: { username: string };
-}) {
+}: ProfilePageProps) {
   const profile = await getProfile(params.username);
 
   if (!profile) {
