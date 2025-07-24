@@ -1,0 +1,12 @@
+name = "upload-avatar-worker"
+main = "src/worker.ts"
+compatibility_date = "2025-07-24"
+account_id = "b69d07531ce1b66bec50f28deb826cf1"
+
+[vars]
+BUCKET_NAME = "whatsyourinfo-avatars"
+
+[[r2_buckets]]
+binding = "AVATAR_BUCKET"
+bucket_name = "whatsyourinfo-avatars"
+preview_bucket_name = "whatsyourinfo-avatars"

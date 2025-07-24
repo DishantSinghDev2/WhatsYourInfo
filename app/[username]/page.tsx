@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import clientPromise from '@/lib/mongodb';
-import { getAvatarUrl } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import {
@@ -85,7 +84,7 @@ export async function generateMetadata({
   const description = profile.bio || 
     `Professional profile of ${profile.firstName} ${profile.lastName} on What'sYour.Info`;
   const canonicalUrl = `https://whatsyour.info/${profile.username}`;
-  const avatar = profile.avatar || getAvatarUrl(profile.email, 400);
+  const avatar = `https://whatsyour.info/api/avatars/${profile.username}`;
 
   return {
     title,
@@ -132,7 +131,7 @@ export default async function ProfilePage({
     notFound();
   }
 
-  const avatar = profile.avatar || getAvatarUrl(profile.email, 200);
+  const avatar = `/api/avatars/${profile.username}`;
   const joinedDate = new Date(profile.createdAt).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',

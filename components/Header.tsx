@@ -125,13 +125,15 @@ export default function Header() {
                 onClick={() => setIsDropdownOpen((prev) => !prev)}
                 className="rounded-full"
               >
-                <Image
-                  src={user.avatar || '/default-avatar.png'}
-                  alt="User Avatar"
-                  width={32}
-                  height={32}
-                  className="rounded-full"
-                />
+                <img
+                      src={
+                        (user.avatar?.startsWith('http')
+                          ? user.avatar
+                          : `/api/avatars/${user.username}?size=128`)
+                      }
+                      alt="User Avatar"
+                      className="rounded-full object-cover border"
+                    />
               </Button>
               {isDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-64 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">

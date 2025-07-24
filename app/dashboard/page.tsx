@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { generateBio } from '@/lib/gemini';
+import AvatarCropDialog from '@/components/AvatarCrop';
 
 interface UserProfile {
   _id: string;
@@ -75,8 +76,12 @@ export default function DashboardPage() {
       color: '#3B82F6',
     },
   });
-
-  useEffect(() => {
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
+  
+useEffect(() => {
     fetchUserProfile();
   }, []);
 
@@ -88,7 +93,7 @@ export default function DashboardPage() {
 
       if (response.ok) {
         const userData = await response.json();
-        if (!userData.user.emailVerified){
+        if (!userData.user.emailVerified) {
           toast.error("Email not verified. Please verify your email.")
           router.push('/verify-otp')
         } else {
@@ -116,7 +121,7 @@ export default function DashboardPage() {
       }
     } catch (error) {
       toast.error('Failed to load profile');
-    } 
+    }
   };
 
   const handleSave = async () => {
@@ -176,8 +181,7 @@ export default function DashboardPage() {
       toast.error('Logout failed');
     }
   };
-
-  if (isLoading) {
+    if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
@@ -281,6 +285,69 @@ export default function DashboardPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">Avatar</label>
+                  <div className="flex items-center space-x-4">
+                    <img
+                      src={
+                        avatarPreview ||
+                        (user.avatar?.startsWith('http')
+                          ? user.avatar
+                          : `/api/avatars/${user.username}?size=128`)
+                      }
+                      alt="User Avatar"
+                      className="w-16 h-16 rounded-full object-cover border"
+                    />
+                    {isEditing && (
+                      <div className="flex flex-col gap-2">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            console.log(file)
+                            if (file) {
+                              setAvatarFile(file);
+                              setIsCropDialogOpen(true);
+                            }
+                          }}
+                          className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {avatarFile && (
+                  <AvatarCropDialog
+                    isOpen={isCropDialogOpen}
+                    setIsOpen={setIsCropDialogOpen}
+                    file={avatarFile}
+                    onConfirm={async (blob: Blob) => {
+                      setIsUploadingAvatar(true);
+                      const formData = new FormData();
+                      formData.append('avatar', blob, avatarFile?.name || 'avatar.jpg');
+
+                      try {
+                        const res = await fetch('/api/avatar/upload', {
+                          method: 'POST',
+                          body: formData,
+                        });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.error || 'Upload failed');
+                        toast.success('Avatar uploaded');
+                        // Create a temporary URL for the preview
+                        setAvatarPreview(URL.createObjectURL(blob));
+                        fetchUserProfile(); // refresh user data
+                      } catch (err: any) {
+                        toast.error(err.message || 'Upload error');
+                      } finally {
+                        setIsUploadingAvatar(false);
+                      }
+                    }}
+                  />
+                )}
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -341,6 +408,8 @@ export default function DashboardPage() {
                     </p>
                   )}
                 </div>
+
+
 
                 {/* Social Links */}
                 <div>

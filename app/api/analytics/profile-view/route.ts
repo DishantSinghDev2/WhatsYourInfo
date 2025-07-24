@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import redis from '@/lib/redis';
+import requestIp from 'request-ip'
+
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,7 +37,8 @@ export async function POST(request: NextRequest) {
       timestamp: new Date(),
       referrer: referrer || 'direct',
       userAgent: userAgent || 'unknown',
-      ip: request.ip || 'unknown',
+      ip: requestIp.getClientIp(request)
+ || 'unknown',
     };
 
     // Store in MongoDB
