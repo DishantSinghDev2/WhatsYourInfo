@@ -1,34 +1,16 @@
+'use client';
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Check, HelpCircle, X } from 'lucide-react';
+import { Check, HelpCircle, Loader2, X } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { Switch } from '@/components/ui/switch'; // Assuming you have a Switch component from shadcn/ui
+import { Label } from '@/components/ui/label';   // Assuming you have a Label component
 
-
-const plans = [
-  {
-    name: 'Free',
-    price: '$0',
-    period: 'forever',
-    description: 'Perfect for individuals getting started',
-    cta: 'Get Started Free',
-    ctaHref: '/register',
-    popular: false,
-  },
-  {
-    name: 'Pro',
-    price: '$6',
-    period: 'per month',
-    yearlyPrice: '$59',
-    description: 'For professionals who want more control',
-    cta: 'Start Pro Trial',
-    ctaHref: '/register?plan=pro',
-    popular: true,
-  },
-];
 
 const featureCategories = [
   {
@@ -97,26 +79,51 @@ const faq = [
 export default function PricingPage() {
   const router = useRouter();
   const [isYearly, setIsYearly] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleProClick = async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      const res = await fetch('/api/paypal/create-order', {
+      const res = await fetch('/api/paypal/create-subscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: 'Pro', yearly: isYearly }),
+        body: JSON.stringify({ yearly: isYearly }),
       });
 
       const data = await res.json();
-      if (data.id) {
-        // Redirect to a dedicated PayPal processing page
-        router.push(`/paypal/checkout?orderID=${data.id}`);
+      
+      if (res.ok && data.approvalUrl) {
+        // Redirect the user to PayPal to approve the subscription
+        router.push(data.approvalUrl);
       } else {
-        // Handle error
-        console.error('Failed to create PayPal order');
+        throw new Error(data.error || 'Failed to create PayPal subscription.');
       }
-    } catch (error) {
-      console.error('Error initiating PayPal payment:', error);
+    } catch (err: Error | unknown) {
+      console.error('Error initiating PayPal payment:', err);
+      setError('Could not connect to PayPal. Please try again.');
+      setIsLoading(false);
     }
+  };
+
+  const proPlan = {
+    name: 'Pro',
+    price: isYearly ? '$59' : '$6',
+    period: isYearly ? 'year' : 'month',
+    description: 'For professionals who want more control',
+    cta: 'Start 14-Day Free Trial',
+    popular: true,
+  };
+  
+  const freePlan = {
+    name: 'Free',
+    price: '$0',
+    period: 'forever',
+    description: 'Perfect for individuals getting started',
+    cta: 'Get Started Free',
+    ctaHref: '/register',
+    popular: false,
   };
 
   return (
@@ -131,35 +138,60 @@ export default function PricingPage() {
           </h1>
           <p className="mt-6 text-lg leading-8 text-gray-600 max-w-3xl mx-auto">
             Choose the perfect plan for your needs. Start free, upgrade when you're ready.
-            No hidden fees, no surprises.
           </p>
+
+          {/* Monthly/Yearly Toggle */}
+          <div className="mt-10 flex items-center justify-center space-x-4">
+            <Label htmlFor="billing-cycle" className={!isYearly ? 'text-blue-600' : 'text-gray-500'}>Monthly</Label>
+            <Switch
+              id="billing-cycle"
+              checked={isYearly}
+              onCheckedChange={setIsYearly}
+            />
+            <Label htmlFor="billing-cycle" className={isYearly ? 'text-blue-600' : 'text-gray-500'}>
+              Yearly <span className="text-green-600 font-medium">(Save 2 months)</span>
+            </Label>
+          </div>
         </div>
 
         {/* Pricing Comparison Table */}
         <div className="sticky top-0 bg-white/80 backdrop-blur-md z-10">
           <div className="grid grid-cols-3 gap-8 max-w-5xl mx-auto py-4">
             <div className="col-span-1"></div> {/* Empty cell for alignment */}
-            {plans.map((plan) => (
-              <div key={plan.name} className="text-center">
-                <h2 className="text-xl font-bold">{plan.name}</h2>
-                <p className="text-sm text-gray-500">{plan.description}</p>
-                 <div className="mt-4">
-                    <span className="text-4xl font-bold text-gray-900">{plan.price}</span>
-                    <span className="text-gray-600">/{plan.period}</span>
-                    {plan.yearlyPrice && (
-                      <div className="mt-1 text-xs text-gray-500">
-                        or {plan.yearlyPrice}/year
-                      </div>
-                    )}
-                  </div>
-                <Link href={plan.ctaHref}>
-                  <Button className={`w-full mt-4 ${plan.popular ? 'bg-blue-600 hover:bg-blue-700' : ''}`} variant={plan.popular ? 'default' : 'outline'}>
-                    {plan.cta}
-                  </Button>
-                </Link>
+            
+            {/* Free Plan Column */}
+            <div className="text-center">
+              <h2 className="text-xl font-bold">{freePlan.name}</h2>
+              <p className="text-sm text-gray-500">{freePlan.description}</p>
+              <div className="mt-4">
+                <span className="text-4xl font-bold text-gray-900">{freePlan.price}</span>
               </div>
-            ))}
+              <Link href={freePlan.ctaHref!}>
+                <Button className="w-full mt-4" variant="outline">
+                  {freePlan.cta}
+                </Button>
+              </Link>
+            </div>
+
+            {/* Pro Plan Column */}
+            <div className="text-center">
+              <h2 className="text-xl font-bold">{proPlan.name}</h2>
+              <p className="text-sm text-gray-500">{proPlan.description}</p>
+              <div className="mt-4">
+                <span className="text-4xl font-bold text-gray-900">{proPlan.price}</span>
+                <span className="text-gray-600">/{proPlan.period}</span>
+              </div>
+              <Button 
+                className="w-full mt-4 bg-blue-600 hover:bg-blue-700" 
+                onClick={handleProClick}
+                disabled={isLoading}
+              >
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {proPlan.cta}
+              </Button>
+            </div>
           </div>
+          {error && <p className="text-center text-red-500 text-sm mt-2">{error}</p>}
           <div className="h-px bg-gray-200 max-w-5xl mx-auto"></div>
         </div>
 
