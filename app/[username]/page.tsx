@@ -15,6 +15,16 @@ import {
 import Link from 'next/link';
 import Script from 'next/script';
 
+// This is for the page component only
+type PageProps = {
+  params: { username: string };
+};
+
+// This is for generateMetadata only
+type MetadataProps = {
+  params: { username: string };
+};
+
 interface User {
   _id: string;
   username: string;
@@ -60,17 +70,15 @@ async function getProfile(username: string): Promise<User | null> {
       ...user,
       _id: user._id.toString(),
     } as User;
-  } catch (error) {
+  } catch (error)
+  {
     console.error('Profile fetch error:', error);
     return null;
   }
 }
 
-export async function generateMetadata({
-  params, // Keep params as is, Next.js handles this
-}: {
-  params: { username: string };
-}): Promise<Metadata> {
+// Use the shared 'Props' type for generateMetadata
+export async function generateMetadata({ params }: MetadataProps): Promise<Metadata> {
   const profile = await getProfile(params.username);
 
   if (!profile) {
@@ -120,14 +128,8 @@ export async function generateMetadata({
   };
 }
 
-type ProfilePageProps = {
-  params: { username: string };
-  searchParams?: { [key: string]: string | string[] | undefined };
-};
-
-export default async function ProfilePage({
-  params,
-}: ProfilePageProps) {
+// Use the shared 'Props' type for the page component
+export default async function ProfilePage({ params }: PageProps) {
   const profile = await getProfile(params.username);
 
   if (!profile) {
@@ -192,7 +194,7 @@ export default async function ProfilePage({
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h1 className="text-3xl font-bold text-gray-900">
-                      {profile.firstName} {profile.lastName}
+                      {profile.firstName} ${profile.lastName}
                     </h1>
                     <p className="text-lg text-gray-600">@{profile.username}</p>
                     <div className="flex items-center mt-2 text-sm text-gray-500">
