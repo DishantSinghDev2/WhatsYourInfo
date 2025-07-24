@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import Header from '@/components/Header';
-import { CheckCircle, KeyRound, Mail, X } from 'lucide-react';
+import { KeyRound, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function VerifyOtpPage() {
@@ -103,7 +103,7 @@ export default function VerifyOtpPage() {
                 setError(data.error || 'Invalid or expired OTP. Please try again.');
                 toast.error(data.error || 'OTP verification failed.');
             }
-        } catch (error) {
+        } catch {
             setError('A network error occurred. Please try again.');
             toast.error('Network error. Please try again.');
         } finally {

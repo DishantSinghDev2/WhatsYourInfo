@@ -21,6 +21,7 @@ import {
   Zap,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { User } from '@/lib/auth';
 
 interface ApiKey {
   _id: string;
@@ -44,7 +45,7 @@ interface OAuthClient {
 
 export default function DeveloperDashboard() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [oauthClients, setOAuthClients] = useState<OAuthClient[]>([]);
@@ -73,7 +74,7 @@ export default function DeveloperDashboard() {
       } else if (response.status === 401) {
         router.push('/login');
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to load profile');
     } finally {
       setIsLoading(false);
@@ -129,7 +130,7 @@ export default function DeveloperDashboard() {
         const error = await response.json();
         toast.error(error.message || 'Failed to create API key');
       }
-    } catch (error) {
+    } catch {
       toast.error('Network error. Please try again.');
     } finally {
       setIsCreatingKey(false);
@@ -165,7 +166,7 @@ export default function DeveloperDashboard() {
         const error = await response.json();
         toast.error(error.message || 'Failed to create OAuth client');
       }
-    } catch (error) {
+    } catch {
       toast.error('Network error. Please try again.');
     } finally {
       setIsCreatingClient(false);
@@ -197,7 +198,7 @@ export default function DeveloperDashboard() {
       } else {
         toast.error('Failed to delete API key');
       }
-    } catch (error) {
+    } catch {
       toast.error('Network error. Please try again.');
     }
   };

@@ -15,7 +15,7 @@ let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
 
 declare global {
-  var _mongoClientPromise: Promise<MongoClient>;
+  var _mongoClientPromise: Promise<MongoClient>; // eslint-disable-line no-var
 }
 
 if (process.env.NODE_ENV === 'development') {

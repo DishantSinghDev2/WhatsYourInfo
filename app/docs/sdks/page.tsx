@@ -4,8 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/Button';
 import {
   Code,
-  Download,
-  ExternalLink,
   BookOpen,
   Github,
 } from 'lucide-react';

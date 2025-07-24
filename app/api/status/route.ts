@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import redis from '@/lib/redis';
 
@@ -11,7 +11,7 @@ interface ServiceCheck {
   icon: string;
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Check MongoDB connection
     const mongoStatus = await checkMongoDB();
@@ -66,6 +66,14 @@ export async function GET(request: NextRequest) {
         responseTime: '67ms',
         icon: 'Activity',
       },
+      {
+        name: 'Redis',
+        status: redisStatus.status,
+        description: redisStatus.description,
+        uptime: '99.99%',
+        responseTime: `${redisStatus.responseTime}ms`,
+        icon: 'Redis',
+      }
     ];
 
     // Determine overall status
@@ -119,7 +127,7 @@ async function checkMongoDB() {
       description: 'MongoDB cluster is healthy and responsive',
       responseTime,
     };
-  } catch (error) {
+  } catch {
     return {
       status: 'outage' as const,
       description: 'MongoDB connection failed',
@@ -139,7 +147,7 @@ async function checkRedis() {
       description: 'Redis cache is operational',
       responseTime,
     };
-  } catch (error) {
+  } catch {
     return {
       status: 'degraded' as const,
       description: 'Redis cache connection issues',
@@ -174,7 +182,7 @@ async function checkAPIEndpoints() {
         responseTime,
       };
     }
-  } catch (error) {
+  } catch {
     return {
       status: 'outage' as const,
       description: 'API endpoints are not responding',
@@ -202,7 +210,7 @@ async function getRecentIncidents() {
       ...incident,
       id: incident._id.toString(),
     }));
-  } catch (error) {
+  } catch {
     // Return empty array if we can't fetch incidents
     return [];
   }

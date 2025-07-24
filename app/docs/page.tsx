@@ -4,12 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/Button';
 import {
   Code,
-  BookOpen,
   Zap,
   Shield,
   Key,
   Globe,
-  Users,
   Database,
   ArrowRight,
 } from 'lucide-react';

@@ -1,10 +1,10 @@
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { NextRequest } from 'next/server';
 import clientPromise from './mongodb';
 import { ObjectId } from 'mongodb';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 export interface User {
   _id: string;
@@ -40,14 +40,14 @@ export async function verifyPassword(password: string, hashedPassword: string): 
   return bcrypt.compare(password, hashedPassword);
 }
 
-export function generateToken(payload: any): string {
+export function generateToken(payload: JwtPayload): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
 }
 
-export function verifyToken(token: string): any {
+export function verifyToken(token: string): JwtPayload | string {
   try {
     return jwt.verify(token, JWT_SECRET);
-  } catch (error) {
+  } catch  {
     return null;
   }
 }
@@ -57,7 +57,7 @@ export async function getUserFromToken(request: NextRequest): Promise<User | nul
     const token = request.cookies.get('auth-token')?.value;
     if (!token) return null;
 
-    const decoded = verifyToken(token);
+    const decoded = verifyToken(token) as JwtPayload;
     if (!decoded) return null;
 
     const client = await clientPromise;
@@ -131,9 +131,10 @@ export async function authenticateUser(email: string, password: string): Promise
     if (!isValid) return null;
 
     // Remove password from returned user
-    const { password: _, ...userWithoutPassword } = user;
+    const { ...userWithoutPassword } = user;
     return {
       ...userWithoutPassword,
+      password: undefined,
       _id: user._id.toString(),
     } as unknown as User;
   } catch (error) {

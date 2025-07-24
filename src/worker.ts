@@ -1,5 +1,5 @@
 export default {
-  async fetch(request: Request, env: any) {
+  async fetch(request: Request, env: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
     const url = new URL(request.url);
     const pathname = url.pathname;
 

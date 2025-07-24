@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Globe, Twitter, Linkedin, Github } from 'lucide-react';
+import { Twitter, Linkedin, Github } from 'lucide-react';
 import Image from 'next/image';
 
 const footerNavigation = {

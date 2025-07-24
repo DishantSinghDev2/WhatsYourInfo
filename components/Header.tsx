@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from './ui/Button';
-import { Globe, Menu, X, User as UserIcon, LogOut, Settings, LayoutDashboard } from 'lucide-react';
+import { Globe, Menu, X, LogOut, Settings, LayoutDashboard } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -56,7 +56,7 @@ export default function Header() {
       } else if (response.status === 401) {
         return;
       }
-    } catch (error) {
+    } catch {
       toast.error('Error fetching user');
     } finally {
       setIsLoading(false);
@@ -70,7 +70,7 @@ export default function Header() {
       setUser(null);
       toast.success('Logged out successfully!');
       setIsDropdownOpen(false);
-    } catch (error) {
+    } catch {
       toast.error('Logout failed.');
     } finally {
       setIsLoading(false);

@@ -7,16 +7,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import {
-  Mail,
   Copy,
   Download,
   Eye,
   Settings,
   Palette,
-  Type,
-  Image as ImageIcon,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { User } from '@/lib/auth';
 
 interface SignatureData {
   name: string;
@@ -64,7 +62,7 @@ export default function EmailSignaturePage() {
   });
 
   const [previewMode, setPreviewMode] = useState<'html' | 'plain'>('html');
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User>(null);
 
   useEffect(() => {
     // Try to load user data if logged in
@@ -87,13 +85,13 @@ export default function EmailSignaturePage() {
           website: userData.user.socialLinks?.website || '',
         }));
       }
-    } catch (error) {
+    } catch {
       // User not logged in, continue with empty form
     }
   };
 
   const generateSignatureHTML = () => {
-    const { name, title, company, email, phone, website, profileUrl, logoUrl, primaryColor, fontSize } = signatureData;
+    const { name, title, company, email, phone, website, profileUrl, primaryColor, fontSize } = signatureData;
     
     const fontSizeMap = {
       small: '12px',
@@ -319,7 +317,7 @@ export default function EmailSignaturePage() {
                     {templates.map((template) => (
                       <button
                         key={template.id}
-                        onClick={() => setSignatureData(prev => ({ ...prev, template: template.id as any }))}
+                        onClick={() => setSignatureData(prev => ({ ...prev, template: template.id as SignatureData['template'] }))}
                         className={`p-3 text-left border rounded-lg transition-colors ${
                           signatureData.template === template.id
                             ? 'border-blue-500 bg-blue-50'
@@ -359,7 +357,7 @@ export default function EmailSignaturePage() {
                     {['small', 'medium', 'large'].map((size) => (
                       <button
                         key={size}
-                        onClick={() => setSignatureData(prev => ({ ...prev, fontSize: size as any }))}
+                        onClick={() => setSignatureData(prev => ({ ...prev, fontSize: size as SignatureData['fontSize'] }))}
                         className={`px-3 py-1 text-sm border rounded ${
                           signatureData.fontSize === size
                             ? 'border-blue-500 bg-blue-50 text-blue-700'

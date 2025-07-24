@@ -23,7 +23,7 @@ interface ServiceStatus {
   description: string;
   uptime: string;
   responseTime: string;
-  icon: any;
+  icon: React.FC<{ className?: string }>;
 }
 
 interface Incident {
@@ -67,7 +67,7 @@ export default function StatusPage() {
         setIncidents(mockIncidents);
         setOverallStatus('operational');
       }
-    } catch (error) {
+    } catch {
       // Fallback to mock data
       setServices(mockServices);
       setIncidents(mockIncidents);

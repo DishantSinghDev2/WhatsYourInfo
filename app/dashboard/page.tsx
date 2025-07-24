@@ -8,14 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import Header from '@/components/Header';
 import {
   User,
-  Settings,
   BarChart3,
   ExternalLink,
   Edit,
   Save,
   X,
   Globe,
-  Mail,
   Twitter,
   Linkedin,
   Github,
@@ -119,7 +117,7 @@ useEffect(() => {
       } else if (response.status === 401) {
         router.push('/login');
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to load profile');
     }
   };
@@ -144,7 +142,7 @@ useEffect(() => {
         const error = await response.json();
         toast.error(error.message || 'Failed to update profile');
       }
-    } catch (error) {
+    } catch {
       toast.error('Network error. Please try again.');
     } finally {
       setIsSaving(false);
@@ -166,7 +164,7 @@ useEffect(() => {
 
       setFormData(prev => ({ ...prev, bio: generatedBio }));
       toast.success('Bio generated successfully!');
-    } catch (error) {
+    } catch {
       toast.error('Failed to generate bio. Please try again.');
     } finally {
       setIsGeneratingBio(false);
@@ -177,7 +175,7 @@ useEffect(() => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
       router.push('/');
-    } catch (error) {
+    } catch {
       toast.error('Logout failed');
     }
   };
@@ -298,7 +296,7 @@ useEffect(() => {
                       alt="User Avatar"
                       className="w-16 h-16 rounded-full object-cover border"
                     />
-                    {isEditing && (
+                    {isEditing ? (
                       <div className="flex flex-col gap-2">
                         <input
                           type="file"
@@ -314,6 +312,8 @@ useEffect(() => {
                           className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                         />
                       </div>
+                    ): isUploadingAvatar && (
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                     )}
                   </div>
                 </div>
@@ -339,8 +339,8 @@ useEffect(() => {
                         // Create a temporary URL for the preview
                         setAvatarPreview(URL.createObjectURL(blob));
                         fetchUserProfile(); // refresh user data
-                      } catch (err: any) {
-                        toast.error(err.message || 'Upload error');
+                      } catch {
+                        toast.error('Upload error');
                       } finally {
                         setIsUploadingAvatar(false);
                       }

@@ -1,10 +1,12 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Check, HelpCircle, X } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+
 
 const plans = [
   {
@@ -93,6 +95,30 @@ const faq = [
   ];
 
 export default function PricingPage() {
+  const router = useRouter();
+  const [isYearly, setIsYearly] = useState(false);
+
+  const handleProClick = async () => {
+    try {
+      const res = await fetch('/api/paypal/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: 'Pro', yearly: isYearly }),
+      });
+
+      const data = await res.json();
+      if (data.id) {
+        // Redirect to a dedicated PayPal processing page
+        router.push(`/paypal/checkout?orderID=${data.id}`);
+      } else {
+        // Handle error
+        console.error('Failed to create PayPal order');
+      }
+    } catch (error) {
+      console.error('Error initiating PayPal payment:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <Header />

@@ -1,11 +1,19 @@
-import Cropper from 'react-easy-crop';
+import Cropper, { Area } from 'react-easy-crop';
 import { Dialog, Transition } from '@headlessui/react';
 import { Fragment, useState, useEffect } from 'react';
 import { RotateCw, Contrast, Sun } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+interface croppedAreaPixels {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+
 // The getCroppedImg function remains the same as the one you provided
-function getCroppedImg(file: File, croppedAreaPixels: any, rotation: number): Promise<Blob> {
+function getCroppedImg(file: File, croppedAreaPixels: croppedAreaPixels , rotation: number): Promise<Blob> {
     return new Promise((resolve, reject) => {
         const image = new Image();
         image.src = URL.createObjectURL(file);
@@ -77,13 +85,18 @@ const AvatarCropDialog = ({
     setIsOpen,
     file,
     onConfirm,
-}: any) => {
+}: {
+    isOpen: boolean;
+    setIsOpen: (isOpen: boolean) => void;
+    file?: File;
+    onConfirm: (blob: Blob) => void;
+}) => {
     const [crop, setCrop] = useState({ x: 0, y: 0 });
     const [zoom, setZoom] = useState(1);
     const [rotation, setRotation] = useState(0);
     const [brightness, setBrightness] = useState(1);
     const [contrast, setContrast] = useState(1);
-    const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState<croppedAreaPixels>(null);
     const [imageSrc, setImageSrc] = useState('');
 
     useEffect(() => {
@@ -96,7 +109,7 @@ const AvatarCropDialog = ({
         }
     }, [file]); // This effect runs whenever the file prop changes
 
-    const onCropComplete = (_: any, croppedPixels: any) => {
+    const onCropComplete = (_: Area, croppedPixels: croppedAreaPixels) => {
         setCroppedAreaPixels(croppedPixels);
     };
 

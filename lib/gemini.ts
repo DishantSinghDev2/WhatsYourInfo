@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { User } from './auth';
 
 const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
@@ -37,7 +38,17 @@ export async function generateBio(userInfo: {
   }
 }
 
-export async function enhanceProfile(profileData: any): Promise<any> {
+interface EnhancedProfile {
+  bio: string;
+  headline: string;
+  skills: string[];
+  tips: string[];
+}
+
+
+
+
+export async function enhanceProfile(profileData: User): Promise<EnhancedProfile> {
   try {
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
@@ -67,6 +78,5 @@ export async function enhanceProfile(profileData: any): Promise<any> {
     }
   } catch (error) {
     console.error('Profile enhancement error:', error);
-    return profileData;
   }
 }

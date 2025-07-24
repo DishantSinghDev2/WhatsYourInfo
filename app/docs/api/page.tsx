@@ -7,9 +7,7 @@ import {
   Database,
   Key,
   Shield,
-  Globe,
   Code,
-  ExternalLink,
 } from 'lucide-react';
 import Link from 'next/link';
 

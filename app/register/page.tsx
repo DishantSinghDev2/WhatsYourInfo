@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import Header from '@/components/Header';
-import { Globe, Eye, EyeOff, CheckCircle, X } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { isValidEmail, isValidUsername } from '@/lib/utils';
 import Image from 'next/image';
@@ -86,7 +86,7 @@ export default function RegisterPage() {
       } else if (response.status === 401) {
         return;
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to load profile');
     }
   };
@@ -125,13 +125,16 @@ export default function RegisterPage() {
         toast.error(data.error || 'Registration failed');
         if (data.details) {
           const fieldErrors: Record<string, string> = {};
-          data.details.forEach((detail: any) => {
+          data.details.forEach((detail: {
+            path: string[];
+            message: string;
+          }) => {
             fieldErrors[detail.path[0]] = detail.message;
           });
           setErrors(fieldErrors);
         }
       }
-    } catch (error) {
+    } catch {
       toast.error('Network error. Please try again.');
     } finally {
       setIsLoading(false);

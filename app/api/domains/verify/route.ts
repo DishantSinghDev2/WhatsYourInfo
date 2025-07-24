@@ -2,10 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromToken } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
 import { z } from 'zod';
+import { ObjectId } from 'mongodb';
 
 const verifyDomainSchema = z.object({
   domain: z.string().min(1, 'Domain is required'),
 });
+
+interface DNSRecord {
+  name: string;
+  type: string;
+  data: string;
+}
+
+
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,7 +36,7 @@ export async function POST(request: NextRequest) {
       const dnsData = await response.json();
       
       const verificationCode = `whatsyour-info-verification=${user._id}`;
-      const isVerified = dnsData.Answer?.some((record: any) => 
+      const isVerified = dnsData.Answer?.some((record: DNSRecord) => 
         record.data.includes(verificationCode)
       );
 
@@ -47,7 +56,7 @@ export async function POST(request: NextRequest) {
       const db = client.db('whatsyourinfo');
 
       await db.collection('users').updateOne(
-        { _id: user._id },
+        { _id: new ObjectId(user._id) },
         { 
           $set: { 
             customDomain: domain,
@@ -62,7 +71,7 @@ export async function POST(request: NextRequest) {
         domain
       });
 
-    } catch (error) {
+    } catch {
       return NextResponse.json(
         { error: 'Failed to verify domain' },
         { status: 500 }

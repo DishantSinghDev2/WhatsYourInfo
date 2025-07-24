@@ -16,6 +16,7 @@ import {
   Crown,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { User } from '@/lib/auth';
 
 interface Lead {
   _id: string;
@@ -29,7 +30,7 @@ interface Lead {
 
 export default function LeadsPage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -55,7 +56,7 @@ export default function LeadsPage() {
       } else if (response.status === 401) {
         router.push('/login');
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to load profile');
     } finally {
       setIsLoading(false);
@@ -83,7 +84,7 @@ export default function LeadsPage() {
         
         setStats({ total, thisMonth, conversionRate });
       }
-    } catch (error) {
+    } catch {
       toast.error('Failed to load leads');
     }
   };

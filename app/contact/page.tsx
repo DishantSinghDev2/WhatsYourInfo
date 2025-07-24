@@ -96,7 +96,7 @@ export default function ContactPage() {
       } else {
         toast.error('Failed to send message. Please try again.');
       }
-    } catch (error) {
+    } catch {
       toast.error('Network error. Please try again.');
     } finally {
       setIsSubmitting(false);
