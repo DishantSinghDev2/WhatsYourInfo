@@ -2,18 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromToken } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { userId: string } }
-) {
+export async function GET(request: NextRequest) {
   try {
     const user = await getUserFromToken(request);
 
-    if (!user || user._id !== params.userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const client = await clientPromise;
@@ -28,14 +22,11 @@ export async function GET(
       leads: leads.map(lead => ({
         ...lead,
         _id: lead._id.toString(),
-      }))
+      })),
     });
 
   } catch (error) {
     console.error('Leads fetch error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch leads' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch leads' }, { status: 500 });
   }
 }

@@ -66,3 +66,21 @@
     @apply bg-background text-foreground;
   }
 }
+
+
+:root {
+  --background: #ffffff;
+  --surface: #f8f9fa;
+  --accent: #007bff;
+  --text-primary: #212529;
+  --text-secondary: #6c757d;
+}
+
+.card-hover-effect {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card-hover-effect:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}

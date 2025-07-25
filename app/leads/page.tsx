@@ -30,7 +30,7 @@ interface Lead {
 
 export default function LeadsPage() {
   const router = useRouter();
-  const [user, setUser] = useState<User>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -65,7 +65,7 @@ export default function LeadsPage() {
 
   const fetchLeads = async (userId: string) => {
     try {
-      const response = await fetch(`/api/leads/${userId}`);
+      const response = await fetch(`/api/leads`);
       if (response.ok) {
         const data = await response.json();
         setLeads(data.leads);

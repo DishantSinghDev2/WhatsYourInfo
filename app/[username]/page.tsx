@@ -1,5 +1,3 @@
-export const dynamic = 'force-dynamic';
-
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import clientPromise from '@/lib/mongodb';
@@ -16,6 +14,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import Script from 'next/script';
+import LeadCaptureForm from '@/components/LeadCaptureForm';
 
 interface User {
   _id: string;
@@ -227,69 +226,11 @@ export default async function ProfilePage({
             {/* Lead Capture Form for Pro Users */}
             {profile.isProUser && (
               <Card className="border-0 shadow-md">
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Get in Touch</h3>
-                  <form className="space-y-4" onSubmit={async (e) => {
-                    e.preventDefault();
-                    const formData = new FormData(e.target as HTMLFormElement);
-                    
-                    try {
-                      const response = await fetch('/api/leads/capture', {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                          username: profile.username,
-                          name: formData.get('name'),
-                          email: formData.get('email'),
-                          message: formData.get('message'),
-                          source: 'profile'
-                        })
-                      });
-                      
-                      if (response.ok) {
-                        alert('Message sent successfully!');
-                        (e.target as HTMLFormElement).reset();
-                      } else {
-                        alert('Failed to send message. Please try again.');
-                      }
-                    } catch {
-                      alert('Failed to send message. Please try again.');
-                    }
-                  }}>
-                    <div>
-                      <input
-                        type="text"
-                        name="name"
-                        placeholder="Your Name"
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <input
-                        type="email"
-                        name="email"
-                        placeholder="Your Email"
-                        required
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <textarea
-                        name="message"
-                        placeholder="Your Message"
-                        rows={4}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <Button type="submit" className="w-full">
-                      Send Message
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
+  <CardContent className="p-6">
+    <h3 className="text-lg font-semibold text-gray-900 mb-4">Get in Touch</h3>
+    <LeadCaptureForm username={profile.username} />
+  </CardContent>
+</Card>
             )}
           </CardContent>
         </Card>

@@ -2,7 +2,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromToken } from '@/lib/auth';
-import client from '@/lib/paypal'; // assumes PayPalHttpClient is already set up
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,7 +29,9 @@ export async function POST(request: NextRequest) {
     }
 
     const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
-    const apiBase = 'https://api-m.paypal.com';
+    const apiBase = process.env.NODE_ENV === 'production'
+      ? 'https://api-m.paypal.com'
+      : 'https://api-m.sandbox.paypal.com';
 
     const tokenResp = await fetch(`${apiBase}/v1/oauth2/token`, {
       method: 'POST',
