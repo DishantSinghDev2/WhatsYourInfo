@@ -62,7 +62,7 @@ export default function EmailSignaturePage() {
   });
 
   const [previewMode, setPreviewMode] = useState<'html' | 'plain'>('html');
-  const [user, setUser] = useState<User>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     // Try to load user data if logged in

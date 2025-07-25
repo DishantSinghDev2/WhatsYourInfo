@@ -68,7 +68,7 @@ export default function VerifyOtpPage() {
                 toast.error(data.error || 'OTP resend failed.');
                 router.push('/login')
             }
-        } catch (error) {
+        } catch (error ) { 
             toast.error(error.message)
             setError(error.message)
         } finally {
