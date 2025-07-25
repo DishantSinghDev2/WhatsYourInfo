@@ -7,7 +7,7 @@ if (!apiKey) {
   throw new Error("GEMINI_API_KEY is not set in the environment variables.");
 }
 
-const genAI = new GoogleGenerativeAI(apiKey);
+export const genAI = new GoogleGenerativeAI(apiKey);
 
 export async function generateBio(userInfo: {
   firstName: string;

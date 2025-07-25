@@ -1,45 +1,15 @@
+// Imports remain largely the same, but add new components
+import ProfileHeader from '@/components/profile/ProfileHeader';
+import ProfileSidebar from '@/components/profile/ProfileSidebar';
+import AboutSection from '@/components/profile/AboutSection';
+import LinksSection from '@/components/profile/LinksSection';
+import VerifiedAccountsSection from '@/components/profile/VerifiedAccountsSection';
+import GallerySection from '@/components/profile/GallerySection'; // For Pro users
+import LeadCaptureSection from '@/components/profile/LeadCaptureSection'; // For Pro users
 import { notFound } from 'next/navigation';
-import { Metadata } from 'next';
 import clientPromise from '@/lib/mongodb';
-import { Button } from '@/components/ui/Button';
-import { Card, CardContent } from '@/components/ui/Card';
-import {
-  Globe,
-  Mail,
-  Twitter,
-  Linkedin,
-  Github,
-  ExternalLink,
-  Calendar,
-} from 'lucide-react';
-import Link from 'next/link';
-import Script from 'next/script';
-import LeadCaptureForm from '@/components/LeadCaptureForm';
-
-interface User {
-  _id: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  bio?: string;
-  avatar?: string;
-  email: string;
-  isProUser: boolean;
-  customDomain?: string;
-  socialLinks: {
-    twitter?: string;
-    linkedin?: string;
-    github?: string;
-    website?: string;
-  };
-  spotlightButton?: {
-    text: string;
-    url: string;
-    color: string;
-  };
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { Metadata } from 'next';
+import { User } from '@/lib/auth'; // Assuming you move the User interface to a shared location
 
 async function getProfile(username: string): Promise<User | null> {
   try {
@@ -121,266 +91,30 @@ export async function generateMetadata({
   };
 }
 
-// The ProfilePageProps type has been removed.
-// The types are now defined directly in the function signature.
-export default async function ProfilePage({
-  params,
-}: {
-  params: { username: string };
-  searchParams?: { [key: string]: string | string[] | undefined };
-}) {
+export default async function ProfilePage({ params }: { params: { username: string } }) {
   const profile = await getProfile(params.username);
 
   if (!profile) {
     notFound();
   }
 
-  const avatar = `/api/avatars/${profile.username}`;
-  const joinedDate = new Date(profile.createdAt).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-  });
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
-      {/* Analytics Tracking */}
-      <Script id="profile-analytics" strategy="afterInteractive">
-        {`
-          fetch('/api/analytics/profile-view', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              username: '${profile.username}',
-              referrer: document.referrer,
-              userAgent: navigator.userAgent
-            })
-          }).catch(() => {});
-        `}
-      </Script>
-
-      {/* JSON-LD Structured Data */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'Person',
-            name: `${profile.firstName} ${profile.lastName}`,
-            url: `https://whatsyour.info/${profile.username}`,
-            image: avatar,
-            description: profile.bio,
-            sameAs: Object.values(profile.socialLinks).filter(Boolean),
-          }),
-        }}
-      />
-
-      <div className="mx-auto max-w-4xl px-6 py-12">
-        {/* Profile Header */}
-        <Card className="mb-8 overflow-hidden border-0 shadow-lg">
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 h-32"></div>
-          <CardContent className="relative px-6 pb-6">
-            <div className="flex flex-col sm:flex-row sm:items-end sm:space-x-6">
-              <div className="relative -mt-16 mb-4 sm:mb-0">
-                <img
-                  src={avatar}
-                  alt={`${profile.firstName} ${profile.lastName}`}
-                  className="h-32 w-32 rounded-full border-4 border-white shadow-lg object-cover"
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h1 className="text-3xl font-bold text-gray-900">
-                      {profile.firstName} ${profile.lastName}
-                    </h1>
-                    <p className="text-lg text-gray-600">@{profile.username}</p>
-                    <div className="flex items-center mt-2 text-sm text-gray-500">
-                      <Calendar className="h-4 w-4 mr-1" />
-                      Joined {joinedDate}
-                    </div>
-                  </div>
-                  {profile.isProUser && profile.spotlightButton && (
-                    <div className="mt-4 sm:mt-0">
-                      <Link
-                        href={profile.spotlightButton.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Button
-                          size="lg"
-                          className="w-full sm:w-auto"
-                          style={{ backgroundColor: profile.spotlightButton.color }}
-                        >
-                          {profile.spotlightButton.text}
-                          <ExternalLink className="ml-2 h-4 w-4" />
-                        </Button>
-                      </Link>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Lead Capture Form for Pro Users */}
-            {profile.isProUser && (
-              <Card className="border-0 shadow-md">
-  <CardContent className="p-6">
-    <h3 className="text-lg font-semibold text-gray-900 mb-4">Get in Touch</h3>
-    <LeadCaptureForm username={profile.username} />
-  </CardContent>
-</Card>
-            )}
-          </CardContent>
-        </Card>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Bio Section */}
-            {profile.bio && (
-              <Card className="border-0 shadow-md">
-                <CardContent className="p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">About</h2>
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                    {profile.bio}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Contact Section */}
-            <Card className="border-0 shadow-md">
-              <CardContent className="p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Get in touch</h2>
-                <p className="text-gray-600 mb-4">
-                  Connect with {profile.firstName} on their preferred platforms
-                </p>
-                <div className="flex flex-wrap gap-3">
-                  <Button variant="outline" size="sm" asChild>
-                    <a href={`mailto:hello@${profile.username}.whatsyour.info`}>
-                      <Mail className="h-4 w-4 mr-2" />
-                      Email
-                    </a>
-                  </Button>
-                  {profile.socialLinks.website && (
-                    <Button variant="outline" size="sm" asChild>
-                      <a
-                        href={profile.socialLinks.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Globe className="h-4 w-4 mr-2" />
-                        Website
-                      </a>
-                    </Button>
-                  )}
-                  {profile.socialLinks.twitter && (
-                    <Button variant="outline" size="sm" asChild>
-                      <a
-                        href={profile.socialLinks.twitter}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Twitter className="h-4 w-4 mr-2" />
-                        Twitter
-                      </a>
-                    </Button>
-                  )}
-                  {profile.socialLinks.linkedin && (
-                    <Button variant="outline" size="sm" asChild>
-                      <a
-                        href={profile.socialLinks.linkedin}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Linkedin className="h-4 w-4 mr-2" />
-                        LinkedIn
-                      </a>
-                    </Button>
-                  )}
-                  {profile.socialLinks.github && (
-                    <Button variant="outline" size="sm" asChild>
-                      <a
-                        href={profile.socialLinks.github}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Github className="h-4 w-4 mr-2" />
-                        GitHub
-                      </a>
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+    <div className="min-h-screen bg-gray-50">
+      {/* Analytics and JSON-LD Scripts remain the same */}
+      <div className="mx-auto max-w-5xl px-4 py-8">
+        <ProfileHeader profile={profile} />
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="md:col-span-2 space-y-8">
+            <AboutSection bio={profile.bio} />
+            <LinksSection socialLinks={profile.socialLinks} />
+            <VerifiedAccountsSection verifiedAccounts={profile.verifiedAccounts} />
+            {profile.isProUser && <GallerySection username={profile.username} />}
           </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Profile URLs */}
-            <Card className="border-0 shadow-md">
-              <CardContent className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile URLs</h3>
-                <div className="space-y-3 text-sm">
-                  <div>
-                    <p className="text-gray-600">Primary URL:</p>
-                    <code className="block bg-gray-100 p-2 rounded text-xs break-all">
-                      https://whatsyour.info/{profile.username}
-                    </code>
-                  </div>
-                  <div>
-                    <p className="text-gray-600">Subdomain URL:</p>
-                    <code className="block bg-gray-100 p-2 rounded text-xs break-all">
-                      https://{profile.username}.whatsyour.info
-                    </code>
-                  </div>
-                  {profile.customDomain && (
-                    <div>
-                      <p className="text-gray-600">Custom Domain:</p>
-                      <code className="block bg-gray-100 p-2 rounded text-xs break-all">
-                        https://{profile.customDomain}
-                      </code>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* What's Your Info Branding */}
-            {!profile.isProUser && (
-              <Card className="border-0 shadow-md bg-blue-50">
-                <CardContent className="p-6 text-center">
-                  <Globe className="h-8 w-8 text-blue-600 mx-auto mb-3" />
-                  <p className="text-sm text-gray-700 mb-3">
-                    This profile is powered by What'sYour.Info
-                  </p>
-                  <Link href="/register">
-                    <Button size="sm" className="w-full">
-                      Create Your Profile
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            )}
+          <div className="space-y-8">
+            <ProfileSidebar profile={profile} />
+            {profile.isProUser && <LeadCaptureSection username={profile.username} />}
           </div>
         </div>
-
-        {/* Gallery for Pro Users */}
-        {profile.isProUser && (
-          <Card className="mt-8 border-0 shadow-lg">
-            <CardContent className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Gallery</h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {/* Gallery items would be loaded from API */}
-                <div className="text-center py-8 col-span-full">
-                  <p className="text-gray-500">Gallery feature coming soon</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   );

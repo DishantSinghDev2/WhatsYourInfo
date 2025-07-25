@@ -84,3 +84,33 @@
   transform: translateY(-5px);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }
+
+/* Custom scrollbar for control panel */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #d1d5db; /* gray-300 */
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af; /* gray-400 */
+}
+
+/* Custom scrollbar for preview panel */
+.custom-scrollbar-preview::-webkit-scrollbar {
+  width: 8px;
+}
+.custom-scrollbar-preview::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+.custom-scrollbar-preview::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+}
+.custom-scrollbar-preview::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}

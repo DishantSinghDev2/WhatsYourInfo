@@ -28,6 +28,30 @@ export interface User {
     url: string;
     color: string;
   };
+  verifiedAccounts: {
+    service: string; // e.g., 'twitter', 'github'
+    username: string;
+    url: string;
+  }[];
+  interests: string[];
+  wallet: {
+    paymentType: string; // e.g., 'paypal', 'btc'
+    address: string;
+  }[];
+  gallery: {
+    imageUrl: string;
+    caption: string;
+  }[];
+  design: {
+    theme: string; // e.g., 'classic', 'sunset'
+    customColors: {
+      background: string;
+      surface: string;
+      accent: string;
+    };
+    headerImage: string;
+    backgroundImage: string;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -96,6 +120,16 @@ export async function createUser(userData: {
     isProUser: false,
     emailVerified: false,
     socialLinks: {},
+    verifiedAccounts: [],
+    interests: [],
+    wallet: [],
+    gallery: [],
+    design: {
+      theme: 'classic',
+      customColors: { background: '#ffffff', surface: '#f8f9fa', accent: '#007bff' },
+      headerImage: '',
+      backgroundImage: '',
+    },
     createdAt: new Date(),
     updatedAt: new Date(),
   };
