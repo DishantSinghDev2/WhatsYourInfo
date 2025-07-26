@@ -1,17 +1,13 @@
 // Imports remain largely the same, but add new components
-import ProfileHeader from '@/components/profile/ProfileHeader';
-import ProfileSidebar from '@/components/profile/ProfileSidebar';
-import AboutSection from '@/components/profile/AboutSection';
-import LinksSection from '@/components/profile/LinksSection';
-import VerifiedAccountsSection from '@/components/profile/VerifiedAccountsSection';
-import GallerySection from '@/components/profile/GallerySection'; // For Pro users
-import LeadCaptureSection from '@/components/profile/LeadCaptureSection'; // For Pro users
 import { notFound } from 'next/navigation';
 import clientPromise from '@/lib/mongodb';
 import { Metadata } from 'next';
 import { User } from '@/lib/auth'; // Assuming you move the User interface to a shared location
+import PublicProfileView from '@/components/profile/PublicProfileView';
+import { UserProfile } from '@/types';
 
-async function getProfile(username: string): Promise<User | null> {
+
+async function getProfile(username: string): Promise<UserProfile | null> {
   try {
     const client = await clientPromise;
     const db = client.db('whatsyourinfo');
@@ -30,7 +26,7 @@ async function getProfile(username: string): Promise<User | null> {
     return {
       ...user,
       _id: user._id.toString(),
-    } as User;
+    } as UserProfile;
   } catch (error) {
     console.error('Profile fetch error:', error);
     return null;
@@ -90,32 +86,10 @@ export async function generateMetadata({
     },
   };
 }
-
 export default async function ProfilePage({ params }: { params: { username: string } }) {
   const profile = await getProfile(params.username);
+  if (!profile) notFound();
 
-  if (!profile) {
-    notFound();
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Analytics and JSON-LD Scripts remain the same */}
-      <div className="mx-auto max-w-5xl px-4 py-8">
-        <ProfileHeader profile={profile} />
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="md:col-span-2 space-y-8">
-            <AboutSection bio={profile.bio} />
-            <LinksSection socialLinks={profile.socialLinks} />
-            <VerifiedAccountsSection verifiedAccounts={profile.verifiedAccounts} />
-            {profile.isProUser && <GallerySection username={profile.username} />}
-          </div>
-          <div className="space-y-8">
-            <ProfileSidebar profile={profile} />
-            {profile.isProUser && <LeadCaptureSection username={profile.username} />}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  // The entire page is now just this one line.
+  return <PublicProfileView profile={profile} />;
 }

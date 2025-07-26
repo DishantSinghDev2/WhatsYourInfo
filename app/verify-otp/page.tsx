@@ -23,7 +23,7 @@ export default function VerifyOtpPage() {
             const data = await response.json()
             if (response.ok) {
                 if (data.user.emailVerified) {
-                    router.push('/dashboard')
+                    router.push('/profile')
                 }
                 setEmail(data.user.email)
             }

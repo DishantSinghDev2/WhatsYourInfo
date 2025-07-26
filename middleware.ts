@@ -1,32 +1,79 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+function verifyToken(token: string): any {
+  try {
+    const [header, payload, signature] = token.split('.');
+    if (!header || !payload || !signature) return null;
+
+    const decoded = JSON.parse(Buffer.from(payload, 'base64').toString());
+    return decoded;
+  } catch {
+    return null;
+  }
+}
+
 export function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || '';
   const url = request.nextUrl.clone();
+  const pathname = url.pathname;
 
-  // Handle subdomain routing
+  const token = request.cookies.get('auth-token')?.value;
+  const decoded = token ? verifyToken(token) : null;
+
+  const isLoggedIn = !!(decoded && decoded.userId);
+  const isEmailVerified = decoded?.emailVerified === true;
+
+  // === 🛑 If authenticated but not email verified, redirect to /verify-otp ===
+  if (
+    isLoggedIn &&
+    !isEmailVerified &&
+    pathname !== '/verify-otp' &&
+    !pathname.startsWith('/_next') &&
+    !pathname.startsWith('/api')
+  ) {
+    url.pathname = '/verify-otp';
+    return NextResponse.redirect(url);
+  }
+
+  // === ✅ If already verified and on /verify-otp → go to /profile ===
+  if (isLoggedIn && isEmailVerified && pathname === '/verify-otp') {
+    url.pathname = '/profile';
+    return NextResponse.redirect(url);
+  }
+
+  // === 🔐 Redirect authenticated users away from /login, /register, / ===
+  if (isLoggedIn && ['/login', '/register', '/'].includes(pathname)) {
+    url.pathname = '/profile';
+    return NextResponse.redirect(url);
+  }
+
+  // === 🚫 Redirect unauthenticated users away from protected routes ===
+  const protectedRoutes = ['/profile', '/dashboard', '/analytics', '/leads'];
+  if (!isLoggedIn && protectedRoutes.includes(pathname)) {
+    url.pathname = '/login';
+    return NextResponse.redirect(url);
+  }
+
+  // === 🌐 Handle subdomain → path routing ===
   if (hostname.includes('.whatsyour.info') && !hostname.startsWith('www.')) {
     const subdomain = hostname.split('.')[0];
-    
-    // Skip API routes and static files
+
     if (
-      url.pathname.startsWith('/api/') ||
-      url.pathname.startsWith('/_next/') ||
-      url.pathname.startsWith('/favicon') ||
-      url.pathname.includes('.')
+      pathname.startsWith('/api/') ||
+      pathname.startsWith('/_next/') ||
+      pathname.startsWith('/favicon') ||
+      pathname.includes('.')
     ) {
       return NextResponse.next();
     }
 
-    // Redirect subdomain to path-based routing
     url.pathname = `/${subdomain}`;
     return NextResponse.rewrite(url);
   }
 
-  // Add security headers
+  // === 🛡️ Security headers ===
   const response = NextResponse.next();
-  
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'origin-when-cross-origin');
@@ -40,13 +87,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 };

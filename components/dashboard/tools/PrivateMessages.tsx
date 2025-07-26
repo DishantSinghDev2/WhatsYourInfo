@@ -1,30 +1,79 @@
 'use client';
+
 import { useState } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { UserProfile } from '@/types';
+import { Button } from '@/components/ui/Button';
+import { MailCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { UserProfile } from '@/types';
 
-export default function PrivateMessages({ user, onUpdate }: { user: UserProfile, onUpdate: (d: any) => void}) {
-    // Assuming a setting like `user.settings.privateMessagesEnabled`
-    const [isEnabled, setIsEnabled] = useState(user.settings?.privateMessagesEnabled || false);
+export default function PrivateMessages({
+  user,
+  onUpdate,
+}: {
+  user: UserProfile;
+  onUpdate: (d: any) => void;
+}) {
+  const [isEnabled, setIsEnabled] = useState(user.settings?.privateMessagesEnabled || false);
+  const [isSaving, setIsSaving] = useState(false);
 
-    const handleToggle = async (checked: boolean) => {
-        setIsEnabled(checked);
-        onUpdate({ settings: { ...user.settings, privateMessagesEnabled: checked }});
-        // Here you would make an API call to save this setting
-        // await fetch('/api/profile/settings', { method: 'PUT', body: JSON.stringify({ privateMessagesEnabled: checked }) });
-        toast.success(`Private messages ${checked ? 'enabled' : 'disabled'}.`);
+  const handleToggle = async (checked: boolean) => {
+    setIsEnabled(checked);
+    setIsSaving(true);
+
+    try {
+      const res = await fetch('/api/profile/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          settings: {
+            ...user.settings,
+            privateMessagesEnabled: checked,
+          },
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed to update settings');
+      onUpdate({ settings: { ...user.settings, privateMessagesEnabled: checked } });
+
+      toast.success(`Private messages ${checked ? 'enabled' : 'disabled'}.`);
+    } catch (err) {
+      toast.error('Could not update your settings.');
+      setIsEnabled(!checked); // Revert toggle
+    } finally {
+      setIsSaving(false);
     }
+  };
 
-    return (
-        <div className="space-y-6">
-            <h2 className="text-xl font-bold">Private Messages</h2>
-            <p className="text-sm text-gray-500">When enabled, a "Contact" button will appear on your profile. Messages will be securely forwarded to your registered email address.</p>
-            <div className="flex items-center space-x-2 p-4 border rounded-lg">
-                <Switch id="private-messages" checked={isEnabled} onCheckedChange={handleToggle} />
-                <Label htmlFor="private-messages">Enable Private Messages</Label>
-            </div>
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center gap-3">
+        <MailCheck className="w-6 h-6 text-green-600" />
+        <h2 className="text-lg font-semibold">Private Messages</h2>
+      </div>
+
+      <p className="text-sm text-gray-600 leading-relaxed">
+        When enabled, a <strong>"Contact"</strong> button will appear on your profile. Messages will be
+        securely forwarded to your registered email: <code>{user.email}</code>
+      </p>
+
+      <div className="flex items-center justify-between px-4 py-3 border rounded-md bg-muted">
+        <div className="flex items-center gap-3">
+          <Switch
+            id="private-messages"
+            checked={isEnabled}
+            onCheckedChange={handleToggle}
+            disabled={isSaving}
+          />
+          <Label htmlFor="private-messages" className="text-sm">
+            {isEnabled ? 'Enabled' : 'Disabled'}
+          </Label>
         </div>
-    );
+        <span className="text-xs text-gray-500">
+          {isSaving ? 'Saving...' : isEnabled ? 'Visitors can contact you' : 'Hidden from public'}
+        </span>
+      </div>
+    </div>
+  );
 }

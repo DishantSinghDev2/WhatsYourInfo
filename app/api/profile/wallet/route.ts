@@ -5,7 +5,6 @@ import { z } from 'zod';
 import { ObjectId } from 'mongodb';
 
 const walletAddressSchema = z.object({
-  id: z.string().optional(),
   paymentType: z.string().min(1, "Payment type is required"),
   address: z.string().min(1, "Address/username is required"),
 });
@@ -23,7 +22,7 @@ export async function PUT(request: NextRequest) {
 
     // Sanitize data before saving
     const walletData = validatedAddresses.map(addr => ({
-      _id: new ObjectId(addr.id) || new ObjectId(),
+      _id: new ObjectId(),
       paymentType: addr.paymentType,
       address: addr.address,
     }));
@@ -32,7 +31,7 @@ export async function PUT(request: NextRequest) {
     const db = client.db('whatsyourinfo');
 
     await db.collection('users').updateOne(
-      { _id: user._id },
+      { _id: new ObjectId(user._id) },
       { $set: { wallet: walletData, updatedAt: new Date() } }
     );
 

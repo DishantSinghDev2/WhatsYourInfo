@@ -15,6 +15,7 @@ import {
   Lock,
   Palette,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 const features = [
   {
@@ -74,6 +75,8 @@ const testimonials = [
 ];
 
 export default function HomePage() {
+  
+
   return (
     <div className="min-h-screen bg-white">
       <Header />

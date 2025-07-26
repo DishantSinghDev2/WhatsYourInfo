@@ -10,24 +10,21 @@ export interface UserProfile {
   isProUser: boolean;
   customDomain?: string;
   emailVerified: boolean;
-  socialLinks: {
-    twitter?: string;
-    linkedin?: string;
-    github?: string;
-    website?: string;
-  };
   spotlightButton?: {
     text: string;
     url: string;
     color: string;
   };
   verifiedAccounts: {
-    service: string; // e.g., 'twitter', 'github'
-    username: string;
-    url: string;
+    provider: string; // e.g., 'twitter', 'github'
+    providerAccountId: string;
+    profileUrl: string;
+    username: string
   }[];
+  showWalletOnPublic: boolean;
   interests: string[];
   wallet: {
+    id: string;
     paymentType: string; // e.g., 'paypal', 'btc'
     address: string;
   }[];

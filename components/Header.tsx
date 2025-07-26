@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Button } from './ui/Button';
 import { Globe, Menu, X, LogOut, Settings, LayoutDashboard } from 'lucide-react';
 import { useEffect, useState, useRef } from 'react';
@@ -9,6 +9,16 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { User } from '@/lib/auth';
 import toast from 'react-hot-toast';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from './ui/dropdown-menu';
+
+import { ChevronDown, Loader2 } from 'lucide-react';
+
 
 const navigation = [
   { name: 'Home', href: '/' },
@@ -24,6 +34,7 @@ export default function Header() {
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const router = useRouter()
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -69,6 +80,7 @@ export default function Header() {
       await fetch('/api/auth/logout', { method: 'POST' });
       setUser(null);
       toast.success('Logged out successfully!');
+      router.push("/")
       setIsDropdownOpen(false);
     } catch {
       toast.error('Logout failed.');
@@ -101,74 +113,90 @@ export default function Header() {
           </Button>
         </div>
 
-        <div className="hidden lg:flex lg:gap-x-12">
-          {navigation.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={cn(
-                'text-sm font-medium transition-colors hover:text-blue-600',
-                pathname === item.href ? 'text-blue-600' : 'text-gray-700'
-              )}
-            >
-              {item.name}
-            </Link>
-          ))}
-        </div>
+        {!user && (
+          <div className="hidden lg:flex lg:gap-x-12">
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={cn(
+                  'text-sm font-medium transition-colors hover:text-blue-600',
+                  pathname === item.href ? 'text-blue-600' : 'text-gray-700'
+                )}
+              >
+                {item.name}
+              </Link>
+            ))}
+          </div>
+        )}
 
+
+        {/* Desktop Navigation */}
         {user ? (
           <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-            <div className="relative" ref={dropdownRef}>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsDropdownOpen((prev) => !prev)}
-                className="rounded-full"
-              >
-                <img
-                      src={
-                        (user.avatar?.startsWith('http')
-                          ? user.avatar
-                          : `/api/avatars/${user.username}?size=128`)
-                      }
-                      alt="User Avatar"
-                      className="rounded-full object-cover border"
-                    />
-              </Button>
-              {isDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-64 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-                  <div className="py-1">
-                    <div className="px-4 py-3">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {user.firstName} {user.lastName}
-                      </p>
-                      <p className="text-sm text-gray-500 truncate">
-                        {user.email}
-                      </p>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <div
+                  className="flex items-center gap-2 cursor-pointer rounded-full hover:bg-gray-100 transition p-1 px-2"
+                >
+                  <img
+                    src={
+                      user.avatar?.startsWith('http')
+                        ? user.avatar
+                        : `/api/avatars/${user.username}?size=128`
+                    }
+                    alt="User Avatar"
+                    className="rounded-full object-cover border w-8 h-8"
+                  />
+                  <div className="transition-all duration-300 overflow-hidden w-0 group-hover:w-auto">
+                    <div className="text-sm font-medium text-gray-800 whitespace-nowrap">
+                      {user.firstName} {user.lastName}
                     </div>
-                    <div className="border-t border-gray-100" />
-                    <Link href="/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={() => setIsDropdownOpen(false)}>
-                      <LayoutDashboard className="inline-block w-4 h-4 mr-2" />
-                      Dashboard
-                    </Link>
-                    <Link href="/settings" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={() => setIsDropdownOpen(false)}>
-                      <Settings className="inline-block w-4 h-4 mr-2" />
-                      Settings
-                    </Link>
-                    <div className="border-t border-gray-100" />
-                    <Button
-                      variant="ghost"
-                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                      onClick={handleLogout}
-                      disabled={isLoading}
-                    >
-                      <LogOut className="inline-block w-4 h-4 mr-2" />
-                      {isLoading ? 'Logging out...' : 'Logout'}
-                    </Button>
+                    <div className="text-xs text-gray-500 truncate">{user.email}</div>
                   </div>
+                  <ChevronDown className="w-4 h-4 text-gray-600" />
                 </div>
-              )}
-            </div>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent className="w-64 mt-2">
+                <div className="px-4 py-2">
+                  <p className="text-sm font-semibold text-gray-900">
+                    {user.firstName} {user.lastName}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                </div>
+
+                <DropdownMenuSeparator />
+
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard" className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
+                    <LayoutDashboard className="w-4 h-4 mr-2" />
+                    Dashboard
+                  </Link>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem asChild>
+                  <Link href="/settings" className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator />
+
+                <DropdownMenuItem asChild>
+                  <button
+                    onClick={handleLogout}
+                    disabled={isLoading}
+                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 flex items-center"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    {isLoading ? 'Logging out…' : 'Logout'}
+                  </button>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
           </div>
         ) : (
           <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:gap-x-4">
@@ -180,6 +208,7 @@ export default function Header() {
             </Link>
           </div>
         )}
+
       </nav>
 
       {/* Mobile menu */}

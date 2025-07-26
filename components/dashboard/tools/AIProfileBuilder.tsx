@@ -1,34 +1,32 @@
 'use client';
 
-import { useState } from "react";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import toast from "react-hot-toast";
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import toast from 'react-hot-toast';
+import { UserProfile } from '@/types';
 
-export default function AIProfileBuilder({ user }: { user: any }) {
+export default function AIProfileBuilder({ user, onUpdate }: { user: UserProfile, onUpdate: ({}) => void }) {
   const [keywords, setKeywords] = useState('');
   const [tone, setTone] = useState('Professional');
-  const [generatedBio, setGeneratedBio] = useState('');
+  const [detail, setDetail] = useState('Medium');
+  const [humor, setHumor] = useState('None');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGenerate = async () => {
-    if (!keywords) {
-      toast.error('Please enter some keywords.');
-      return;
-    }
+    if (!keywords) return toast.error('Please enter some keywords.');
     setIsLoading(true);
-    setGeneratedBio('');
     try {
       const res = await fetch('/api/tools/ai-builder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firstName: user.firstName, keywords, tone }),
+        body: JSON.stringify({ firstName: user.firstName, keywords, tone, detail, humor }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      setGeneratedBio(data.bio);
+      onUpdate({ bio: data.bio });
+      toast.success("Bio updated")
     } catch {
       toast.error('Failed to generate bio.');
     } finally {
@@ -36,33 +34,65 @@ export default function AIProfileBuilder({ user }: { user: any }) {
     }
   };
 
+  const renderGroup = (
+    title: string,
+    options: string[],
+    selected: string,
+    onSelect: (val: string) => void
+  ) => (
+    <div className="space-y-2">
+      <p className="text-sm font-medium">{title}</p>
+      <div className="flex gap-2 bg-muted/10 px-3 py-2 rounded-md relative ">
+        {options.map((option) => {
+          const isSelected = selected === option;
+          return (
+            <div key={option} className="relative w-full">
+              <AnimatePresence initial={false}>
+                {isSelected && (
+                  <motion.div
+                    layoutId={`selection-${title}`}
+                    className="absolute inset-0 rounded-md bg-blue-600/10 border border-blue-600"
+                    transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                  />
+                )}
+              </AnimatePresence>
+              <button
+                onClick={() => onSelect(option)}
+                className={`relative z-10 text-sm px-3 py-1.5 rounded-md transition-colors ${
+                  isSelected
+                    ? 'text-blue-600 font-semibold'
+                    : 'text-gray-700 hover:bg-muted/30'
+                }`}
+              >
+                {option}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
-        <h2 className="text-xl font-bold">AI Profile Builder</h2>
-        <Input 
-            placeholder="Enter keywords (e.g., 'React developer, data science, project manager')"
-            value={keywords}
-            onChange={(e) => setKeywords(e.target.value)}
+      <h2 className="text-xl font-bold">AI Profile Builder</h2>
+
+      <div>
+        <label className="text-sm font-medium">Who are you?</label>
+        <Input
+          placeholder="e.g. React developer, gamer, productivity geek"
+          value={keywords}
+          onChange={(e) => setKeywords(e.target.value)}
         />
-        <Select onValueChange={setTone} defaultValue={tone}>
-            <SelectTrigger><SelectValue placeholder="Select a tone" /></SelectTrigger>
-            <SelectContent>
-                <SelectItem value="Professional">Professional</SelectItem>
-                <SelectItem value="Friendly">Friendly</SelectItem>
-                <SelectItem value="Witty">Witty</SelectItem>
-                <SelectItem value="Academic">Academic</SelectItem>
-            </SelectContent>
-        </Select>
-        <Button onClick={handleGenerate} disabled={isLoading}>{isLoading ? 'Generating...' : 'Generate Bio'}</Button>
-        {generatedBio && (
-            <div>
-                <Textarea value={generatedBio} rows={6} readOnly />
-                <Button variant="outline" className="mt-2" onClick={() => {
-                    navigator.clipboard.writeText(generatedBio);
-                    toast.success('Bio copied to clipboard!');
-                }}>Copy Bio</Button>
-            </div>
-        )}
+      </div>
+
+      {renderGroup('Tone', ['Professional', 'Friendly', 'Witty'], tone, setTone)}
+      {renderGroup('Detail Level', ['Low', 'Medium', 'High'], detail, setDetail)}
+      {renderGroup('Humor', ['None', 'Subtle', 'Full-on'], humor, setHumor)}
+
+      <Button onClick={handleGenerate} disabled={isLoading}>
+        {isLoading ? 'Generating...' : 'Generate Bio'}
+      </Button>
     </div>
   );
 }

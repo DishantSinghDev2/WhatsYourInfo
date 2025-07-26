@@ -1,24 +1,26 @@
 'use client';
 
 import { useState } from 'react';
-import { Bot, CreditCard, Mail, MessageSquare, Route } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { SiRobotframework, SiMaildotru, SiImessage, SiMinutemailer, SiCarrd } from 'react-icons/si';
+
 import AIProfileBuilder from '@/components/dashboard/tools/AIProfileBuilder';
 import DigitalBusinessCard from '@/components/dashboard/tools/DigitalBusinessCard';
 import EmailSignature from '@/components/dashboard/tools/EmailSignature';
 import PrivateMessages from '@/components/dashboard/tools/PrivateMessages';
 import SmartRedirects from '@/components/dashboard/tools/SmartRedirects';
 import { UserProfile } from '@/types';
-import { motion } from 'framer-motion';
+import ProCrownBadge from '@/components/icon/pro';
 
 const tools = [
-  { id: 'ai-builder', title: 'AI Profile Builder', description: 'Generate a professional bio using AI.', icon: Bot },
-  { id: 'card', title: 'Digital Card', description: 'Create a downloadable business card.', icon: CreditCard },
-  { id: 'signature', title: 'Email Signature', description: 'Generate a professional email signature.', icon: Mail },
-  { id: 'messages', title: 'Private Messages', description: 'Allow visitors to contact you privately.', icon: MessageSquare },
-  { id: 'redirects', title: 'Smart Redirects', description: 'Create short links like /youtube.', icon: Route, pro: true },
+  { id: 'ai-builder', title: 'AI Profile Builder', icon: SiRobotframework },
+  { id: 'card', title: 'Digital Card', icon: SiCarrd },
+  { id: 'signature', title: 'Email Signature', icon: SiMaildotru },
+  { id: 'messages', title: 'Private Messages', icon: SiImessage },
+  { id: 'redirects', title: 'Smart Redirects', icon: SiMinutemailer, pro: true },
 ];
 
-const toolComponents: { [key: string]: React.ComponentType<any> } = {
+const toolComponents: Record<string, React.ComponentType<any>> = {
   'ai-builder': AIProfileBuilder,
   'card': DigitalBusinessCard,
   'signature': EmailSignature,
@@ -28,38 +30,49 @@ const toolComponents: { [key: string]: React.ComponentType<any> } = {
 
 export default function ToolsPanel({ user, onUpdate }: { user: UserProfile, onUpdate: (data: Partial<UserProfile>) => void }) {
   const [activeTool, setActiveTool] = useState<string | null>(null);
+  const ActiveTool = activeTool ? toolComponents[activeTool] : null;
 
-  const ActiveToolComponent = activeTool ? toolComponents[activeTool] : null;
+  if (ActiveTool) {
+    return (
+      <motion.div
+        key={activeTool}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="space-y-6"
+      >
+        <button
+          onClick={() => setActiveTool(null)}
+          className="text-sm font-semibold text-blue-600 hover:underline flex items-center gap-2"
+        >
+          ← Back to Tools
+        </button>
+        <ActiveTool user={user} onUpdate={onUpdate} />
+      </motion.div>
+    );
+  }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold">Tools</h1>
-      <p className="text-gray-500 mb-8">Supercharge your profile with these powerful tools.</p>
-      
-      {ActiveToolComponent ? (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <button onClick={() => setActiveTool(null)} className="mb-4 text-sm text-blue-600 hover:underline">← Back to all tools</button>
-          <ActiveToolComponent user={user} onUpdate={onUpdate} />
-        </motion.div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tools.map((tool) => (
-            <motion.div 
-              key={tool.id}
-              whileHover={{ y: -5, boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)" }}
-              className="p-6 bg-white rounded-lg border cursor-pointer" 
-              onClick={() => setActiveTool(tool.id)}
-            >
-              <div className="flex items-center justify-between">
-                <tool.icon className="h-8 w-8 text-blue-600" />
-                {tool.pro && <span className="text-xs font-bold text-yellow-600 bg-yellow-100 px-2 py-1 rounded-full">PRO</span>}
-              </div>
-              <h3 className="text-lg font-semibold mt-4">{tool.title}</h3>
-              <p className="text-sm text-gray-500 mt-1">{tool.description}</p>
-            </motion.div>
-          ))}
-        </div>
-      )}
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-xl font-bold">Tools</h1>
+        <p className="text-gray-500 text-sm">Supercharge your profile with these powerful tools.</p>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        {tools.map(tool => (
+          <button
+            key={tool.id}
+            onClick={() => setActiveTool(tool.id)}
+            className="flex items-center gap-2 text-sm font-medium px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-md border border-gray-300 transition"
+          >
+            <tool.icon className="h-5 w-5 text-blue-600" />
+            {tool.title}
+            {tool.pro && (
+              <ProCrownBadge />
+            )}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
