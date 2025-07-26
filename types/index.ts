@@ -39,8 +39,10 @@ export interface UserProfile {
       surface: string;
       accent: string;
     };
-    headerImage: string;
-    backgroundImage: string;
+    headerImage?: string;
+    backgroundImage?: string;
+    sections?: [];
+    visibility?: [];
   };
   createdAt: Date;
   updatedAt: Date;

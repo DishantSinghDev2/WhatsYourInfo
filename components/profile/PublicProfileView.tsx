@@ -16,32 +16,58 @@ const iconMap: { [key: string]: React.ElementType } = {
   'bitcoin (btc)': SiBitcoin,
 };
 
-export default function PublicProfileView({ profile, isPreview = false }: { profile: UserProfile, isPreview?: boolean }) {
-  const themeStyles = {
-    backgroundColor: profile.design?.customColors?.background || '#ffffff',
-    color: profile.design?.customColors?.accent || '#111827',
-  };
+export default function PublicProfileView({ profile, isPreview = false }: { profile: UserProfile; isPreview?: boolean }) {
+  const background = profile.design?.customColors?.background || '#ffffff';
+  const accent = profile.design?.customColors?.accent || '#111827';
+
+  const isGradient = (value: string) => value?.startsWith('linear-gradient');
+
+  const containerStyle = isGradient(background)
+    ? { backgroundImage: background }
+    : { backgroundColor: background };
+
+  const textStyle = isGradient(accent)
+    ? {
+        backgroundImage: accent,
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+      }
+    : {
+        color: accent,
+      };
 
   return (
-    <div className="min-h-screen transition-colors duration-500" style={themeStyles}>
-      <div className="h-48 bg-gray-200" style={{ backgroundImage: `url(${profile.design?.headerImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+    <div className="min-h-screen transition-colors duration-500" style={containerStyle}>
+      <div
+        className="h-48 bg-gray-200"
+        style={{
+          backgroundImage: `url(${profile.design?.headerImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative flex flex-col sm:flex-row items-center sm:items-end justify-between -mt-20">
-          <div className="flex items-end gap-4">
+          <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 text-center sm:text-left">
             <img
               src={`/api/avatars/${profile.username}?t=${Date.now()}`}
               className="w-36 h-36 rounded-md border-4 object-cover"
-              style={{ borderColor: themeStyles.backgroundColor }}
+              style={{ borderColor: background }}
               alt={`${profile.firstName}'s avatar`}
-              onError={(e: any) => e.target.src = '/default-avatar.png'}
+              onError={(e: any) => (e.target.src = '/default-avatar.png')}
             />
-            <div className="pb-2">
-              <h1 className="text-3xl font-bold flex items-center gap-2">
-                {profile.firstName} {profile.lastName}
+            <div className="pb-2 sm:pb-0">
+              <h1
+                className="text-2xl sm:text-3xl font-bold flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2"
+                style={textStyle}
+              >
+                <span>
+                  {profile.firstName} {profile.lastName}
+                </span>
                 <VerifiedTick isPro={profile.isProUser} />
               </h1>
-              <p className="text-lg opacity-70">@{profile.username}</p>
+              <p className="text-base sm:text-lg opacity-70">@{profile.username}</p>
             </div>
           </div>
 
@@ -55,7 +81,9 @@ export default function PublicProfileView({ profile, isPreview = false }: { prof
               <DropdownMenuContent>
                 <DropdownMenuItem>Share Profile</DropdownMenuItem>
                 <DropdownMenuItem>
-                  <a href={`/api/vcard/${profile.username}`} download>Download vCard</a>
+                  <a href={`/api/vcard/${profile.username}`} download>
+                    Download vCard
+                  </a>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <AdvancedDetailsDialog profile={profile} />
@@ -68,11 +96,17 @@ export default function PublicProfileView({ profile, isPreview = false }: { prof
         {/* Verified Accounts */}
         <div className="mt-4">
           {profile.verifiedAccounts?.length > 0 && (
-            <div className="flex flex-wrap gap-3 mt-2">
-              {profile.verifiedAccounts.map(acc => {
+            <div className="flex flex-wrap gap-3 mt-2 justify-center sm:justify-start">
+              {profile.verifiedAccounts.map((acc) => {
                 const Icon = iconMap[acc.provider.toLowerCase()];
                 return (
-                  <a key={acc.provider} href={acc.profileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 hover:bg-black/10 rounded">
+                  <a
+                    key={acc.provider}
+                    href={acc.profileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 p-2 hover:bg-black/10 rounded"
+                  >
                     {Icon && <Icon className="h-5 w-5" />}
                   </a>
                 );
@@ -97,8 +131,14 @@ export default function PublicProfileView({ profile, isPreview = false }: { prof
               <div className="p-5 bg-black/5 rounded-md">
                 <h3 className="font-semibold mb-3">Links</h3>
                 <div className="space-y-2">
-                  {profile.links.map(link => (
-                    <a key={link._id} href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-2 hover:bg-black/10 rounded">
+                  {profile.links.map((link) => (
+                    <a
+                      key={link._id}
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-2 hover:bg-black/10 rounded"
+                    >
                       <LinkIcon className="h-4 w-4 opacity-60" />
                       <span>{link.title}</span>
                     </a>
@@ -114,8 +154,12 @@ export default function PublicProfileView({ profile, isPreview = false }: { prof
           <footer className="mt-16 py-8 border-t text-center text-sm opacity-60">
             <p className="font-bold text-lg mb-2">What'sYour.Info</p>
             <div className="flex justify-center gap-4 mb-4">
-              <a href="/terms" className="hover:underline">Terms</a>
-              <a href="/privacy" className="hover:underline">Privacy Policy</a>
+              <a href="/terms" className="hover:underline">
+                Terms
+              </a>
+              <a href="/privacy" className="hover:underline">
+                Privacy Policy
+              </a>
             </div>
             <Button variant="default">Upgrade to Pro</Button>
           </footer>
