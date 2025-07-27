@@ -70,7 +70,7 @@ export async function createUser(userData: {
   const user = {
     ...userData,
     password: hashedPassword,
-    bio: '',
+    bio: 'Under development...',
     avatar: '',
     isProUser: false,
     emailVerified: false,
@@ -82,7 +82,7 @@ export async function createUser(userData: {
     design: {
       theme: 'classic',
       customColors: { background: '#ffffff', surface: '#f8f9fa', accent: '#007bff' },
-      headerImage: '',
+      headerImage: '/header.png',
       backgroundImage: '',
     },
     createdAt: new Date(),

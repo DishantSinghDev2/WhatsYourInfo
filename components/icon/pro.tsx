@@ -1,12 +1,9 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { Crown } from 'lucide-react';
 
-export default function ProCrownBadge({ size = 48 }: { size?: number }) {
+export default function ProCrownBadge({ size = 48, className }: { size?: number, className?: string }) {
   return (
-    <div title='PRO'>
-        <Crown className='fill-yellow-400 text-yellow-400 w-4' />
-    </div>
+    <Crown className={`${className} fill-yellow-400 text-yellow-400 w-5 h-5`} aria-label='PRO' />
   );
 }

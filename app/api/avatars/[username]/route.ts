@@ -69,7 +69,7 @@ function renderSharpSVG(seed: string, size: number, bgColor: string, textColor: 
     <svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
       <rect width="100%" height="100%" fill="#${bgColor}" />
       <text
-        x="50%" y="50%"
+        x="50%" y="52%"
         font-family="sans-serif"
         font-size="${fontSize}"
         fill="#${textColor}"

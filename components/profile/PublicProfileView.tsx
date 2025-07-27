@@ -97,16 +97,17 @@ export default function PublicProfileView({
               style={{ borderColor: background }}
               alt={`${profile.firstName}'s avatar`}
               onError={(e: any) => (e.target.src = '/default-avatar.png')}
+              loading='lazy'
             />
             <div className="pb-2 sm:pb-0">
               <h1
-                className="text-2xl sm:text-3xl font-bold flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2"
+                className="text-2xl sm:text-3xl font-bold flex flex-row items-center gap-1 sm:gap-2"
                 style={textStyle}
               >
                 <span>
                   {profile.firstName} {profile.lastName}
                 </span>
-                <VerifiedTick isPro={profile.isProUser} />
+                {profile.emailVerified && <VerifiedTick isPro={profile.isProUser} />}
               </h1>
               <p className="text-base sm:text-lg opacity-70">@{profile.username}</p>
             </div>
@@ -245,9 +246,9 @@ export default function PublicProfileView({
           <AdvancedDetailsDialog profile={profile} />
         </div>
 
-        {!profile.isProUser && !isPreview && (
-          <footer className="mt-16 py-8 border-t flex md:flex-row flex-col w-full justify-center md:justify-between text-sm">
-            <Link href="/" className="-m-1.5 p-1.5 flex items-center space-x-2">
+        {!profile.isProUser && (
+          <footer className="mt-16 py-8 border-t flex md:flex-row flex-col w-full justify-center md:justify-between text-sm md:gap-0 gap-5">
+            <Link href="/" className="-m-1.5 p-1.5 flex items-center justify-center space-x-2">
               <Image
                 src="/logotext.svg"
                 alt="WhatsYour.Info"
@@ -255,7 +256,7 @@ export default function PublicProfileView({
                 height={32}
               />
             </Link>
-            <div className="flex items-center gap-4">
+            <div className="flex justify-center md:items-center gap-4">
               <Link href="/terms" className="hover:underline">
                 Terms
               </Link>
@@ -263,8 +264,9 @@ export default function PublicProfileView({
                 Privacy Policy
               </Link>
             </div>
-            {
-              <Button style={accentButtonStyle}>Upgrade to Pro</Button>}
+            <Link href="/register">
+              <Button style={accentButtonStyle}>Create profile</Button>
+            </Link>
           </footer>
         )}
       </div>

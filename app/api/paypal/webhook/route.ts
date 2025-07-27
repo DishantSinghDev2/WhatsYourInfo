@@ -57,6 +57,8 @@ export async function POST(request: NextRequest) {
             $set: {
               isProUser: true,
               paypalSubscriptionId: sub.id,
+              proStarted: new Date(),
+              nextDue: new Date(sub.next_billing_time),
               updatedAt: new Date(),
             },
           }

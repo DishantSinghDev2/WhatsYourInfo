@@ -1,6 +1,6 @@
 // app/types/index.ts
 export interface UserProfile {
-    _id: string;
+  _id: string;
   email: string;
   username: string;
   firstName: string;
@@ -8,6 +8,8 @@ export interface UserProfile {
   bio?: string;
   avatar?: string;
   isProUser: boolean;
+  proStarted?: Date,
+  nextDue?: Date,
   customDomain?: string;
   emailVerified: boolean;
   spotlightButton?: {
