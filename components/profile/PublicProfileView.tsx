@@ -1,9 +1,8 @@
 'use client';
 import { UserProfile } from '@/types';
 import { Button } from '@/components/ui/Button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { SiX, SiLinkedin, SiGithub, SiPaypal, SiBitcoin } from 'react-icons/si';
-import { Globe, MoreVertical, Link as LinkIcon } from 'lucide-react';
+import { Globe, Share2, Download, Settings, Link as LinkIcon } from 'lucide-react';
 import VerifiedTick from './VerifiedTick';
 import { AdvancedDetailsDialog } from './AdvancedDetailsDialog';
 
@@ -71,29 +70,18 @@ export default function PublicProfileView({ profile, isPreview = false }: { prof
             </div>
           </div>
 
-          <div className="absolute top-24 right-0 sm:relative sm:top-0 sm:right-0">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <MoreVertical className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem>Share Profile</DropdownMenuItem>
-                <DropdownMenuItem>
-                  <a href={`/api/vcard/${profile.username}`} download>
-                    Download vCard
-                  </a>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <AdvancedDetailsDialog profile={profile} />
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div className="absolute top-24 right-0 sm:relative sm:top-0 sm:right-0 flex gap-2">
+            <Button variant="ghost" size="icon" onClick={() => navigator.share?.({ title: 'Check my profile', url: window.location.href })}>
+              <Share2 className="h-5 w-5" />
+            </Button>
+            <Button variant="ghost" size="icon" asChild>
+              <a href={`/api/vcard/${profile.username}`} download>
+                <Download className="h-5 w-5" />
+              </a>
+            </Button>
           </div>
         </div>
 
-        {/* Verified Accounts */}
         <div className="mt-4">
           {profile.verifiedAccounts?.length > 0 && (
             <div className="flex flex-wrap gap-3 mt-2 justify-center sm:justify-start">
@@ -115,7 +103,6 @@ export default function PublicProfileView({ profile, isPreview = false }: { prof
           )}
         </div>
 
-        {/* Bio + Sidebar */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
             {profile.bio && (
@@ -123,6 +110,17 @@ export default function PublicProfileView({ profile, isPreview = false }: { prof
                 <h2 className="text-xl font-semibold mb-3">About</h2>
                 <p className="opacity-80 leading-relaxed whitespace-pre-wrap">{profile.bio}</p>
               </div>
+            )}
+            {profile.spotlightButton && (
+              <a
+                href={profile.spotlightButton.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block px-4 py-2 rounded-md text-center font-semibold text-white"
+                style={{ backgroundColor: profile.spotlightButton.color || accent }}
+              >
+                {profile.spotlightButton.text}
+              </a>
             )}
           </div>
 
@@ -146,10 +144,45 @@ export default function PublicProfileView({ profile, isPreview = false }: { prof
                 </div>
               </div>
             )}
+
+            {profile.wallet?.length > 0 && profile.showWalletOnPublic && (
+              <div className="p-5 bg-black/5 rounded-md">
+                <h3 className="font-semibold mb-3">Wallet</h3>
+                <div className="space-y-1 text-sm">
+                  {profile.wallet.map((w) => (
+                    <div key={w.id} className="flex justify-between items-center">
+                      <span>{w.paymentType}</span>
+                      <span className="opacity-70 truncate max-w-[150px]">{w.address}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {profile.gallery?.length > 0 && (
+              <div className="p-5 bg-black/5 rounded-md">
+                <h3 className="font-semibold mb-3">Gallery</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {profile.gallery.map((item, idx) => (
+                    <div key={idx}>
+                      <img src={item.imageUrl} alt={item.caption} className="rounded-md object-cover w-full h-24" />
+                      {item.caption && <p className="text-xs mt-1">{item.caption}</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Footer */}
+        <div className="mt-12 flex justify-center">
+          <AdvancedDetailsDialog profile={profile}>
+            <Button variant="outline" size="sm" className="flex gap-1 items-center">
+              <Settings className="h-4 w-4" /> More Settings
+            </Button>
+          </AdvancedDetailsDialog>
+        </div>
+
         {!profile.isProUser && !isPreview && (
           <footer className="mt-16 py-8 border-t text-center text-sm opacity-60">
             <p className="font-bold text-lg mb-2">What'sYour.Info</p>

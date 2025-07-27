@@ -20,12 +20,13 @@ const services = [
 export default function VerifiedAccountsPanel({
   user,
   onUpdate,
+  changesSaved
 }: {
   user: UserProfile;
   onUpdate: (data: Partial<UserProfile>) => void;
+  changesSaved: (a: boolean) => void;
 }) {
   const router = useRouter();
-  const [verifying, setVerifying] = useState<string | null>(null);
 
   const connectedAccounts = user.verifiedAccounts || [];
 

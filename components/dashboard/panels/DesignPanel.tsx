@@ -25,9 +25,11 @@ const defaultSections = ['Introduction', 'Links', 'Photos', 'Verified accounts',
 export default function DesignPanel({
   user,
   onUpdate,
+  changesSaved
 }: {
   user: UserProfile;
   onUpdate: (data: Partial<UserProfile>) => void;
+  changesSaved: (a: boolean) => void
 }) {
   const [design, setDesign] = useState(user.design || {});
   const [sectionOrder, setSectionOrder] = useState<string[]>(user.design?.sections || defaultSections);
@@ -42,6 +44,7 @@ export default function DesignPanel({
 
   useEffect(() => {
     setHasChanges(true);
+      changesSaved(false)
   }, [JSON.stringify(design), sectionOrder, JSON.stringify(visibility)]);
 
 
@@ -69,6 +72,7 @@ export default function DesignPanel({
       setDesign(prev => ({ ...prev, [`${type}Image`]: data.url }));
       toast.success('Uploaded!', { id: toastId });
       setHasChanges(true);
+      changesSaved(true)
     }
   };
 
@@ -93,6 +97,7 @@ export default function DesignPanel({
       onUpdate(payload);
       toast.success('Saved!', { id: toastId });
       setHasChanges(false);
+      changesSaved(true)
     } catch {
       toast.error('Save failed.', { id: toastId });
     } finally {
@@ -114,23 +119,23 @@ export default function DesignPanel({
               <button
                 key={name}
                 onClick={() => handleThemeClick(name, colors)}
-                className={`relative border rounded-md p-3 text-left group transition-all duration-300 h-[110px] ${isSelected ? 'border-black shadow-md bg-gray-50' : 'border-gray-200'
+                className={`relative border rounded-md p-3 text-left group transition-all duration-300 h-[90px] ${isSelected ? 'border-black shadow-md bg-gray-50' : 'border-gray-200'
                   }`}
               >
                 <div className="relative h-6 w-6 mx-auto mt-1 flex justify-center">
                   {/* Circle 1 - Bottom */}
                   <span
-                    className="absolute w-3.5 h-3.5 border border-gray-500 rounded-full bg-white transition-all duration-300 group-hover:translate-y-[-10px] group-hover:scale-110 z-10"
+                    className="absolute w-6 h-6 border border-gray-500 rounded-full bg-white transition-all duration-300 group-hover:translate-y-[-10px] group-hover:scale-110 z-10"
                     style={{ background: colors.surface }}
                   />
                   {/* Circle 2 - Middle */}
                   <span
-                    className="absolute w-3.5 h-3.5 border border-gray-500 rounded-full bg-white translate-y-[6px] transition-all duration-300 group-hover:translate-y-[0px] group-hover:scale-110 z-20"
+                    className="absolute w-6 h-6 border border-gray-500 rounded-full bg-white translate-y-[6px] transition-all duration-300 group-hover:translate-y-[0px] group-hover:scale-110 z-20"
                     style={{ background: colors.background }}
                   />
                   {/* Circle 3 - Top */}
                   <span
-                    className="absolute w-3.5 h-3.5 border border-gray-500 rounded-full bg-white translate-y-[12px] transition-all duration-300 group-hover:translate-y-[10px] group-hover:scale-110 z-30"
+                    className="absolute w-6 h-6 border border-gray-500 rounded-full bg-white translate-y-[12px] transition-all duration-300 group-hover:translate-y-[10px] group-hover:scale-110 z-30"
                     style={{ background: colors.accent }}
                   />
                 </div>
@@ -143,7 +148,7 @@ export default function DesignPanel({
           })}
 
         </div>
-          <CustomColorMenu design={design} setDesign={setDesign} />
+        <CustomColorMenu design={design} setDesign={setDesign} />
 
 
         {/* Animated Custom Color Pickers */}

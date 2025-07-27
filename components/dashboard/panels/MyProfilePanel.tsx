@@ -5,18 +5,17 @@ import { UserProfile } from '@/types';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/Button';
-import { SiX, SiLinkedin, SiGithub } from 'react-icons/si';
-import { Globe, Sparkles, Save } from 'lucide-react';
+import { Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
-import { generateBio } from '@/lib/gemini';
 
 interface MyProfilePanelProps {
   user: UserProfile;
   onUpdate: (data: Partial<UserProfile>) => void;
+  changesSaved: (a: boolean) => void
 }
 
-export default function MyProfilePanel({ user, onUpdate }: MyProfilePanelProps) {
+export default function MyProfilePanel({ user, onUpdate, changesSaved }: MyProfilePanelProps) {
   const [formData, setFormData] = useState<Partial<UserProfile>>({
     firstName: user.firstName || '',
     lastName: user.lastName || '',
@@ -38,6 +37,7 @@ export default function MyProfilePanel({ user, onUpdate }: MyProfilePanelProps) 
         return updated;
       });
       onUpdate(formData)
+      changesSaved(false)
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -55,6 +55,7 @@ export default function MyProfilePanel({ user, onUpdate }: MyProfilePanelProps) 
 
       if (!res.ok) throw new Error('Failed to save profile');
       toast.success('Profile updated!', { id: toastId });
+      changesSaved(true)
     } catch (err) {
       toast.error('Could not save profile.', { id: toastId });
     } finally {

@@ -31,9 +31,10 @@ const supportedWallets = Object.keys(walletIcons);
 interface WalletPanelProps {
   user: UserProfile;
   onUpdate: (data: Partial<UserProfile>) => void;
+  changesSaved: (a: boolean) => void;
 }
 
-export default function WalletPanel({ user, onUpdate }: WalletPanelProps) {
+export default function WalletPanel({ user, onUpdate, changesSaved }: WalletPanelProps) {
   const [wallet, setWallet] = useState(user.wallet || []);
   const [activeWallet, setActiveWallet] = useState<string | null>(null);
   const [newAddress, setNewAddress] = useState('');
@@ -72,6 +73,7 @@ export default function WalletPanel({ user, onUpdate }: WalletPanelProps) {
         body: JSON.stringify({ wallet: updated }),
       });
       toast.success(`${type} added`);
+      changesSaved(true)
     } catch {
       toast.error('Failed to save');
     }
@@ -103,6 +105,7 @@ export default function WalletPanel({ user, onUpdate }: WalletPanelProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ wallet: updated }),
       });
+      changesSaved(true)
     } catch {
       toast.error('Failed to remove');
     }
@@ -188,7 +191,8 @@ export default function WalletPanel({ user, onUpdate }: WalletPanelProps) {
                       <Input
                         placeholder={`Edit your ${item.paymentType} address`}
                         value={editingAddress}
-                        onChange={(e) => setEditingAddress(e.target.value)}
+                        onChange={(e) => {setEditingAddress(e.target.value)
+      changesSaved(false)}}
                         className="text-sm"
                       />
                       <div className="flex justify-end mt-2">

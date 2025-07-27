@@ -1,172 +1,243 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { UserProfile } from '@/types';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 import toast from 'react-hot-toast';
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
-import { GripVertical, PlusCircle, Trash2 } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { Trash2, Save, GripVertical } from 'lucide-react';
+import { AnimatePresence, motion, Reorder } from 'framer-motion';
 
-// Define the Link type for the frontend
-type LinkItem = { _id: string; title: string; url: string; };
+type LinkItem = { _id: string; title: string; url: string };
 
 interface LinksPanelProps {
   user: UserProfile;
   onUpdate: (data: Partial<UserProfile>) => void;
+  changesSaved: (a: boolean) => void
 }
 
-export default function LinksPanel({ user, onUpdate }: LinksPanelProps) {
+export default function LinksPanel({ user, onUpdate, changesSaved }: LinksPanelProps) {
   const [links, setLinks] = useState<LinkItem[]>(user.links || []);
+  const [originalLinks, setOriginalLinks] = useState<LinkItem[]>(user.links || []);
   const [newLink, setNewLink] = useState({ title: '', url: '' });
   const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingData, setEditingData] = useState({ title: '', url: '' });
+  const [reordered, setReordered] = useState(false);
 
   const handleAddLink = async () => {
     if (!newLink.title || !newLink.url) {
-      toast.error('Both title and URL are required.');
+      toast.error('Title and URL required');
       return;
     }
+
     setIsAdding(true);
     const toastId = toast.loading('Adding link...');
     try {
-      const response = await fetch('/api/profile/links', {
+      const res = await fetch('/api/profile/links', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newLink),
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Failed to add link.');
-      
-      const updatedLinks = [...links, data.link];
-      setLinks(updatedLinks);
-      onUpdate({ links: updatedLinks }); // Update live preview
-      setNewLink({ title: '', url: '' }); // Reset form
-      toast.success('Link added!', { id: toastId });
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Could not add link.', { id: toastId });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Add failed');
+
+      const updated = [...links, data.link];
+      setLinks(updated);
+      setOriginalLinks(updated);
+      setNewLink({ title: '', url: '' });
+      onUpdate({ links: updated });
+      changesSaved(true)
+      toast.success('Link added', { id: toastId });
+    } catch (err) {
+      toast.error('Failed to add link', { id: toastId });
     } finally {
       setIsAdding(false);
     }
   };
 
-  const handleDeleteLink = async (linkId: string) => {
-    const originalLinks = [...links];
-    // Optimistic UI update
-    const updatedLinks = links.filter(link => link._id !== linkId);
-    setLinks(updatedLinks);
-    onUpdate({ links: updatedLinks });
+  const handleDeleteLink = async (id: string) => {
+    const updated = links.filter(l => l._id !== id);
+    setLinks(updated);
+    setOriginalLinks(updated);
+    onUpdate({ links: updated });
 
     try {
-      const response = await fetch(`/api/profile/links?id=${linkId}`, { method: 'DELETE' });
-      if (!response.ok) throw new Error('Failed to delete on server.');
-      toast.success('Link removed.');
-    } catch (error) {
-      toast.error('Failed to remove link. Reverting.');
-      setLinks(originalLinks); // Revert on failure
-      onUpdate({ links: originalLinks });
+      await fetch(`/api/profile/links?id=${id}`, { method: 'DELETE' });
+      toast.success('Link deleted');
+      changesSaved(true)
+    } catch {
+      toast.error('Delete failed');
     }
   };
 
-  const handleOnDragEnd = async (result: DropResult) => {
-    if (!result.destination) return;
-
-    const items = Array.from(links);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-
-    setLinks(items);
-    onUpdate({ links: items });
-    
-    // Persist the new order to the backend
+  const handleSaveOrder = async () => {
     try {
-      const linksToSave = items.map(l => ({ id: l._id, title: l.title, url: l.url }));
+      const payload = links.map(({ _id, title, url }) => ({ id: _id, title, url }));
       await fetch('/api/profile/links', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(linksToSave),
+        body: JSON.stringify(payload),
       });
-    } catch (error) {
-      toast.error('Could not save new link order.');
-      setLinks(links); // Revert on failure
+      toast.success('Saved order');
+      setOriginalLinks(links);
+      setReordered(false);
       onUpdate({ links });
+      changesSaved(true)
+    } catch {
+      toast.error('Order save failed');
+    }
+  };
+
+  const handleEditSave = async (id: string) => {
+    const updated = links.map(l =>
+      l._id === id ? { ...l, ...editingData } : l
+    );
+    setLinks(updated);
+    setOriginalLinks(updated);
+    setEditingId(null);
+    onUpdate({ links: updated });
+
+    try {
+      await fetch('/api/profile/links', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated.map(({ _id, title, url }) => ({ id: _id, title, url }))),
+      });
+      toast.success('Link updated');
+      changesSaved(true)
+    } catch {
+      toast.error('Update failed');
     }
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 max-w-xl text-sm">
       <div>
-        <h1 className="text-2xl font-bold">Links</h1>
-        <p className="text-gray-500">Share your favorite links with the world. Drag to reorder.</p>
+        <h1 className="text-xl font-semibold">Links</h1>
+        <p className="text-muted-foreground text-xs">Manage your links. Drag to reorder.</p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Your Links</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <DragDropContext onDragEnd={handleOnDragEnd}>
-            <Droppable droppableId="links">
-              {(provided) => (
-                <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-3">
-                  <AnimatePresence>
-                    {links.map((link, index) => (
-                      <Draggable key={link._id} draggableId={link._id} index={index}>
-                        {(provided) => (
-                          <motion.div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border"
-                            layout
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0, x: -50 }}
-                          >
-                            <GripVertical className="h-5 w-5 text-gray-400" />
-                            <div className="flex-grow">
-                              <p className="font-medium">{link.title}</p>
-                              <p className="text-sm text-gray-500 truncate">{link.url}</p>
-                            </div>
-                            <Button variant="ghost" size="icon" onClick={() => handleDeleteLink(link._id)}>
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </motion.div>
-                        )}
-                      </Draggable>
-                    ))}
-                  </AnimatePresence>
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
-        </CardContent>
-      </Card>
+      <Reorder.Group
+        axis="y"
+        values={links}
+        onReorder={(newOrder) => {
+          setLinks(newOrder);
+          setReordered(true);
+          changesSaved(false)
+        }}
+        className="space-y-2"
+      >
+        <AnimatePresence>
+          {links.map(link => (
+            <Reorder.Item
+              key={link._id}
+              value={link}
+              className="bg-gray-100 px-3 py-2 rounded"
+              whileDrag={{ scale: 1.02 }}
+            >
+              <motion.div
+                layout
+                className="flex items-start justify-between gap-2 cursor-pointer"
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Add New Link</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Input 
-            placeholder="Link Title (e.g., My Portfolio)"
-            value={newLink.title}
-            onChange={(e) => setNewLink(prev => ({ ...prev, title: e.target.value }))}
-          />
-          <Input 
-            type="url"
-            placeholder="https://example.com"
-            value={newLink.url}
-            onChange={(e) => setNewLink(prev => ({ ...prev, url: e.target.value }))}
-          />
-          <Button onClick={handleAddLink} disabled={isAdding} className="w-full">
-            <PlusCircle className="h-4 w-4 mr-2" />
-            {isAdding ? 'Adding...' : 'Add Link'}
+              >
+                <div className="flex items-start gap-2 flex-1 min-w-0">
+                  <GripVertical className="w-4 h-4 text-gray-400 shrink-0 mt-1" />
+                  <div className="text-left w-full" onClick={() => {
+                    setEditingId(link._id);
+                    setEditingData({ title: link.title, url: link.url });
+                  }}>
+                    <p className="font-medium text-sm truncate">{link.title}</p>
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-500 hover:underline truncate block"
+                    >
+                      {link.url}
+                    </a>
+
+                    <AnimatePresence>
+                      {editingId === link._id && (
+                        <motion.div
+                          key={`${link._id}-editor`}
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="overflow-hidden pt-2 space-y-2"
+                        >
+                          <Input
+                            className="text-sm"
+                            value={editingData.title}
+                            onChange={(e) => {
+                              setEditingData(prev => ({ ...prev, title: e.target.value }))
+                              changesSaved(false)
+                            }
+                            }
+                          />
+                          <Input
+                            className="text-sm"
+                            value={editingData.url}
+                            onChange={(e) => {
+                              setEditingData(prev => ({ ...prev, url: e.target.value }))
+                              changesSaved(false)
+                            }
+                            }
+                          />
+                          <div className="flex justify-end">
+                            <Button size="sm" onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditSave(link._id);
+                            }}>
+                              Save
+                            </Button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteLink(link._id);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4 text-red-500" />
+                </Button>
+              </motion.div>
+            </Reorder.Item>
+          ))}
+        </AnimatePresence>
+      </Reorder.Group>
+
+      {reordered && (
+        <div className="flex justify-end">
+          <Button onClick={handleSaveOrder} size="sm" className="gap-2">
+            <Save className="w-4 h-4" /> Save Changes
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      )}
+
+      <div className="pt-6 space-y-2">
+        <h2 className="font-medium">Add New Link</h2>
+        <Input
+          placeholder="Title (e.g. Portfolio)"
+          value={newLink.title}
+          onChange={(e) => setNewLink((prev) => ({ ...prev, title: e.target.value }))}
+        />
+        <Input
+          placeholder="https://yourlink.com"
+          value={newLink.url}
+          onChange={(e) => setNewLink((prev) => ({ ...prev, url: e.target.value }))}
+        />
+        <Button onClick={handleAddLink} disabled={isAdding} className="w-full">
+          {isAdding ? 'Adding...' : 'Add Link'}
+        </Button>
+      </div>
     </div>
   );
 }

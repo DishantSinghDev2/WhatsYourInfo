@@ -11,9 +11,10 @@ import { Upload } from 'lucide-react';
 interface AvatarsPanelProps {
   user: UserProfile;
   onUpdate: (data: Partial<UserProfile>) => void;
+  changesSaved: (a: boolean) => void
 }
 
-export default function AvatarsPanel({ user, onUpdate }: AvatarsPanelProps) {
+export default function AvatarsPanel({ user, onUpdate, changesSaved }: AvatarsPanelProps) {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -27,6 +28,7 @@ export default function AvatarsPanel({ user, onUpdate }: AvatarsPanelProps) {
     if (file) {
       setAvatarFile(file);
       setIsCropDialogOpen(true);
+      changesSaved(false)
     }
   };
 
@@ -50,6 +52,7 @@ export default function AvatarsPanel({ user, onUpdate }: AvatarsPanelProps) {
       onUpdate({ avatar: newAvatarUrl }); // Update parent state for live preview
 
       toast.success('Avatar updated!', { id: toastId });
+      changesSaved(true)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Upload error.', { id: toastId });
     } finally {

@@ -28,7 +28,7 @@ export function CustomColorMenu({
   }, [design.customColors])
 
   return (
-    <Popover.Root open={isSelected}>
+    <Popover.Root>
       <Popover.Trigger asChild>
         <button
           onClick={() => {
@@ -40,12 +40,10 @@ export function CustomColorMenu({
               }))
             }
           }}
-          className={`relative border rounded-md p-1 w-full group transition-all duration-300 h-[110px] ${
-            isSelected
-              ? 'border-black shadow-md bg-gray-50'
-              : 'border-gray-200'
-          }`}
+          className={`relative border rounded-md p-1 w-full group transition-all duration-300 h-[110px] ${isSelected ? 'border-black shadow-md bg-gray-50' : 'border-gray-200'
+            }`}
         >
+
           {/* Color dots stacked */}
           <div className="relative h-6 w-6 mx-auto mt-1 flex justify-center">
             {[customColors.surface, customColors.background, customColors.accent].map(
@@ -82,9 +80,8 @@ export function CustomColorMenu({
               {['background', 'surface', 'accent'].map((key) => (
                 <button
                   key={key}
-                  className={`flex-1 text-xs border rounded p-2 flex flex-row gap-2 items-center hover:bg-gray-100 transition ${
-                    openKey === key ? 'border-black' : 'border-gray-300'
-                  }`}
+                  className={`flex-1 text-xs border rounded p-2 flex flex-row gap-2 items-center hover:bg-gray-100 transition ${openKey === key ? 'border-black' : 'border-gray-300'
+                    }`}
                   onClick={() => setOpenKey(openKey === key ? null : key)}
                 >
                   <span

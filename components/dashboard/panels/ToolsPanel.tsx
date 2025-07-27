@@ -28,8 +28,8 @@ const toolComponents: Record<string, React.ComponentType<any>> = {
   'redirects': SmartRedirects,
 };
 
-export default function ToolsPanel({ user, onUpdate }: { user: UserProfile, onUpdate: (data: Partial<UserProfile>) => void }) {
-  const [activeTool, setActiveTool] = useState<string | null>(null);
+export default function ToolsPanel({ user, onUpdate, aTool, changesSaved }: { user: UserProfile, onUpdate: (data: Partial<UserProfile>) => void, aTool?: string | null, changesSaved: (a: boolean) => void }) {
+  const [activeTool, setActiveTool] = useState<string | null>(aTool || null);
   const ActiveTool = activeTool ? toolComponents[activeTool] : null;
 
   if (ActiveTool) {
@@ -40,13 +40,7 @@ export default function ToolsPanel({ user, onUpdate }: { user: UserProfile, onUp
         animate={{ opacity: 1 }}
         className="space-y-6"
       >
-        <button
-          onClick={() => setActiveTool(null)}
-          className="text-sm font-semibold text-blue-600 hover:underline flex items-center gap-2"
-        >
-          ← Back to Tools
-        </button>
-        <ActiveTool user={user} onUpdate={onUpdate} />
+        <ActiveTool user={user} onUpdate={onUpdate} changesSaved={changesSaved} />
       </motion.div>
     );
   }

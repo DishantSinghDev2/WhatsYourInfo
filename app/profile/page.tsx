@@ -21,6 +21,7 @@ import WalletPanel from '@/components/dashboard/panels/WalletPanel';
 import PhotosPanel from '@/components/dashboard/panels/PhotosPanel';
 import ToolsPanel from '@/components/dashboard/panels/ToolsPanel';
 import AccountSettingsPanel from '@/components/dashboard/panels/AccountSettingsPanel';
+import { ChevronLeft } from 'lucide-react';
 
 const panelComponents: Record<string, React.ComponentType<any>> = {
   profile: MyProfilePanel,
@@ -41,7 +42,8 @@ export default function ProfilePage() {
   const [draftUser, setDraftUser] = useState<UserProfile | null>(null);
   const [activePanel, setActivePanel] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [backToTool, setBackToTool] = useState<string | null>("")
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -73,29 +75,14 @@ export default function ProfilePage() {
   const handleUpdate = (updatedData: Partial<UserProfile>) => {
     setDraftUser(prev => {
       const updated = prev ? { ...prev, ...updatedData } : null;
-      if (JSON.stringify(updated) !== JSON.stringify(user)) {
-        setHasUnsavedChanges(true);
-      }
       return updated;
     });
   };
 
-  const handleSave = async () => {
-    if (!draftUser) return;
-    try {
-      const res = await fetch('/api/profile/save', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(draftUser),
-      });
-      if (!res.ok) throw new Error();
-      setUser(draftUser);
-      setHasUnsavedChanges(false);
-      toast.success('Profile saved!');
-    } catch {
-      toast.error('Failed to save changes.');
-    }
-  };
+  const handleChangesSaved = (a: boolean) => {
+    setHasUnsavedChanges(!a)
+  }
+
 
   const ActivePanelComponent = activePanel ? panelComponents[activePanel] : null;
 
@@ -107,46 +94,42 @@ export default function ProfilePage() {
       <div className='flex flex-row overflow-hidden'>
 
         {/* Sidebar / Left Panel */}
-          <div className="flex-grow px-4 py-6 overflow-y-auto custom-scrollbar w-[559px]">
-            <AnimatePresence mode="wait">
-              {ActivePanelComponent ? (
-                <motion.div
-                  key={activePanel}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
+        <div className="flex-grow px-4 py-6 overflow-y-auto custom-scrollbar w-[559px]">
+          <AnimatePresence mode="wait">
+            {ActivePanelComponent ? (
+              <motion.div
+                key={activePanel}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <button
+                  onClick={() => {
+                    if (activePanel === "tool") {
+                      setBackToTool(null)
+                    } else {
+                      handleBackToNav()
+                    }
+                  }}
+                  className="mb-4 text-blue-600 hover:underline text-sm flex items-center gap-1"
                 >
-                  <button
-                    onClick={handleBackToNav}
-                    className="mb-4 text-blue-600 hover:underline text-sm flex items-center gap-1"
-                  >
-                    ← Back
-                  </button>
-                  <ActivePanelComponent user={draftUser} onUpdate={handleUpdate} />
-                  {hasUnsavedChanges && (
-                    <div className="flex justify-end pt-6">
-                      <button
-                        onClick={handleSave}
-                        className="bg-black text-white px-4 py-2 rounded text-xs font-medium hover:bg-gray-900 transition"
-                      >
-                        Save Changes
-                      </button>
-                    </div>
-                  )}
-                </motion.div>
-              ) : (
-                <motion.div key="nav" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                  <DashboardNav setActivePanel={setActivePanel} user={draftUser} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+                  <ChevronLeft className='bg-gray-200 rounded-full p-2 w-8 h-8 hover:bg-gray-100 transition duration-100' />
+                </button>
+                <ActivePanelComponent user={draftUser} onUpdate={handleUpdate} aTool={backToTool} changesSaved={handleChangesSaved} />
+              </motion.div>
+            ) : (
+              <motion.div key="nav" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <DashboardNav setActivePanel={setActivePanel} user={draftUser} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Preview Panel */}
-          <div className="h-full w-full overflow-y-auto custom-scrollbar-preview p-4 bg-gray-800">
-            <ProfilePreview user={draftUser} />
-          </div>
+        <div className="h-full w-full overflow-y-auto custom-scrollbar-preview p-4 bg-gray-800">
+          <ProfilePreview user={draftUser} />
+        </div>
       </div>
     </div>
   );
