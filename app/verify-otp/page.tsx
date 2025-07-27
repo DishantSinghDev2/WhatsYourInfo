@@ -98,7 +98,7 @@ export default function VerifyOtpPage() {
             const data = await response.json();
 
             if (response.ok) {
-                router.push('/login?message=Email verified. Please sign in.');
+                router.push('/profile');
             } else {
                 setError(data.error || 'Invalid or expired OTP. Please try again.');
                 toast.error(data.error || 'OTP verification failed.');

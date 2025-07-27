@@ -21,14 +21,14 @@ export interface UserProfile {
     profileUrl: string;
     username: string
   }[];
-  showWalletOnPublic: boolean;
-  interests: string[];
-  wallet: {
+  showWalletOnPublic?: boolean;
+  interests?: string[];
+  wallet?: {
     id: string;
     paymentType: string; // e.g., 'paypal', 'btc'
     address: string;
   }[];
-  gallery: {
+  gallery?: {
     imageUrl: string;
     caption: string;
   }[];

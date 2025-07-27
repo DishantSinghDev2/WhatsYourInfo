@@ -9,16 +9,69 @@ import { Reorder } from 'framer-motion';
 import { DropdownMenu, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuContent } from '@radix-ui/react-dropdown-menu';
 import { CustomColorMenu } from '@/components/color-selector/CustomColourMenu';
 
-const colorThemes = {
-  Classic: { background: '#FFFFFF', surface: '#F8F9FA', accent: '#007BFF' },
-  Sunset: { background: '#2C3E50', surface: '#34495E', accent: '#E74C3C' },
-  Mint: { background: '#F0FFF4', surface: '#FFFFFF', accent: '#38A169' },
-  Nite: { background: '#111827', surface: '#1F2937', accent: '#3B82F6' },
-  Solar: { background: '#FDF6E3', surface: '#FBF1D5', accent: '#B58900' },
-  Rose: { background: '#FFF1F2', surface: '#FFFFFF', accent: '#DB2777' },
-  Forest: { background: '#1A2A27', surface: '#2D423F', accent: '#4ADE80' },
-  Cyber: { background: '#000000', surface: '#1A1A1A', accent: '#F000B8' },
+export const colorThemes = {
+  Classic: {
+    background: '#FFFFFF',
+    surface: '#F8F9FA',
+    accent: '#2563EB', // Blue-600
+  },
+  Minimal: {
+    background: '#FAFAFA',
+    surface: '#FFFFFF',
+    accent: '#111827', // Gray-900
+  },
+  Sunset: {
+    background: '#2C3E50',
+    surface: '#34495E',
+    accent: '#E74C3C', // Red-orange
+  },
+  Mint: {
+    background: '#F0FFF4',
+    surface: '#FFFFFF',
+    accent: '#10B981', // Emerald-500
+  },
+  Nite: {
+    background: '#0F172A', // Slate-900
+    surface: '#1E293B',     // Slate-800
+    accent: '#3B82F6',      // Blue-500
+  },
+  Solar: {
+    background: '#FDF6E3',
+    surface: '#F5EFC1',
+    accent: '#B58900',      // Solarized yellow
+  },
+  Rose: {
+    background: '#FFF1F2',
+    surface: '#FEE2E2',
+    accent: '#E11D48',      // Rose-600
+  },
+  Forest: {
+    background: '#1A2A27',
+    surface: '#2D423F',
+    accent: '#4ADE80',      // Green-400
+  },
+  Cyber: {
+    background: '#0A0A0A',
+    surface: '#1F1F1F',
+    accent: '#F000B8',      // Neon pink
+  },
+  Lavender: {
+    background: '#F5F3FF',
+    surface: '#EDE9FE',
+    accent: '#8B5CF6',      // Violet-500
+  },
+  Sky: {
+    background: '#E0F2FE',
+    surface: '#BAE6FD',
+    accent: '#0284C7',      // Sky-600
+  },
+  Grape: {
+    background: '#F3E8FF',
+    surface: '#E9D5FF',
+    accent: '#7C3AED',      // Purple-600
+  },
 };
+
 
 const defaultSections = ['Introduction', 'Links', 'Photos', 'Verified accounts', 'Interests'];
 
@@ -44,7 +97,8 @@ export default function DesignPanel({
 
   useEffect(() => {
     setHasChanges(true);
-      changesSaved(false)
+    changesSaved(false)
+    onUpdate({ design, section: sectionOrder, visibility });
   }, [JSON.stringify(design), sectionOrder, JSON.stringify(visibility)]);
 
 

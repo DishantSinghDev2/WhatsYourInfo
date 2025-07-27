@@ -1,10 +1,14 @@
 'use client';
 import { UserProfile } from '@/types';
 import { Button } from '@/components/ui/Button';
-import { SiX, SiLinkedin, SiGithub, SiPaypal, SiBitcoin } from 'react-icons/si';
+import { SiX, SiLinkedin, SiGithub, SiPaypal, SiBitcoin, SiEthereum, SiMoneygram } from 'react-icons/si';
 import { Globe, Share2, Download, Settings, Link as LinkIcon } from 'lucide-react';
 import VerifiedTick from './VerifiedTick';
 import { AdvancedDetailsDialog } from './AdvancedDetailsDialog';
+import tinycolor from 'tinycolor2';
+import Link from 'next/link';
+import Image from 'next/image';
+import LeadCaptureForm from '../LeadCaptureForm';
 
 const iconMap: { [key: string]: React.ElementType } = {
   twitter: SiX,
@@ -15,11 +19,36 @@ const iconMap: { [key: string]: React.ElementType } = {
   'bitcoin (btc)': SiBitcoin,
 };
 
-export default function PublicProfileView({ profile, isPreview = false }: { profile: UserProfile; isPreview?: boolean }) {
+const walletIconMap: Record<string, React.ElementType> = {
+  bitcoin: SiBitcoin,
+  btc: SiBitcoin,
+  paypal: SiPaypal,
+  ethereum: SiEthereum,
+  eth: SiEthereum,
+  bank: SiMoneygram,
+};
+
+function isGradient(value: string) {
+  return value?.startsWith('linear-gradient');
+}
+
+function isDarkColor(color: string) {
+  try {
+    return tinycolor(color).isDark();
+  } catch {
+    return false;
+  }
+}
+
+export default function PublicProfileView({
+  profile,
+  isPreview = false
+}: {
+  profile: UserProfile;
+  isPreview?: boolean;
+}) {
   const background = profile.design?.customColors?.background || '#ffffff';
   const accent = profile.design?.customColors?.accent || '#111827';
-
-  const isGradient = (value: string) => value?.startsWith('linear-gradient');
 
   const containerStyle = isGradient(background)
     ? { backgroundImage: background }
@@ -27,22 +56,35 @@ export default function PublicProfileView({ profile, isPreview = false }: { prof
 
   const textStyle = isGradient(accent)
     ? {
-        backgroundImage: accent,
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-      }
+      backgroundImage: accent,
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
+    }
     : {
-        color: accent,
-      };
+      color: accent,
+    };
+
+  const forceLightText = isDarkColor(
+    isGradient(background) ? '#000000' : background
+  );
+
+  const accentButtonStyle = {
+    backgroundColor: accent,
+    color: isDarkColor(accent) ? '#fff' : '#000'
+  };
 
   return (
-    <div className="min-h-screen transition-colors duration-500" style={containerStyle}>
+    <div
+      className={`min-h-screen pb-5 transition-colors duration-500 ${forceLightText ? 'text-white' : 'text-black'
+        }`}
+      style={containerStyle}
+    >
       <div
         className="h-48 bg-gray-200"
         style={{
-          backgroundImage: `url(${profile.design?.headerImage})`,
+          backgroundImage: `url(${profile.design?.headerImage || profile.isProUser ? "/pro-header.png" : "/header.png"})`,
           backgroundSize: 'cover',
-          backgroundPosition: 'center',
+          backgroundPosition: 'center'
         }}
       />
 
@@ -71,7 +113,16 @@ export default function PublicProfileView({ profile, isPreview = false }: { prof
           </div>
 
           <div className="absolute top-24 right-0 sm:relative sm:top-0 sm:right-0 flex gap-2">
-            <Button variant="ghost" size="icon" onClick={() => navigator.share?.({ title: 'Check my profile', url: window.location.href })}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() =>
+                navigator.share?.({
+                  title: 'Check my profile',
+                  url: window.location.href
+                })
+              }
+            >
               <Share2 className="h-5 w-5" />
             </Button>
             <Button variant="ghost" size="icon" asChild>
@@ -116,8 +167,8 @@ export default function PublicProfileView({ profile, isPreview = false }: { prof
                 href={profile.spotlightButton.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block px-4 py-2 rounded-md text-center font-semibold text-white"
-                style={{ backgroundColor: profile.spotlightButton.color || accent }}
+                className="block px-4 py-2 rounded-md text-center font-semibold"
+                style={accentButtonStyle}
               >
                 {profile.spotlightButton.text}
               </a>
@@ -125,7 +176,7 @@ export default function PublicProfileView({ profile, isPreview = false }: { prof
           </div>
 
           <div className="space-y-6">
-            {profile.links?.length > 0 && (
+            {profile.links && profile.links?.length > 0 && (
               <div className="p-5 bg-black/5 rounded-md">
                 <h3 className="font-semibold mb-3">Links</h3>
                 <div className="space-y-2">
@@ -145,27 +196,38 @@ export default function PublicProfileView({ profile, isPreview = false }: { prof
               </div>
             )}
 
-            {profile.wallet?.length > 0 && profile.showWalletOnPublic && (
+            {profile.wallet && profile.wallet?.length > 0 && profile.showWalletOnPublic && (
               <div className="p-5 bg-black/5 rounded-md">
                 <h3 className="font-semibold mb-3">Wallet</h3>
-                <div className="space-y-1 text-sm">
-                  {profile.wallet.map((w) => (
-                    <div key={w.id} className="flex justify-between items-center">
-                      <span>{w.paymentType}</span>
-                      <span className="opacity-70 truncate max-w-[150px]">{w.address}</span>
-                    </div>
-                  ))}
+                <div className="space-y-3 text-sm">
+                  {profile.wallet.map((w) => {
+                    const WalletIcon = walletIconMap[w.paymentType.toLowerCase()] || Globe;
+                    return (
+                      <div key={w.id} className="flex items-start gap-2">
+                        <WalletIcon className="h-4 w-4 mt-1 opacity-70" />
+                        <div>
+                          <p className="font-semibold">{w.paymentType}</p>
+                          <p className="opacity-80 break-words">{w.address}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
-            {profile.gallery?.length > 0 && (
+
+            {profile.gallery && profile.gallery?.length > 0 && (
               <div className="p-5 bg-black/5 rounded-md">
                 <h3 className="font-semibold mb-3">Gallery</h3>
                 <div className="grid grid-cols-2 gap-2">
                   {profile.gallery.map((item, idx) => (
                     <div key={idx}>
-                      <img src={item.imageUrl} alt={item.caption} className="rounded-md object-cover w-full h-24" />
+                      <img
+                        src={item.imageUrl}
+                        alt={item.caption}
+                        className="rounded-md object-cover w-full h-24"
+                      />
                       {item.caption && <p className="text-xs mt-1">{item.caption}</p>}
                     </div>
                   ))}
@@ -174,27 +236,35 @@ export default function PublicProfileView({ profile, isPreview = false }: { prof
             )}
           </div>
         </div>
+        {profile.isProUser && (
+          <LeadCaptureForm username={profile.username} design={profile.design} />
+        )}
+
 
         <div className="mt-12 flex justify-center">
-          <AdvancedDetailsDialog profile={profile}>
-            <Button variant="outline" size="sm" className="flex gap-1 items-center">
-              <Settings className="h-4 w-4" /> More Settings
-            </Button>
-          </AdvancedDetailsDialog>
+          <AdvancedDetailsDialog profile={profile} />
         </div>
 
         {!profile.isProUser && !isPreview && (
-          <footer className="mt-16 py-8 border-t text-center text-sm opacity-60">
-            <p className="font-bold text-lg mb-2">What'sYour.Info</p>
-            <div className="flex justify-center gap-4 mb-4">
-              <a href="/terms" className="hover:underline">
+          <footer className="mt-16 py-8 border-t flex md:flex-row flex-col w-full justify-center md:justify-between text-sm">
+            <Link href="/" className="-m-1.5 p-1.5 flex items-center space-x-2">
+              <Image
+                src="/logotext.svg"
+                alt="WhatsYour.Info"
+                width={200}
+                height={32}
+              />
+            </Link>
+            <div className="flex items-center gap-4">
+              <Link href="/terms" className="hover:underline">
                 Terms
-              </a>
-              <a href="/privacy" className="hover:underline">
+              </Link>
+              <Link href="/privacy" className="hover:underline">
                 Privacy Policy
-              </a>
+              </Link>
             </div>
-            <Button variant="default">Upgrade to Pro</Button>
+            {
+              <Button style={accentButtonStyle}>Upgrade to Pro</Button>}
           </footer>
         )}
       </div>

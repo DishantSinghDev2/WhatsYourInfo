@@ -6,7 +6,7 @@ import PublicProfileView from '@/components/profile/PublicProfileView';
 import { GripVertical } from 'lucide-react';
 
 export default function ProfilePreview({ user }: { user: UserProfile | null }) {
-  const MIN_WIDTH = 320;
+  const MIN_WIDTH = 620;
   const MAX_WIDTH = 900;
 
   const [width, setWidth] = useState(MAX_WIDTH);

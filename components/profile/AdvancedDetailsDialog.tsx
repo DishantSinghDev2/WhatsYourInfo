@@ -8,24 +8,60 @@ import {
   DialogTrigger
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/Button';
-import Image from 'next/image';
 import { Globe, Star, CheckCircle, Clock } from 'lucide-react';
 import { UserProfile } from '@/types';
+import tinycolor from 'tinycolor2';
 
 export function AdvancedDetailsDialog({ profile }: { profile: UserProfile }) {
-  const themeStyles = {
-    backgroundColor: profile.design?.customColors?.background || '#ffffff',
-    color: profile.design?.customColors?.accent || '#111827',
-  };
+  const colors = profile.design?.customColors || {};
+
+  const isGradient = (val: string) => val?.startsWith('linear-gradient');
+
+  // Handle background
+  const bg = colors.background || '#ffffff';
+  const bgStyle = isGradient(bg)
+    ? { backgroundImage: bg }
+    : { backgroundColor: bg };
+
+  // Determine text color against solid background
+  const textColor = isGradient(bg)
+    ? 'text-white'
+    : tinycolor(bg).isDark() ? 'text-white' : 'text-black';
+
+  // Handle surface
+  const surface = colors.surface || '#f3f4f6';
+  const surfaceStyle = isGradient(surface)
+    ? { backgroundImage: surface }
+    : { backgroundColor: surface };
+  const surfaceText = isGradient(surface)
+    ? 'text-white'
+    : tinycolor(surface).isDark() ? 'text-white' : 'text-black';
+
+  // Accent button styling
+  const accent = colors.accent || '#111827';
+  const accentBtnStyle = isGradient(accent)
+    ? {
+        backgroundImage: accent,
+        color: 'white',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent'
+      }
+    : {
+        backgroundColor: accent,
+        color: tinycolor(accent).isDark() ? 'white' : 'black'
+      };
 
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">Advanced details</Button>
+        <Button variant="outline" size="sm" style={accentBtnStyle}>
+          Advanced details
+        </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl p-0 overflow-hidden border-0 shadow-lg">
-        <div className="grid md:grid-cols-2 bg-white" style={themeStyles}>
-          {/* Left Side: Info Card */}
+
+      <DialogContent className="max-w-3xl p-0 overflow-hidden border-0 shadow-xl rounded-xl">
+        <div className={`grid md:grid-cols-2 ${textColor}`} style={bgStyle}>
+          {/* Left Panel */}
           <div className="p-6 space-y-4">
             <DialogHeader>
               <DialogTitle className="text-xl font-bold mb-2">Profile Details</DialogTitle>
@@ -38,12 +74,15 @@ export function AdvancedDetailsDialog({ profile }: { profile: UserProfile }) {
                 alt={`${profile.firstName}'s avatar`}
               />
               <div>
-                <p className="font-semibold text-lg">{profile.firstName} {profile.lastName}</p>
+                <p className="font-semibold text-lg">
+                  {profile.firstName} {profile.lastName}
+                </p>
                 <a
                   href={`/user/${profile.username}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-500 hover:underline text-sm"
+                  className="text-sm underline underline-offset-2"
+                  style={{ color: tinycolor(accent).toHexString() }}
                 >
                   View profile →
                 </a>
@@ -80,20 +119,40 @@ export function AdvancedDetailsDialog({ profile }: { profile: UserProfile }) {
             )}
           </div>
 
-          {/* Right Side: QR + vCard download */}
-          <div className="p-6 bg-black/5 flex flex-col gap-3 items-start justify-center text-sm">
-            <p><strong>Links</strong></p>
+          {/* Right Panel */}
+          <div
+            className={`p-6 flex flex-col gap-3 text-sm ${surfaceText}`}
+            style={surfaceStyle}
+          >
+            <p className="font-semibold">Quick Links</p>
             <a
               href={`https://gravatar.com/${profile.username}.card`}
-              className="hover:underline text-blue-600"
+              className="hover:underline text-blue-400"
               target="_blank"
             >
               gravatar.com/{profile.username}.card
             </a>
+
             <div className="flex flex-col gap-2 mt-3">
-              <a href={`/api/vcard/${profile.username}`} download className="text-blue-600 hover:underline">Download vCard</a>
-              <a href={`/qr/${profile.username}?type=logo`} className="text-blue-600 hover:underline">QR - Logo</a>
-              <a href={`/qr/${profile.username}?type=avatar`} className="text-blue-600 hover:underline">QR - Avatar</a>
+              <a
+                href={`/api/vcard/${profile.username}`}
+                download
+                className="text-blue-400 hover:underline"
+              >
+                Download vCard
+              </a>
+              <a
+                href={`/qr/${profile.username}?type=logo`}
+                className="text-blue-400 hover:underline"
+              >
+                QR - Logo
+              </a>
+              <a
+                href={`/qr/${profile.username}?type=avatar`}
+                className="text-blue-400 hover:underline"
+              >
+                QR - Avatar
+              </a>
             </div>
           </div>
         </div>

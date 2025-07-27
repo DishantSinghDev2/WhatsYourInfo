@@ -1,11 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { BadgeCheck } from 'lucide-react';
-import { User } from '@/lib/auth';
+import { UserProfile } from '@/types';
 
-// Assuming User type is updated to include verifiedAccounts
-// a good structure would be: `verifiedAccounts: { service: string, url: string }[]`
 interface VerifiedAccountsSectionProps {
-  verifiedAccounts?: User['verifiedAccounts']; 
+  verifiedAccounts?: UserProfile['verifiedAccounts']; 
 }
 
 export default function VerifiedAccountsSection({ verifiedAccounts }: VerifiedAccountsSectionProps) {
@@ -22,13 +20,13 @@ export default function VerifiedAccountsSection({ verifiedAccounts }: VerifiedAc
         {verifiedAccounts.map((account, index) => (
           <a
             key={index}
-            href={account.url}
+            href={account.profileUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center text-sm text-gray-800 hover:text-blue-600 transition-colors"
           >
             <BadgeCheck className="h-5 w-5 text-blue-500 mr-3" />
-            <span className="font-medium">{account.service}</span>
+            <span className="font-medium">{account.provider}</span>
           </a>
         ))}
       </CardContent>

@@ -72,8 +72,8 @@ export default function WalletPanel({ user, onUpdate, changesSaved }: WalletPane
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ wallet: updated }),
       });
-      toast.success(`${type} added`);
       changesSaved(true)
+      toast.success(`${type} added`);
     } catch {
       toast.error('Failed to save');
     }
@@ -84,7 +84,7 @@ export default function WalletPanel({ user, onUpdate, changesSaved }: WalletPane
     onUpdate({ showWalletOnPublic: val });
 
     try {
-      await fetch('/api/profile/show-wallet-toggle', {
+      await fetch('/api/profile/wallet/show', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ showWalletOnPublic: val }),
@@ -150,7 +150,6 @@ export default function WalletPanel({ user, onUpdate, changesSaved }: WalletPane
             return (
               <motion.div
                 key={item.id}
-                layout
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
@@ -191,8 +190,10 @@ export default function WalletPanel({ user, onUpdate, changesSaved }: WalletPane
                       <Input
                         placeholder={`Edit your ${item.paymentType} address`}
                         value={editingAddress}
-                        onChange={(e) => {setEditingAddress(e.target.value)
-      changesSaved(false)}}
+                        onChange={(e) => {
+                          setEditingAddress(e.target.value)
+                          changesSaved(false)
+                        }}
                         className="text-sm"
                       />
                       <div className="flex justify-end mt-2">

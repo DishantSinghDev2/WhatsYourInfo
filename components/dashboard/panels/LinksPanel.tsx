@@ -126,6 +126,7 @@ export default function LinksPanel({ user, onUpdate, changesSaved }: LinksPanelP
           setLinks(newOrder);
           setReordered(true);
           changesSaved(false)
+          onUpdate({ links: newOrder });
         }}
         className="space-y-2"
       >
@@ -142,7 +143,7 @@ export default function LinksPanel({ user, onUpdate, changesSaved }: LinksPanelP
                 className="flex items-start justify-between gap-2 cursor-pointer"
 
               >
-                <div className="flex items-start gap-2 flex-1 min-w-0">
+                <div className="flex items-start gap-2 flex-1">
                   <GripVertical className="w-4 h-4 text-gray-400 shrink-0 mt-1" />
                   <div className="text-left w-full" onClick={() => {
                     setEditingId(link._id);
@@ -162,7 +163,7 @@ export default function LinksPanel({ user, onUpdate, changesSaved }: LinksPanelP
                       {editingId === link._id && (
                         <motion.div
                           key={`${link._id}-editor`}
-                          initial={{ opacity: 0, height: 0 }}
+                          initial={{ opacity: 0, height: 'auto' }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
                           className="overflow-hidden pt-2 space-y-2"

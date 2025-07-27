@@ -70,7 +70,7 @@ export default function LoginPage() {
           router.push("/verify-otp")
         }
         toast.success('Welcome back!');
-        router.push('/dashboard');
+        router.push('/profile');
       } else {
         toast.error(data.error || 'Login failed');
         if (data.details) {

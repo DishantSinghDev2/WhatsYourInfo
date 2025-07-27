@@ -3,57 +3,12 @@ import bcrypt from 'bcryptjs';
 import { NextRequest } from 'next/server';
 import clientPromise from './mongodb';
 import { ObjectId } from 'mongodb';
+import { UserProfile } from '@/types';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-export interface User {
-  _id: string;
-  email: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  bio?: string;
-  avatar?: string;
-  isProUser: boolean;
-  customDomain?: string;
-  emailVerified: boolean;
-  socialLinks: {
-    twitter?: string;
-    linkedin?: string;
-    github?: string;
-    website?: string;
-  };
-  spotlightButton?: {
-    text: string;
-    url: string;
-    color: string;
-  };
-  verifiedAccounts: {
-    service: string; // e.g., 'twitter', 'github'
-    username: string;
-    url: string;
-  }[];
-  interests: string[];
-  wallet: {
-    paymentType: string; // e.g., 'paypal', 'btc'
-    address: string;
-  }[];
-  gallery: {
-    imageUrl: string;
-    caption: string;
-  }[];
-  design: {
-    theme: string; // e.g., 'classic', 'sunset'
-    customColors: {
-      background: string;
-      surface: string;
-      accent: string;
-    };
-    headerImage: string;
-    backgroundImage: string;
-  };
-  createdAt: Date;
-  updatedAt: Date;
+export interface User extends UserProfile{
+  
 }
 
 export async function hashPassword(password: string): Promise<string> {
