@@ -4,6 +4,31 @@ import { NextRequest } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { logApiCall } from '@/lib/logging'; // We will create this next
+import jwt from 'jsonwebtoken';
+
+/**
+ * Extracts and verifies a JWT from an 'Authorization: Bearer <token>' header.
+ * This is used to protect developer API endpoints (/api/v1/*).
+ * @param request The incoming NextRequest.
+ * @returns The decoded token payload if valid, otherwise null.
+ */
+export function verifyApiToken(request: NextRequest): { userId: string; [key: string]: any } | null {
+  const authHeader = request.headers.get('Authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return null;
+  }
+  const token = authHeader.split(' ')[1];
+
+  if (!token) return null;
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
+    return decoded as { userId: string; [key: string]: any };
+  } catch (error) {
+    // Token is invalid or expired
+    return null;
+  }
+}
 
 export interface AuthenticatedApiRequest {
   user: {

@@ -13,213 +13,125 @@ import Link from 'next/link';
 
 const endpoints = [
   {
-    category: 'Public API',
-    description: 'Access public profile data without authentication',
+    category: 'Public Endpoints (v1)',
+    description: 'Access public data without authentication.',
     endpoints: [
       {
         method: 'GET',
-        path: '/api/public/profile/{username}',
-        description: 'Get public profile information',
+        path: '/api/v1/profile/{username}',
+        description: 'Get public profile information for a specific user.',
         auth: 'None',
-        response: {
-          username: 'johndoe',
-          firstName: 'John',
-          lastName: 'Doe',
-          bio: 'Software engineer and entrepreneur',
-          avatar: 'https://whatsyour.info/api/avatars/johndoe',
-          isProUser: true,
-          socialLinks: {
-            twitter: 'https://twitter.com/johndoe',
-            linkedin: 'https://linkedin.com/in/johndoe'
-          },
-          profileUrl: 'https://whatsyour.info/johndoe'
-        }
+        response: { username: 'johndoe', firstName: 'John', bio: 'Software engineer...', isProUser: true, links: [], design: {} /* ... */ }
       },
       {
         method: 'GET',
-        path: '/api/public/search',
-        description: 'Search public profiles',
+        path: '/api/v1/avatars/{username}',
+        description: 'Get a user\'s avatar image.',
         auth: 'None',
-        params: [
-          { name: 'q', type: 'string', required: true, description: 'Search query' },
-          { name: 'limit', type: 'integer', required: false, description: 'Maximum results (default: 10)' }
-        ],
-        response: {
-          profiles: [
-            {
-              username: 'johndoe',
-              firstName: 'John',
-              lastName: 'Doe',
-              bio: 'Software engineer',
-              avatar: 'https://whatsyour.info/api/avatars/johndoe'
-            }
-          ]
-        }
-      },
-      {
-        method: 'GET',
-        path: '/api/avatars/{username}',
-        description: 'Get user avatar image',
-        auth: 'None',
-        params: [
-          { name: 'size', type: 'integer', required: false, description: 'Image size in pixels (default: 200)' }
-        ],
-        response: 'Binary image data (JPEG/PNG)'
+        response: 'Binary image data (e.g., image/png)'
       }
     ]
   },
   {
-    category: 'Authentication API',
-    description: 'User authentication and profile management (requires API key)',
+    category: 'Authentication API (v1)',
+    description: 'Authenticate and get a short-lived token for further requests.',
     endpoints: [
       {
         method: 'POST',
-        path: '/api/auth/login',
-        description: 'Authenticate user with email and password',
+        path: '/api/v1/auth/login',
+        description: 'Exchange a permanent API Key for a short-lived JWT.',
         auth: 'API Key',
-        body: {
-          email: 'user@example.com',
-          password: 'password123'
-        },
+        body: {},
         response: {
-          message: 'Login successful',
-          user: {
-            _id: '507f1f77bcf86cd799439011',
-            email: 'user@example.com',
-            username: 'johndoe',
-            firstName: 'John',
-            lastName: 'Doe',
-            isProUser: false
-          },
-          token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
-        }
-      },
-      {
-        method: 'GET',
-        path: '/api/auth/user',
-        description: 'Get authenticated user profile',
-        auth: 'Bearer Token',
-        response: {
-          user: {
-            _id: '507f1f77bcf86cd799439011',
-            email: 'user@example.com',
-            username: 'johndoe',
-            firstName: 'John',
-            lastName: 'Doe',
-            bio: 'Software engineer',
-            isProUser: false,
-            socialLinks: {}
-          }
-        }
-      },
-      {
-        method: 'PUT',
-        path: '/api/auth/profile',
-        description: 'Update user profile',
-        auth: 'Bearer Token',
-        body: {
-          firstName: 'John',
-          lastName: 'Doe',
-          bio: 'Updated bio',
-          socialLinks: {
-            twitter: 'https://twitter.com/johndoe'
-          }
-        },
-        response: {
-          message: 'Profile updated successfully',
-          user: {
-            _id: '507f1f77bcf86cd799439011',
-            firstName: 'John',
-            lastName: 'Doe',
-            bio: 'Updated bio'
-          }
+          message: 'Authentication successful',
+          token_type: 'Bearer',
+          access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+          expires_in: 3600
         }
       }
     ]
   },
   {
-    category: 'OAuth API',
-    description: 'OAuth 2.0 authentication flow for third-party applications',
+    category: 'Authenticated User API (v1)',
+    description: 'Manage the user profile associated with your access token.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/api/v1/me',
+        description: 'Get the complete profile of the authenticated user.',
+        auth: 'Bearer Token',
+        response: { _id: '...', username: 'johndoe', email: 'user@example.com', bio: '...', links: [ { title: "Portfolio", url: "..." } ] }
+      },
+      {
+        method: 'PUT',
+        path: '/api/v1/me',
+        description: 'Update fields on the authenticated user\'s profile.',
+        auth: 'Bearer Token',
+        body: {
+          firstName: 'John',
+          bio: 'My updated bio.',
+          links: [ { title: "My Website", url: "https://example.com" } ],
+          design: { theme: 'nite' }
+        },
+        response: { message: 'Profile updated successfully.' }
+      }
+    ]
+  },
+  {
+    category: 'Developer Management API',
+    description: 'Manage your own developer resources like API keys and OAuth apps.',
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/api/dev/stats',
+        description: 'Get usage statistics for your developer account.',
+        auth: 'Cookie (Web UI)',
+        response: { apiKeys: 1, oauthClients: 0, apiCalls: 150, rateLimit: '1,000/hr' }
+      },
+      {
+        method: 'GET',
+        path: '/api/dev/keys',
+        description: 'List all of your API keys.',
+        auth: 'Cookie (Web UI)',
+        response: { keys: [ { _id: '...', name: 'Production Key', key: 'wyi_...', lastUsed: '...' } ] }
+      },
+      {
+        method: 'POST',
+        path: '/api/dev/keys',
+        description: 'Create a new API key.',
+        auth: 'Cookie (Web UI)',
+        body: { name: 'My New App Key' },
+        response: { message: 'API key created successfully', key: { /* ...new key object... */ } }
+      },
+      {
+        method: 'DELETE',
+        path: '/api/dev/keys/{keyId}',
+        description: 'Permanently delete an API key.',
+        auth: 'Cookie (Web UI)',
+        response: { message: 'API key deleted successfully' }
+      }
+      // You would add OAuth client management endpoints here as well
+    ]
+  },
+  {
+    category: 'OAuth API (v1)',
+    description: 'Standard OAuth 2.0 flow for third-party applications.',
     endpoints: [
       {
         method: 'GET',
         path: '/oauth/authorize',
-        description: 'OAuth authorization endpoint',
+        description: 'OAuth authorization endpoint to request user permission.',
         auth: 'None',
-        params: [
-          { name: 'client_id', type: 'string', required: true, description: 'OAuth client ID' },
-          { name: 'redirect_uri', type: 'string', required: true, description: 'Callback URL' },
-          { name: 'response_type', type: 'string', required: true, description: 'Must be "code"' },
-          { name: 'scope', type: 'string', required: false, description: 'Requested scopes' },
-          { name: 'state', type: 'string', required: false, description: 'CSRF protection' }
-        ],
-        response: 'Redirects to redirect_uri with authorization code'
+        params: [ { name: 'client_id', type: 'string', required: true, description: 'Your OAuth App Client ID' }, /* ... */ ],
+        response: 'Redirects to your redirect_uri with an authorization code.'
       },
       {
         method: 'POST',
-        path: '/api/oauth/token',
-        description: 'Exchange authorization code for access token',
+        path: '/api/v1/oauth/token',
+        description: 'Exchange an authorization code for an access token.',
         auth: 'None',
-        body: {
-          client_id: 'your_client_id',
-          client_secret: 'your_client_secret',
-          code: 'authorization_code',
-          redirect_uri: 'https://yourapp.com/callback',
-          grant_type: 'authorization_code'
-        },
-        response: {
-          access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-          token_type: 'Bearer',
-          expires_in: 3600,
-          user: {
-            _id: '507f1f77bcf86cd799439011',
-            username: 'johndoe',
-            email: 'user@example.com'
-          }
-        }
-      }
-    ]
-  },
-  {
-    category: 'Developer API',
-    description: 'Manage API keys and OAuth applications (requires authentication)',
-    endpoints: [
-      {
-        method: 'GET',
-        path: '/api/dev/keys',
-        description: 'List API keys',
-        auth: 'Bearer Token',
-        response: {
-          keys: [
-            {
-              _id: '507f1f77bcf86cd799439011',
-              name: 'Production API Key',
-              key: 'wyi_live_1234567890abcdef...',
-              isActive: true,
-              createdAt: '2025-01-15T10:30:00Z',
-              lastUsed: '2025-01-15T15:45:00Z'
-            }
-          ]
-        }
-      },
-      {
-        method: 'POST',
-        path: '/api/dev/keys',
-        description: 'Create new API key',
-        auth: 'Bearer Token',
-        body: {
-          name: 'My App API Key'
-        },
-        response: {
-          message: 'API key created successfully',
-          key: {
-            _id: '507f1f77bcf86cd799439011',
-            name: 'My App API Key',
-            key: 'wyi_live_1234567890abcdef...',
-            isActive: true,
-            createdAt: '2025-01-15T10:30:00Z'
-          }
-        }
+        body: { client_id: '...', client_secret: '...', code: '...', grant_type: 'authorization_code' },
+        response: { access_token: '...', token_type: 'Bearer', user: { /* ... */ } }
       }
     ]
   }
@@ -228,23 +140,24 @@ const endpoints = [
 const authMethods = [
   {
     name: 'API Key',
-    description: 'Include your API key in the Authorization header',
+    description: 'A permanent secret key for server-to-server authentication.',
     example: 'Authorization: Bearer wyi_live_1234567890abcdef...',
-    usage: 'Required for authentication endpoints and private operations'
+    usage: 'Use this key ONLY to authenticate with the /api/v1/auth/login endpoint to get a short-lived JWT.'
   },
   {
-    name: 'Bearer Token',
-    description: 'Use JWT tokens for authenticated user operations',
+    name: 'Bearer Token (JWT)',
+    description: 'A short-lived token used to access protected user resources.',
     example: 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-    usage: 'Required for user-specific operations and profile management'
+    usage: 'Obtained from the login endpoint. Use this for all calls to /api/v1/me.'
   },
   {
     name: 'OAuth 2.0',
-    description: 'Standard OAuth 2.0 flow for third-party applications',
-    example: 'Authorization: Bearer oauth_access_token',
-    usage: 'For applications that need to act on behalf of users'
+    description: 'Standard flow for applications acting on behalf of other users.',
+    example: 'Authorization: Bearer oauth_access_token_...',
+    usage: 'Use this when you need users to grant your app permission to access their data.'
   }
 ];
+
 
 export default function APIDocsPage() {
   return (
@@ -279,8 +192,7 @@ export default function APIDocsPage() {
           </div>
         </div>
       </section>
-
-      {/* Base URL */}
+{/* Base URL (Updated) */}
       <section className="py-8 bg-gray-50">
         <div className="mx-auto max-w-4xl px-6 lg:px-8">
           <Card className="border-gray-200">
@@ -288,49 +200,38 @@ export default function APIDocsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">Base URL</h3>
-                  <p className="text-gray-600">All API requests should be made to:</p>
+                  <p className="text-gray-600">All developer API requests should be made to:</p>
                 </div>
-                <Badge variant="secondary">REST API</Badge>
+                <Badge variant="secondary">REST API v1</Badge>
               </div>
               <code className="block bg-gray-900 text-green-400 p-4 rounded-lg mt-4 text-lg font-mono">
-                https://whatsyour.info/api
+                https://whatsyour.info/api/v1
               </code>
             </CardContent>
           </Card>
         </div>
       </section>
 
-      {/* Authentication */}
+      {/* Authentication (Updated) */}
       <section className="py-16 bg-white">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900">
-              Authentication
-            </h2>
-            <p className="mt-4 text-lg text-gray-600">
-              Different endpoints require different authentication methods
-            </p>
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900">Authentication</h2>
+            <p className="mt-4 text-lg text-gray-600">Our API uses a simple, secure token-based authentication system.</p>
           </div>
           
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {authMethods.map((method, index) => (
               <Card key={index} className="border-gray-200">
                 <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Shield className="h-5 w-5 mr-2 text-blue-600" />
-                    {method.name}
-                  </CardTitle>
-                  <CardDescription>
-                    {method.description}
-                  </CardDescription>
+                  <CardTitle className="flex items-center"><Shield className="h-5 w-5 mr-2 text-blue-600" />{method.name}</CardTitle>
+                  <CardDescription>{method.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div>
-                      <h4 className="text-sm font-medium text-gray-900 mb-2">Example</h4>
-                      <code className="block bg-gray-100 p-3 rounded text-sm text-gray-800 break-all">
-                        {method.example}
-                      </code>
+                      <h4 className="text-sm font-medium text-gray-900 mb-2">Example Header</h4>
+                      <code className="block bg-gray-100 p-3 rounded text-sm text-gray-800 break-all">{method.example}</code>
                     </div>
                     <div>
                       <h4 className="text-sm font-medium text-gray-900 mb-2">Usage</h4>
@@ -344,66 +245,52 @@ export default function APIDocsPage() {
         </div>
       </section>
 
-      {/* API Endpoints */}
+      {/* API Endpoints (Updated with new data) */}
       <section className="py-16 bg-gray-50">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900">
-              API Endpoints
-            </h2>
-            <p className="mt-4 text-lg text-gray-600">
-              Complete reference for all available endpoints
-            </p>
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900">API Endpoints</h2>
+            <p className="mt-4 text-lg text-gray-600">Complete reference for all available endpoints.</p>
           </div>
           
           <div className="space-y-12">
             {endpoints.map((category, categoryIndex) => (
               <div key={categoryIndex}>
-                <div className="mb-8">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                    {category.category}
-                  </h3>
+                <div className="mb-8 border-l-4 border-blue-500 pl-4">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-1">{category.category}</h3>
                   <p className="text-gray-600">{category.description}</p>
                 </div>
                 
                 <div className="space-y-6">
                   {category.endpoints.map((endpoint, endpointIndex) => (
-                    <Card key={endpointIndex} className="border-gray-200">
-                      <CardHeader>
+                    <Card key={endpointIndex} className="border-gray-200 overflow-hidden">
+                      <CardHeader className="bg-gray-50/50">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
                             <Badge 
-                              variant={endpoint.method === 'GET' ? 'secondary' : 'default'}
                               className={
-                                endpoint.method === 'GET' 
-                                  ? 'bg-green-100 text-green-800'
-                                  : endpoint.method === 'POST'
-                                  ? 'bg-blue-100 text-blue-800'
-                                  : 'bg-yellow-100 text-yellow-800'
+                                endpoint.method === 'GET' ? 'bg-green-100 text-green-800 border-green-200'
+                                : endpoint.method === 'POST' ? 'bg-blue-100 text-blue-800 border-blue-200'
+                                : endpoint.method === 'PUT' ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
+                                : 'bg-red-100 text-red-800 border-red-200'
                               }
                             >
                               {endpoint.method}
                             </Badge>
-                            <code className="text-lg font-mono text-gray-900">
-                              {endpoint.path}
-                            </code>
+                            <code className="text-lg font-mono text-gray-900">{endpoint.path}</code>
                           </div>
                           <Badge 
-                            variant={endpoint.auth === 'None' ? 'secondary' : 'default'}
                             className={
-                              endpoint.auth === 'None'
-                                ? 'bg-gray-100 text-gray-800'
-                                : 'bg-red-100 text-red-800'
+                              endpoint.auth === 'None' ? 'bg-gray-100 text-gray-800 border-gray-200'
+                              : 'bg-red-100 text-red-800 border-red-200'
                             }
                           >
-                            {endpoint.auth}
+                            Auth: {endpoint.auth}
                           </Badge>
                         </div>
-                        <CardDescription className="text-base">
-                          {endpoint.description}
-                        </CardDescription>
+                        <CardDescription className="text-base pt-2">{endpoint.description}</CardDescription>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className="pt-6">
                         <div className="space-y-6">
                           {/* Parameters */}
                           {endpoint.params && (
@@ -442,15 +329,12 @@ export default function APIDocsPage() {
                           {endpoint.body && (
                             <div>
                               <h4 className="font-medium text-gray-900 mb-3">Request Body</h4>
-                              <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-sm overflow-x-auto">
-                                <code>{JSON.stringify(endpoint.body, null, 2)}</code>
-                              </pre>
+                              <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-sm overflow-x-auto"><code>{JSON.stringify(endpoint.body, null, 2)}</code></pre>
                             </div>
                           )}
-
                           {/* Response */}
                           <div>
-                            <h4 className="font-medium text-gray-900 mb-3">Response</h4>
+                            <h4 className="font-medium text-gray-900 mb-3">Example Response</h4>
                             <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-sm overflow-x-auto">
                               <code>
                                 {typeof endpoint.response === 'string' 
@@ -470,7 +354,7 @@ export default function APIDocsPage() {
           </div>
         </div>
       </section>
-
+      
       {/* Rate Limits */}
       <section className="py-16 bg-white">
         <div className="mx-auto max-w-4xl px-6 lg:px-8">

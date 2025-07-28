@@ -37,31 +37,31 @@ const quickStartSteps = [
 const apiEndpoints = [
   {
     method: 'GET',
-    endpoint: '/api/public/profile/{username}',
+    endpoint: '/api/v1/profile/{username}',
     description: 'Get public profile information',
     auth: 'None',
   },
   {
     method: 'GET',
-    endpoint: '/api/avatars/{username}',
+    endpoint: '/api/v1/avatars/{username}',
     description: 'Get user avatar image',
     auth: 'None',
   },
   {
     method: 'POST',
-    endpoint: '/api/auth/login',
+    endpoint: '/api/v1/auth/login',
     description: 'Authenticate a user',
     auth: 'API Key',
   },
   {
     method: 'GET',
-    endpoint: '/api/auth/user',
+    endpoint: '/api/v1/me',
     description: 'Get authenticated user data',
     auth: 'Bearer Token',
   },
   {
     method: 'PUT',
-    endpoint: '/api/auth/profile',
+    endpoint: '/api/v1/me',
     description: 'Update user profile',
     auth: 'Bearer Token',
   },
@@ -107,7 +107,7 @@ export default function DocsPage() {
               Developer Documentation
             </h1>
             <p className="mt-6 text-lg leading-8 text-gray-600 max-w-3xl mx-auto">
-              Everything you need to integrate What'sYour.Info into your applications. 
+              Everything you need to integrate WhatsYour.Info into your applications. 
               From simple profile lookups to full SSO implementation.
             </p>
             <div className="mt-8 flex items-center justify-center gap-x-6">
@@ -183,7 +183,7 @@ export default function DocsPage() {
                 Core Endpoints
               </CardTitle>
               <CardDescription>
-                Base URL: https://whatsyour.info/api
+                Base URL: https://whatsyour.info/api/v1
               </CardDescription>
             </CardHeader>
             <CardContent>

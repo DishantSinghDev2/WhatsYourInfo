@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateApiKey } from '@/lib/api-auth';
+import { verifyApiToken } from '@/lib/api-auth';
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 
@@ -9,9 +9,9 @@ import { ObjectId } from 'mongodb';
  * Fetches the complete but sanitized profile for the authenticated user.
  */
 export async function GET(request: NextRequest) {
-  const auth = await authenticateApiKey(request);
-  if (!auth) {
-    return NextResponse.json({ error: 'Invalid or missing API key.' }, { status: 401 });
+  const tokenPayload = verifyApiToken(request);
+  if (!tokenPayload) {
+    return NextResponse.json({ error: 'Invalid or expired Bearer token.' }, { status: 401 });
   }
 
   const client = await clientPromise;
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   };
 
   const userProfile = await db.collection('users').findOne(
-    { _id: new ObjectId(auth.user._id) },
+    { _id: new ObjectId(tokenPayload.user._id) },
     { projection: publicProjection }
   );
 
@@ -96,9 +96,9 @@ const updateProfileSchema = z.object({
  * Updates the profile of the authenticated user.
  */
 export async function PUT(request: NextRequest) {
-  const auth = await authenticateApiKey(request);
-  if (!auth) {
-    return NextResponse.json({ error: 'Invalid or missing API key.' }, { status: 401 });
+  const tokenPayload = verifyApiToken(request);
+  if (!tokenPayload) {
+    return NextResponse.json({ error: 'Invalid or expired Bearer token.' }, { status: 401 });
   }
 
   try {
@@ -111,7 +111,7 @@ export async function PUT(request: NextRequest) {
     // Pro-level feature check: Spotlight Button
     // If the user is NOT pro, remove the spotlightButton from the payload
     // to prevent them from setting it via a crafted API call.
-    if (!auth.user.isProUser && 'spotlightButton' in updatePayload) {
+    if (!tokenPayload.user.isProUser && 'spotlightButton' in updatePayload) {
       delete updatePayload.spotlightButton;
     }
 
@@ -119,7 +119,7 @@ export async function PUT(request: NextRequest) {
     const db = client.db('whatsyourinfo');
 
     const result = await db.collection('users').updateOne(
-      { _id: new ObjectId(auth.user._id) },
+      { _id: new ObjectId(tokenPayload.user._id) },
       { $set: { ...updatePayload, updatedAt: new Date() } }
     );
     
