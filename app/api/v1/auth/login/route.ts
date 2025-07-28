@@ -1,59 +1,37 @@
 // app/api/v1/auth/login/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
-import { generateToken } from '@/lib/auth'; // We reuse your existing JWT generator
-import { logApiCall } from '@/lib/logging'; // Your existing logging utility
-import clientPromise from '@/lib/mongodb';
-import { ObjectId } from 'mongodb';
-import bcrypt from 'bcryptjs';
+import { generateToken } from '@/lib/auth';
+import { authenticateApiKey } from '@/lib/api-auth'; // The updated middleware
 
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Authorization header with Bearer token (your API Key) is required.' }, { status: 401 });
+    const authResult = await authenticateApiKey(request);
+
+    // --- Handle Authentication Failures ---
+    if (authResult.status === 'failure') {
+      if (authResult.reason === 'RATE_LIMIT_EXCEEDED') {
+        const response = NextResponse.json(
+          { error: authResult.message }, // Use the specific message from the auth function
+          { status: 429 } // 429 Too Many Requests
+        );
+        // Add helpful rate-limiting headers to the response
+        response.headers.set('X-RateLimit-Limit', authResult.limit?.toString() || '0');
+        response.headers.set('X-RateLimit-Remaining', authResult.remaining?.toString() || '0');
+        response.headers.set('X-RateLimit-Reset', authResult.reset?.getTime().toString() || '0');
+        return response;
+      }
+      
+      // Handle invalid keys
+      return NextResponse.json({ error: authResult.message }, { status: 401 });
     }
 
-    const apiKey = authHeader.split(' ')[1];
-    if (!apiKey) {
-      return NextResponse.json({ error: 'API Key is missing.' }, { status: 401 });
-    }
+    // --- Handle Authentication Success ---
+    const { user } = authResult.data;
 
-    const client = await clientPromise;
-    const db = client.db('whatsyourinfo');
-
-    // Find the API key document in the database
-    const apiKeyData = await db.collection('api_keys').findOne({ key: apiKey, isActive: true });
-
-    if (!apiKeyData) {
-      return NextResponse.json({ error: 'Invalid or inactive API Key.' }, { status: 401 });
-    }
-
-    // Find the user associated with this key
-    const user = await db.collection('users').findOne({ _id: new ObjectId(apiKeyData.userId) });
-
-    if (!user) {
-      // This is an integrity issue, the key's owner doesn't exist.
-      return NextResponse.json({ error: 'Invalid API Key.' }, { status: 401 });
-    }
-
-    // --- Authentication Successful ---
-
-    // Log this "login" event as an API call
-    logApiCall({
-      keyId: apiKeyData._id,
-      userId: user._id,
-      endpoint: '/api/v1/auth/login',
-    });
-    
-    // Update the 'lastUsed' timestamp for the key
-    db.collection('api_keys').updateOne({ _id: apiKeyData._id }, { $set: { lastUsed: new Date() } });
-
-    // Generate a short-lived JWT for subsequent requests
     const token = generateToken({
       userId: user._id.toString(),
-      emailVerified: user.emailVerified,
-      // You can add a special scope for API access if needed
+      emailVerified: true,
       scope: 'api_access',
     });
 
@@ -61,7 +39,7 @@ export async function POST(request: NextRequest) {
       message: 'Authentication successful',
       token_type: 'Bearer',
       access_token: token,
-      expires_in: 3600, // Let the developer know the token is valid for 1 hour (3600s)
+      expires_in: 3600,
     });
 
   } catch (error) {
