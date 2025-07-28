@@ -54,7 +54,7 @@ export default function LeadCaptureForm({
 
   return (
     <div
-      className="mt-5 bg-black/5 max-w-full mx-auto rounded-md p-3 transition-all duration-300 shadow"
+      className="mt-5 bg-black/5 max-w-full mx-auto rounded-md px-3"
       
     >
       <button

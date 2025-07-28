@@ -46,15 +46,12 @@ export async function POST(request: NextRequest) {
     );
 
     if (!user.emailVerified) {
-      const response = await fetch(`${process.env.FRONTEND_URL || `localhost:3000`}/api/auth/send-otp`, {
+      await fetch(`${process.env.FRONTEND_URL || `localhost:3000`}/api/auth/send-otp`, {
         method: "POST",
         body: JSON.stringify({
           email: user.email
         })
       })
-      if (!response.ok){
-        throw new Error("Failed to send OTP")
-      }
     }
 
     // Set HTTP-only cookie

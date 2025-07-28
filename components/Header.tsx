@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from './ui/Button';
-import { Globe, Menu, X, LogOut, Settings, LayoutDashboard, ChevronDown, Loader2 } from 'lucide-react';
+import { Globe, Menu, X, LogOut, Settings, LayoutDashboard, ChevronDown, Loader2, CreditCard, Users, Code } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -129,11 +129,11 @@ export default function Header() {
                       className="rounded-full object-cover border w-9 h-9"
                     />
                     <div className="hidden md:block">
-                       <p className="text-sm font-medium text-gray-800 whitespace-nowrap">
-                         {user.firstName} {user.lastName}
-                       </p>
-                       <p className="text-xs text-gray-500 truncate">{user.email}</p>
-                     </div>
+                      <p className="text-sm font-medium text-gray-800 whitespace-nowrap">
+                        {user.firstName} {user.lastName}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                    </div>
                     <ChevronDown className="w-4 h-4 text-gray-600 transition-transform group-hover:rotate-180" />
                   </div>
                 </DropdownMenuTrigger>
@@ -151,8 +151,18 @@ export default function Header() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/settings" className="flex items-center cursor-pointer">
-                      <Settings className="w-4 h-4 mr-2" /> Settings
+                    <Link href="/billing" className="flex items-center cursor-pointer">
+                      <CreditCard className="w-4 h-4 mr-2" /> Billing
+                    </Link>
+                  </DropdownMenuItem>
+                  {user.isProUser && <DropdownMenuItem asChild>
+                    <Link href="/leads" className="flex items-center cursor-pointer">
+                      <Users className="w-4 h-4 mr-2" /> Leads
+                    </Link>
+                  </DropdownMenuItem>}
+                  <DropdownMenuItem asChild>
+                    <Link href="/dev" className="flex items-center cursor-pointer">
+                      <Code className="w-4 h-4 mr-2" /> Developers
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -234,7 +244,7 @@ export default function Header() {
                     {user ? (
                       <>
                         <Link href="/dashboard" className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50">Dashboard</Link>
-                        <Link href="/settings" className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50">Settings</Link>
+                        <Link href="/billing" className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50">Billing</Link>
                       </>
                     ) : (
                       navigation.map((item) => (

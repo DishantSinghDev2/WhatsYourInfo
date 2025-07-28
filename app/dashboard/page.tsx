@@ -1,692 +1,187 @@
+// app/dashboard/page.tsx
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import Header from '@/components/Header';
 import {
-  User,
   BarChart3,
   ExternalLink,
-  Edit,
-  Save,
-  X,
-  Globe,
-  Twitter,
-  Linkedin,
-  Github,
-  Sparkles,
+  Users,
+  CreditCard,
+  Code,
+  Settings,
   Crown,
-  Eye,
-  Users
+  Loader2,
+  Key
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { generateBio } from '@/lib/gemini';
-import AvatarCropDialog from '@/components/AvatarCrop';
+import { User as AuthUser } from '@/lib/auth';
 
-interface UserProfile {
-  _id: string;
-  email: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  bio?: string;
-  avatar?: string;
-  isProUser: boolean;
-  customDomain?: string;
-  socialLinks: {
-    twitter?: string;
-    linkedin?: string;
-    github?: string;
-    website?: string;
-  };
-  spotlightButton?: {
-    text: string;
-    url: string;
-    color: string;
-  };
-  createdAt: string;
-  updatedAt: string;
+// Type for the data we expect from our new API endpoint
+interface DashboardStats {
+  profileViews: number;
+  newLeads: number;
+  accountPlan: 'Pro' | 'Free';
 }
+
+// A reusable card component for displaying stats
+const StatCard = ({ title, value, icon, description }: { title: string, value: string | number, icon: React.ReactNode, description?: string }) => (
+  <Card>
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardTitle className="text-sm font-medium text-gray-500">{title}</CardTitle>
+      {icon}
+    </CardHeader>
+    <CardContent>
+      <div className="text-3xl font-bold">{value}</div>
+      {description && <p className="text-xs text-gray-500">{description}</p>}
+    </CardContent>
+  </Card>
+);
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isGeneratingBio, setIsGeneratingBio] = useState(false);
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    bio: '',
-    socialLinks: {
-      twitter: '',
-      linkedin: '',
-      github: '',
-      website: '',
-    },
-    spotlightButton: {
-      text: '',
-      url: '',
-      color: '#3B82F6',
-    },
-  });
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-  const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
-  
-useEffect(() => {
-    fetchUserProfile();
-  }, []);
 
-  const fetchUserProfile = async () => {
-    try {
-      const response = await fetch('/api/auth/user', {
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        const userData = await response.json();
-        if (!userData.user.emailVerified) {
-          toast.error("Email not verified. Please verify your email.")
-          router.push('/verify-otp')
-        } else {
-          setIsLoading(false)
-          setUser(userData.user);
-          setFormData({
-            firstName: userData.user.firstName,
-            lastName: userData.user.lastName,
-            bio: userData.user.bio || '',
-            socialLinks: userData.user.socialLinks || {
-              twitter: '',
-              linkedin: '',
-              github: '',
-              website: '',
-            },
-            spotlightButton: userData.user.spotlightButton || {
-              text: '',
-              url: '',
-              color: '#3B82F6',
-            },
-          });
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        const userResponse = await fetch('/api/auth/user');
+        if (!userResponse.ok) {
+          if (userResponse.status === 401) router.push('/login');
+          throw new Error('Please sign in to continue.');
         }
-      } else if (response.status === 401) {
-        router.push('/login');
+        const userData = await userResponse.json();
+        setUser(userData.user);
+
+        // Fetch aggregated stats from our new endpoint
+        const statsResponse = await fetch('/api/dashboard/stats');
+        if (!statsResponse.ok) throw new Error('Could not load dashboard stats.');
+        const statsData = await statsResponse.json();
+        setStats(statsData);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'An error occurred.');
+      } finally {
+        setIsLoading(false);
       }
-    } catch {
-      toast.error('Failed to load profile');
-    }
-  };
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      const response = await fetch('/api/auth/profile', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        const updatedUser = await response.json();
-        setUser(updatedUser.user);
-        setIsEditing(false);
-        toast.success('Profile updated successfully!');
-      } else {
-        const error = await response.json();
-        toast.error(error.message || 'Failed to update profile');
-      }
-    } catch {
-      toast.error('Network error. Please try again.');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleGenerateBio = async () => {
-    if (!user) return;
-
-    setIsGeneratingBio(true);
-    try {
-      const generatedBio = await generateBio({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        profession: 'Professional', // Could be enhanced with a profession field
-        interests: [], // Could be enhanced with interests
-        experience: 'Experienced professional',
-      });
-
-      setFormData(prev => ({ ...prev, bio: generatedBio }));
-      toast.success('Bio generated successfully!');
-    } catch {
-      toast.error('Failed to generate bio. Please try again.');
-    } finally {
-      setIsGeneratingBio(false);
-    }
-  };
+    };
+    fetchInitialData();
+  }, [router]);
 
   const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      router.push('/');
-    } catch {
-      toast.error('Logout failed');
-    }
+    toast.loading('Signing out...');
+    await fetch('/api/auth/logout', { method: 'POST' });
+    toast.dismiss();
+    router.push('/login');
   };
-    if (isLoading) {
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
         <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+            <Loader2 className="h-16 w-16 animate-spin text-blue-600" />
         </div>
       </div>
     );
   }
 
-  if (!user) {
+  if (!user || !stats) {
+    // This state can be reached if there was an error fetching data
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
-          <Card className="w-full max-w-md">
-            <CardContent className="text-center p-6">
-              <p className="text-gray-600 mb-4">Please sign in to access your dashboard.</p>
-              <Button onClick={() => router.push('/login')}>Sign In</Button>
-            </CardContent>
-          </Card>
+        <div className="min-h-screen bg-gray-50">
+           <Header />
+           <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
+               <p className="text-gray-600">Could not load dashboard. Please try again later.</p>
+           </div>
         </div>
-      </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-              <p className="text-gray-600">Manage your profile and settings</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <a
-                href={`/${user.username}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center"
-              >
-                <Button variant="outline">
-                  <Eye className="h-4 w-4 mr-2" />
-                  View Profile
-                </Button>
-              </a>
-              <Button variant="outline" onClick={handleLogout}>
-                Sign Out
-              </Button>
-              <Button variant="outline" onClick={() => router.push('/analytics')}>
-                <BarChart3 className="h-4 w-4 mr-2" />
-                Analytics
-              </Button>
-              {user.isProUser && (
-                <Button variant="outline" onClick={() => router.push('/leads')}>
-                  <Users className="h-4 w-4 mr-2" />
-                  Leads
-                </Button>
-              )}
-            </div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Welcome, {user.firstName}!</h1>
+            <p className="text-gray-600">Here's your account summary for the last 30 days.</p>
+          </div>
+          <div className="flex items-center space-x-2">
+             <Button variant="outline" asChild>
+                <a href={`/${user.username}`} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-4 w-4 mr-2" /> View Public Profile
+                </a>
+             </Button>
+             <Button variant="ghost" onClick={handleLogout}>Sign Out</Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Profile Information */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center">
-                      <User className="h-5 w-5 mr-2" />
-                      Profile Information
-                    </CardTitle>
-                    <CardDescription>
-                      Update your public profile information
-                    </CardDescription>
-                  </div>
-                  {!isEditing ? (
-                    <Button variant="outline" onClick={() => setIsEditing(true)}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
-                  ) : (
-                    <div className="flex space-x-2">
-                      <Button variant="outline" onClick={() => setIsEditing(false)}>
-                        <X className="h-4 w-4 mr-2" />
-                        Cancel
-                      </Button>
-                      <Button onClick={handleSave} disabled={isSaving}>
-                        <Save className="h-4 w-4 mr-2" />
-                        {isSaving ? 'Saving...' : 'Save'}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">Avatar</label>
-                  <div className="flex items-center space-x-4">
-                    <img
-                      src={
-                        avatarPreview ||
-                        (user.avatar?.startsWith('http')
-                          ? user.avatar
-                          : `/api/avatars/${user.username}?size=128`)
-                      }
-                      alt="User Avatar"
-                      className="w-16 h-16 rounded-full object-cover border"
-                    />
-                    {isEditing ? (
-                      <div className="flex flex-col gap-2">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            console.log(file)
-                            if (file) {
-                              setAvatarFile(file);
-                              setIsCropDialogOpen(true);
-                            }
-                          }}
-                          className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                        />
-                      </div>
-                    ): isUploadingAvatar && (
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                    )}
-                  </div>
-                </div>
-
-                {avatarFile && (
-                  <AvatarCropDialog
-                    isOpen={isCropDialogOpen}
-                    setIsOpen={setIsCropDialogOpen}
-                    file={avatarFile}
-                    onConfirm={async (blob: Blob) => {
-                      setIsUploadingAvatar(true);
-                      const formData = new FormData();
-                      formData.append('avatar', blob, avatarFile?.name || 'avatar.jpg');
-
-                      try {
-                        const res = await fetch('/api/avatar/upload', {
-                          method: 'POST',
-                          body: formData,
-                        });
-                        const data = await res.json();
-                        if (!res.ok) throw new Error(data.error || 'Upload failed');
-                        toast.success('Avatar uploaded');
-                        // Create a temporary URL for the preview
-                        setAvatarPreview(URL.createObjectURL(blob));
-                        fetchUserProfile(); // refresh user data
-                      } catch {
-                        toast.error('Upload error');
-                      } finally {
-                        setIsUploadingAvatar(false);
-                      }
-                    }}
-                  />
-                )}
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      First Name
-                    </label>
-                    {isEditing ? (
-                      <Input
-                        value={formData.firstName}
-                        onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-                      />
-                    ) : (
-                      <p className="text-gray-900">{user.firstName}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Last Name
-                    </label>
-                    {isEditing ? (
-                      <Input
-                        value={formData.lastName}
-                        onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-                      />
-                    ) : (
-                      <p className="text-gray-900">{user.lastName}</p>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Bio
-                    </label>
-                    {isEditing && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleGenerateBio}
-                        disabled={isGeneratingBio}
-                      >
-                        <Sparkles className="h-4 w-4 mr-1" />
-                        {isGeneratingBio ? 'Generating...' : 'AI Generate'}
-                      </Button>
-                    )}
-                  </div>
-                  {isEditing ? (
-                    <textarea
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      rows={4}
-                      value={formData.bio}
-                      onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
-                      placeholder="Tell people about yourself..."
-                    />
-                  ) : (
-                    <p className="text-gray-900 whitespace-pre-wrap">
-                      {user.bio || 'No bio added yet.'}
-                    </p>
-                  )}
-                </div>
-
-
-
-                {/* Social Links */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Social Links
-                  </label>
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-3">
-                      <Twitter className="h-5 w-5 text-blue-400" />
-                      {isEditing ? (
-                        <Input
-                          placeholder="https://twitter.com/username"
-                          value={formData.socialLinks.twitter}
-                          onChange={(e) => setFormData(prev => ({
-                            ...prev,
-                            socialLinks: { ...prev.socialLinks, twitter: e.target.value }
-                          }))}
-                        />
-                      ) : (
-                        <span className="text-gray-900">
-                          {user.socialLinks?.twitter || 'Not set'}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <Linkedin className="h-5 w-5 text-blue-600" />
-                      {isEditing ? (
-                        <Input
-                          placeholder="https://linkedin.com/in/username"
-                          value={formData.socialLinks.linkedin}
-                          onChange={(e) => setFormData(prev => ({
-                            ...prev,
-                            socialLinks: { ...prev.socialLinks, linkedin: e.target.value }
-                          }))}
-                        />
-                      ) : (
-                        <span className="text-gray-900">
-                          {user.socialLinks?.linkedin || 'Not set'}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <Github className="h-5 w-5 text-gray-800" />
-                      {isEditing ? (
-                        <Input
-                          placeholder="https://github.com/username"
-                          value={formData.socialLinks.github}
-                          onChange={(e) => setFormData(prev => ({
-                            ...prev,
-                            socialLinks: { ...prev.socialLinks, github: e.target.value }
-                          }))}
-                        />
-                      ) : (
-                        <span className="text-gray-900">
-                          {user.socialLinks?.github || 'Not set'}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <Globe className="h-5 w-5 text-green-600" />
-                      {isEditing ? (
-                        <Input
-                          placeholder="https://yourwebsite.com"
-                          value={formData.socialLinks.website}
-                          onChange={(e) => setFormData(prev => ({
-                            ...prev,
-                            socialLinks: { ...prev.socialLinks, website: e.target.value }
-                          }))}
-                        />
-                      ) : (
-                        <span className="text-gray-900">
-                          {user.socialLinks?.website || 'Not set'}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Pro Features */}
-                {user.isProUser && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
-                      Spotlight Button (Pro Feature)
-                    </label>
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs text-gray-500 mb-1">Button Text</label>
-                          {isEditing ? (
-                            <Input
-                              placeholder="Contact Me"
-                              value={formData.spotlightButton.text}
-                              onChange={(e) => setFormData(prev => ({
-                                ...prev,
-                                spotlightButton: { ...prev.spotlightButton, text: e.target.value }
-                              }))}
-                            />
-                          ) : (
-                            <span className="text-gray-900">
-                              {user.spotlightButton?.text || 'Not set'}
-                            </span>
-                          )}
-                        </div>
-                        <div>
-                          <label className="block text-xs text-gray-500 mb-1">Button Color</label>
-                          {isEditing ? (
-                            <input
-                              type="color"
-                              value={formData.spotlightButton.color}
-                              onChange={(e) => setFormData(prev => ({
-                                ...prev,
-                                spotlightButton: { ...prev.spotlightButton, color: e.target.value }
-                              }))}
-                              className="w-full h-9 border border-gray-300 rounded-lg"
-                            />
-                          ) : (
-                            <div
-                              className="w-full h-6 rounded border"
-                              style={{ backgroundColor: user.spotlightButton?.color || '#3B82F6' }}
-                            />
-                          )}
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">Button URL</label>
-                        {isEditing ? (
-                          <Input
-                            placeholder="https://calendly.com/username"
-                            value={formData.spotlightButton.url}
-                            onChange={(e) => setFormData(prev => ({
-                              ...prev,
-                              spotlightButton: { ...prev.spotlightButton, url: e.target.value }
-                            }))}
-                          />
-                        ) : (
-                          <span className="text-gray-900">
-                            {user.spotlightButton?.url || 'Not set'}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Account Status */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  {user.isProUser ? (
-                    <Crown className="h-5 w-5 mr-2 text-yellow-500" />
-                  ) : (
-                    <User className="h-5 w-5 mr-2" />
-                  )}
-                  Account Status
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Plan:</span>
-                    <span className={`text-sm font-medium ${user.isProUser ? 'text-yellow-600' : 'text-gray-900'}`}>
-                      {user.isProUser ? 'Pro' : 'Free'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Username:</span>
-                    <span className="text-sm font-medium text-gray-900">@{user.username}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Profile URL:</span>
-                    <a
-                      href={`/${user.username}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-blue-600 hover:underline flex items-center"
-                    >
-                      View <ExternalLink className="h-3 w-3 ml-1" />
-                    </a>
-                  </div>
-                  {!user.isProUser && (
-                    <div className="pt-3 border-t">
-                      <Button className="w-full" onClick={() => router.push('/pricing')}>
-                        Upgrade to Pro
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Quick Stats */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <BarChart3 className="h-5 w-5 mr-2" />
-                  Profile Stats
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Profile Views:</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => router.push('/analytics')}
-                      className="text-blue-600 hover:text-blue-700"
-                    >
-                      View Analytics
-                    </Button>
-                  </div>
-                  {user.isProUser && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Leads:</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => router.push('/leads')}
-                        className="text-blue-600 hover:text-blue-700"
-                      >
-                        Manage Leads
-                      </Button>
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Email Signature:</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => router.push('/tools/email-signature')}
-                      className="text-blue-600 hover:text-blue-700"
-                    >
-                      Generate
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Profile URLs */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Your Profile URLs</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 text-sm">
-                  <div>
-                    <p className="text-gray-600 mb-1">Primary URL:</p>
-                    <code className="block bg-gray-100 p-2 rounded text-xs break-all">
-                      https://whatsyour.info/{user.username}
-                    </code>
-                  </div>
-                  <div>
-                    <p className="text-gray-600 mb-1">Subdomain URL:</p>
-                    <code className="block bg-gray-100 p-2 rounded text-xs break-all">
-                      https://{user.username}.whatsyour.info
-                    </code>
-                  </div>
-                  {user.customDomain && (
-                    <div>
-                      <p className="text-gray-600 mb-1">Custom Domain:</p>
-                      <code className="block bg-gray-100 p-2 rounded text-xs break-all">
-                        https://{user.customDomain}
-                      </code>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        {/* --- LIVE STATS GRID --- */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <StatCard 
+            title="Profile Views"
+            value={stats.profileViews.toLocaleString()}
+            icon={<BarChart3 className="h-5 w-5 text-purple-600" />}
+            description="Views in the last 30 days"
+          />
+          <StatCard 
+            title="New Leads"
+            value={user.isProUser ? stats.newLeads : 'N/A'}
+            icon={<Users className="h-5 w-5 text-green-600" />}
+            description={user.isProUser ? "Leads in the last 30 days" : "Upgrade to Pro to capture leads"}
+          />
+          <StatCard
+            title="Account Plan"
+            value={stats.accountPlan}
+            icon={<Crown className={`h-5 w-5 ${user.isProUser ? 'text-yellow-500' : 'text-gray-400'}`} />}
+            description={user.isProUser ? "You have access to all features" : "Limited access"}
+          />
         </div>
-      </div>
+
+        {/* --- NAVIGATION GRID --- */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Link href="/profile" className="block p-6 bg-white border rounded-lg hover:shadow-md transition-shadow">
+            <Settings className="h-8 w-8 text-blue-600 mb-3" />
+            <h3 className="font-semibold text-lg">Edit Profile & Design</h3>
+            <p className="text-sm text-gray-500">Update your name, bio, links, and page design.</p>
+          </Link>
+          <Link href="/analytics" className="block p-6 bg-white border rounded-lg hover:shadow-md transition-shadow">
+            <BarChart3 className="h-8 w-8 text-purple-600 mb-3" />
+            <h3 className="font-semibold text-lg">View Analytics</h3>
+            <p className="text-sm text-gray-500">Track detailed profile views and visitor insights.</p>
+          </Link>
+          <Link href="/billing" className="block p-6 bg-white border rounded-lg hover:shadow-md transition-shadow">
+            <CreditCard className="h-8 w-8 text-red-600 mb-3" />
+            <h3 className="font-semibold text-lg">Billing & Plan</h3>
+            <p className="text-sm text-gray-500">Manage your subscription, invoices, and payment methods.</p>
+          </Link>
+          {user.isProUser ? (
+             <Link href="/leads" className="block p-6 bg-white border rounded-lg hover:shadow-md transition-shadow">
+              <Users className="h-8 w-8 text-green-600 mb-3" />
+              <h3 className="font-semibold text-lg">Manage Leads</h3>
+              <p className="text-sm text-gray-500">View and export contacts from your profile.</p>
+            </Link>
+          ) : (
+             <Link href="/pricing" className="block p-6 bg-yellow-50 border border-yellow-300 rounded-lg hover:shadow-md transition-shadow">
+                <Crown className="h-8 w-8 text-yellow-500 mb-3" />
+                <h3 className="font-semibold text-lg">Upgrade to Pro</h3>
+                <p className="text-sm text-gray-600">Unlock lead capture, custom domains, and more.</p>
+            </Link>
+          )}
+          <Link href="/dev" className="block p-6 bg-white border rounded-lg hover:shadow-md transition-shadow">
+            <Code className="h-8 w-8 text-gray-800 mb-3" />
+            <h3 className="font-semibold text-lg">Developer Tools</h3>
+            <p className="text-sm text-gray-500">Create API keys and OAuth applications.</p>
+          </Link>
+        </div>
+      </main>
     </div>
   );
 }

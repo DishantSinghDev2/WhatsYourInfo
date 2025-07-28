@@ -15,10 +15,10 @@ import { FiRepeat } from 'react-icons/fi';
 import ProCrownBadge from '@/components/icon/pro';
 
 const predefinedImages = [
-  '/bg-image-1.jpg',
-  '/bg-image-2.jpg',
-  '/bg-image-3.jpeg',
-  '/bg-image-4.jpg',
+  '/assets/card/bg-image-1.jpg',
+  '/assets/card/bg-image-2.jpg',
+  '/assets/card/bg-image-3.jpeg',
+  '/assets/card/bg-image-4.jpg',
 ];
 
 const getProviderIcon = (provider: string) => {

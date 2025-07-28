@@ -1,70 +1,160 @@
+// components/AccountSettingsPanel.tsx
+
 'use client';
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+import { useState, useEffect } from 'react';
 import { UserProfile } from '@/types';
 import toast from 'react-hot-toast';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { useRouter } from 'next/navigation';
 
-export default function AccountSettingsPanel({ user }: { user: UserProfile }) {
+// A lightweight, custom confirmation dialog component
+function CustomConfirmationDialog({
+  isOpen,
+  onClose,
+  onConfirm,
+  isActionInProgress,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  isActionInProgress: boolean;
+}) {
+  useEffect(() => {
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onMouseDown={onClose}>
+      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4" onMouseDown={(e) => e.stopPropagation()}>
+        <h2 className="text-lg font-bold text-gray-900">Are you absolutely sure?</h2>
+        <p className="mt-2 text-sm text-gray-600">
+          This action cannot be undone. This will permanently delete your account and all of your data from our servers.
+        </p>
+        <div className="mt-6 flex justify-end space-x-3">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isActionInProgress}
+            className="px-4 py-2 text-sm font-medium text-gray-800 bg-gray-100 rounded-md border border-gray-300 hover:bg-gray-200 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isActionInProgress}
+            className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:bg-red-400"
+          >
+            {isActionInProgress ? 'Deleting...' : 'Yes, delete my account'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function AccountSettingsPanel({ user, onUpdate }: { user: UserProfile, onUpdate: (data: Partial<UserProfile>) => void; }) {
   const [username, setUsername] = useState(user.username);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const router = useRouter();
 
   const handleUsernameChange = async () => {
-    // API call to PUT /api/profile/username
-    toast.success('Username updated!');
+    if (username.trim() === user.username) {
+      return;
+    }
+    setIsSaving(true);
+    const toastId = toast.loading('Saving username...');
+    try {
+      const response = await fetch('/api/profile/username', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username.trim() }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+
+      toast.success('Username updated successfully!', { id: toastId });
+      onUpdate({ username: username.trim() })
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not save username.', { id: toastId });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDeleteAccount = async () => {
-    // API call to DELETE /api/profile
-    toast.success('Account deleted.');
-    // redirect to homepage
+    setIsDeleting(true);
+    try {
+      const response = await fetch('/api/profile', { method: 'DELETE' });
+      if (!response.ok) throw new Error('Failed to delete account.');
+
+      toast.success('Account deleted. Redirecting...');
+      // Redirect to the home page after a short delay
+      setTimeout(() => router.push('/deleted'), 1000);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'An error occurred.');
+      setIsDeleting(false); // Only reset if deletion fails
+    }
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-2xl">
       <div>
-        <h1 className="text-2xl font-bold">Account Settings</h1>
-        <p className="text-gray-500">Manage your account-wide settings and data.</p>
+        <h2 className="text-xl font-semibold">Account Settings</h2>
+        <p className="text-gray-500 mt-1">Manage your account-wide settings and data.</p>
       </div>
-      <Card>
-        <CardHeader>
-            <CardTitle>Profile URL</CardTitle>
-            <CardDescription>Changing your username will change your profile URL. This can break existing links.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex items-center gap-2">
-            <span className="text-gray-500">whatsyour.info/</span>
-            <Input value={username} onChange={(e) => setUsername(e.target.value)} className="flex-grow"/>
-            <Button onClick={handleUsernameChange}>Save</Button>
-        </CardContent>
-      </Card>
-      <Card className="border-red-500">
-        <CardHeader>
-            <CardTitle className="text-red-600">Danger Zone</CardTitle>
-        </CardHeader>
-        <CardContent>
-            <AlertDialog>
-                <AlertDialogTrigger asChild>
-                    <Button variant="destructive">Delete Account</Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete your account and remove your data from our servers.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteAccount} className="bg-red-600 hover:bg-red-700">Yes, delete account</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-            <p className="text-sm text-gray-500 mt-2">Permanently delete your entire account.</p>
-        </CardContent>
-      </Card>
+
+      {/* Custom Username Section */}
+      <div className="border border-gray-200 rounded-lg p-5">
+        <h3 className="font-semibold text-gray-800">Your Profile URL</h3>
+        <p className="text-sm text-gray-500 mt-1">Changing your username will change your profile URL, which can break existing links.</p>
+        <div className="mt-4 flex items-stretch sm:items-center flex-col sm:flex-row gap-2">
+          <span className="bg-gray-100 border border-r-0 border-gray-300 rounded-l-md px-3 py-2 text-gray-600 shrink-0">whatsyour.info/</span>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-r-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            onClick={handleUsernameChange}
+            disabled={isSaving || username.trim() === user.username}
+            className="w-full sm:w-auto px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors"
+          >
+            {isSaving ? 'Saving...' : 'Save'}
+          </button>
+        </div>
+      </div>
+
+      {/* Custom Danger Zone Section */}
+      <div className="border border-red-500/50 rounded-lg p-5">
+        <h3 className="font-semibold text-red-600">Danger Zone</h3>
+        <div className="mt-4 md:flex md:items-center md:justify-between">
+          <p className="text-sm text-gray-600">Permanently delete your entire account.<br />This action is final and cannot be undone.</p>
+          <button
+            onClick={() => setIsDeleteDialogOpen(true)}
+            className="mt-3 md:mt-0 w-full md:w-auto px-5 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+          >
+            Delete My Account
+          </button>
+        </div>
+      </div>
+
+      <CustomConfirmationDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleDeleteAccount}
+        isActionInProgress={isDeleting}
+      />
     </div>
   );
 }

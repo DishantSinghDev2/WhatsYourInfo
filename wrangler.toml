@@ -1,12 +1,24 @@
-name = "upload-avatar-worker"
+# wrangler.toml
+
+name = "whatsyourinfo-media-worker" # Renamed for clarity
 main = "src/worker.ts"
 compatibility_date = "2025-07-24"
-account_id = "b69d07531ce1b66bec50f28deb826cf1"
+account_id = "b69d07531ce1b66bec50f28deb826cf1" # Your Account ID
 
-[vars]
-BUCKET_NAME = "whatsyourinfo-avatars"
-
+# --- BUCKET FOR AVATARS ---
 [[r2_buckets]]
 binding = "AVATAR_BUCKET"
 bucket_name = "whatsyourinfo-avatars"
-preview_bucket_name = "whatsyourinfo-avatars"
+preview_bucket_name = "whatsyourinfo-avatars-preview" # It's good practice to have a separate preview bucket
+
+# --- BUCKET FOR HEADER IMAGES ---
+[[r2_buckets]]
+binding = "HEADER_BUCKET"
+bucket_name = "whatsyourinfo-headers"
+preview_bucket_name = "whatsyourinfo-headers-preview"
+
+# --- BUCKET FOR BACKGROUND IMAGES ---
+[[r2_buckets]]
+binding = "BACKGROUND_BUCKET"
+bucket_name = "whatsyourinfo-backgrounds"
+preview_bucket_name = "whatsyourinfo-backgrounds-preview"

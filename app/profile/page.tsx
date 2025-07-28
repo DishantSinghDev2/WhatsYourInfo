@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import Header from '@/components/Header';
 import ProfilePreview from '@/components/dashboard/ProfilePreview';
 import DashboardNav from '@/components/dashboard/DashboardNav';

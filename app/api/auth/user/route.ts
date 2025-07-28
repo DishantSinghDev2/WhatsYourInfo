@@ -19,13 +19,10 @@ export async function GET(request: NextRequest) {
         username: user.username,
         firstName: user.firstName,
         lastName: user.lastName,
-        bio: user.bio,
         emailVerified: user.emailVerified,
         avatar: user.avatar,
         isProUser: user.isProUser,
         customDomain: user.customDomain,
-        socialLinks: user.socialLinks,
-        spotlightButton: user.spotlightButton,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       }

@@ -43,21 +43,65 @@ interface OAuthClient {
   isActive: boolean;
 }
 
+// --- New Interface for our Stats API response ---
+interface DevStats {
+  apiKeys: number;
+  oauthClients: number;
+  apiCalls: number;
+  rateLimit: string;
+}
+
+
 export default function DeveloperDashboard() {
   const router = useRouter();
-  const [user, setUser] = useState<User>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // State for the lists
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [oauthClients, setOAuthClients] = useState<OAuthClient[]>([]);
+  
+  // State for the new live stats
+  const [stats, setStats] = useState<DevStats | null>(null);
+  
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
   const [isCreatingKey, setIsCreatingKey] = useState(false);
   const [isCreatingClient, setIsCreatingClient] = useState(false);
   const [newKeyName, setNewKeyName] = useState('');
-  const [newClient, setNewClient] = useState({
-    name: '',
-    description: '',
-    redirectUris: [''],
-  });
+  const [newClient, setNewClient] = useState({ name: '', description: '', redirectUris: [''] });
+
+  useEffect(() => {
+    // Fetch all developer data in parallel
+    const fetchAllData = async () => {
+        try {
+            // Authenticate user first
+            const userRes = await fetch('/api/auth/user');
+            if (!userRes.ok) {
+                if(userRes.status === 401) router.push('/login');
+                throw new Error('Authentication failed');
+            }
+            const userData = await userRes.json();
+            setUser(userData.user);
+
+            // Fetch lists and stats concurrently
+            const [keysRes, clientsRes, statsRes] = await Promise.all([
+                fetch('/api/dev/keys'),
+                fetch('/api/dev/oauth-clients'),
+                fetch('/api/dev/stats') // Fetching from our new stats endpoint
+            ]);
+
+            if (keysRes.ok) setApiKeys((await keysRes.json()).keys);
+            if (clientsRes.ok) setOAuthClients((await clientsRes.json()).clients);
+            if (statsRes.ok) setStats(await statsRes.json());
+            
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Failed to load developer data.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    fetchAllData();
+  }, [router]);
 
   useEffect(() => {
     fetchUserProfile();
@@ -256,50 +300,47 @@ export default function DeveloperDashboard() {
         </div>
 
         {/* Quick Stats */}
+        
+        {/* --- LIVE STATS GRID --- */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardContent className="p-6">
-              <div className="flex items-center">
-                <Key className="h-8 w-8 text-blue-600" />
+              <div className="flex items-center"><Key className="h-8 w-8 text-blue-600" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">API Keys</p>
-                  <p className="text-2xl font-bold text-gray-900">{apiKeys.length}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats?.apiKeys ?? '...'}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          
           <Card>
             <CardContent className="p-6">
-              <div className="flex items-center">
-                <Shield className="h-8 w-8 text-green-600" />
+              <div className="flex items-center"><Shield className="h-8 w-8 text-green-600" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">OAuth Apps</p>
-                  <p className="text-2xl font-bold text-gray-900">{oauthClients.length}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats?.oauthClients ?? '...'}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          
           <Card>
             <CardContent className="p-6">
-              <div className="flex items-center">
-                <Database className="h-8 w-8 text-purple-600" />
+              <div className="flex items-center"><Database className="h-8 w-8 text-purple-600" />
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">API Calls</p>
-                  <p className="text-2xl font-bold text-gray-900">Coming Soon</p>
+                  <p className="text-sm font-medium text-gray-600">API Calls (30d)</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {(stats?.apiCalls ?? 0).toLocaleString()}
+                  </p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          
           <Card>
             <CardContent className="p-6">
-              <div className="flex items-center">
-                <Zap className="h-8 w-8 text-yellow-600" />
+              <div className="flex items-center"><Zap className="h-8 w-8 text-yellow-600" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Rate Limit</p>
-                  <p className="text-2xl font-bold text-gray-900">1000/hr</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats?.rateLimit ?? '...'}</p>
                 </div>
               </div>
             </CardContent>

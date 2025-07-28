@@ -42,6 +42,12 @@ const apiEndpoints = [
     auth: 'None',
   },
   {
+    method: 'GET',
+    endpoint: '/api/avatars/{username}',
+    description: 'Get user avatar image',
+    auth: 'None',
+  },
+  {
     method: 'POST',
     endpoint: '/api/auth/login',
     description: 'Authenticate a user',

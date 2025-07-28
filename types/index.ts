@@ -1,4 +1,5 @@
 // app/types/index.ts
+
 export interface UserProfile {
   _id: string;
   email: string;
@@ -8,8 +9,9 @@ export interface UserProfile {
   bio?: string;
   avatar?: string;
   isProUser: boolean;
-  proStarted?: Date,
-  nextDue?: Date,
+  paypalSubscriptionId?: string;
+  proStarted?: Date;
+  nextDue?: Date;
   customDomain?: string;
   emailVerified: boolean;
   spotlightButton?: {
@@ -18,16 +20,16 @@ export interface UserProfile {
     color: string;
   };
   verifiedAccounts: {
-    provider: string; // e.g., 'twitter', 'github'
+    provider: string;
     providerAccountId: string;
     profileUrl: string;
-    username: string
+    username: string;
   }[];
   showWalletOnPublic?: boolean;
   interests?: string[];
   wallet?: {
     id: string;
-    paymentType: string; // e.g., 'paypal', 'btc'
+    paymentType: string;
     address: string;
   }[];
   gallery?: {
@@ -35,7 +37,7 @@ export interface UserProfile {
     caption: string;
   }[];
   design: {
-    theme: string; // e.g., 'classic', 'sunset'
+    theme: string;
     customColors: {
       background: string;
       surface: string;
@@ -43,10 +45,12 @@ export interface UserProfile {
     };
     headerImage?: string;
     backgroundImage?: string;
-    sections?: [];
-    visibility?: [];
+    backgroundBlur?: number;  // Blur in pixels (e.g., 0 to 20)
+    backgroundOpacity?: number; // Opacity percentage for the color overlay (e.g., 0 to 100)
+    sections: string[]; // Updated from [] to string[]
+    visibility: { [key: string]: boolean }; // Updated to a key-boolean map
   };
+  links?: { _id: string; title: string; url: string; }[];
   createdAt: Date;
   updatedAt: Date;
-  links?: { _id: string; title: string; url: string; }[];
 }

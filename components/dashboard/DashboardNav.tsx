@@ -20,7 +20,7 @@ const navItems = [
 export default function DashboardNav({ setActivePanel, user }: { setActivePanel: (id: string) => void, user: UserProfile }) {
   return (
     <div>
-      <h1 className="text-2xl font-bold">Dashboard</h1>
+      <h1 className="text-2xl font-bold">Profile</h1>
       <p className="text-gray-500 mb-8">Select a category to edit your profile.</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {navItems.map((item) => (

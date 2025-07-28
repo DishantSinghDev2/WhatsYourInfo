@@ -149,7 +149,7 @@ export default function TermsPage() {
                   <p className="text-gray-700">
                     <strong>DishIs Technologies</strong><br />
                     Email: legal@whatsyour.info<br />
-                    Address: 123 Tech Street, Suite 100, San Francisco, CA 94105
+                    Address: PW2X+X7 Bahadurgarh, Haryana
                   </p>
                 </div>
               </section>
