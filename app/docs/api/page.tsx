@@ -60,7 +60,7 @@ const endpoints = [
         path: '/api/v1/me',
         description: 'Get the complete profile of the authenticated user.',
         auth: 'Bearer Token',
-        response: { _id: '...', username: 'johndoe', email: 'user@example.com', bio: '...', links: [ { title: "Portfolio", url: "..." } ] }
+        response: { _id: '...', username: 'johndoe', email: 'user@example.com', bio: '...', links: [{ title: "Portfolio", url: "..." }] }
       },
       {
         method: 'PUT',
@@ -70,7 +70,7 @@ const endpoints = [
         body: {
           firstName: 'John',
           bio: 'My updated bio.',
-          links: [ { title: "My Website", url: "https://example.com" } ],
+          links: [{ title: "My Website", url: "https://example.com" }],
           design: { theme: 'nite' }
         },
         response: { message: 'Profile updated successfully.' }
@@ -93,7 +93,7 @@ const endpoints = [
         path: '/api/dev/keys',
         description: 'List all of your API keys.',
         auth: 'Cookie (Web UI)',
-        response: { keys: [ { _id: '...', name: 'Production Key', key: 'wyi_...', lastUsed: '...' } ] }
+        response: { keys: [{ _id: '...', name: 'Production Key', key: 'wyi_...', lastUsed: '...' }] }
       },
       {
         method: 'POST',
@@ -113,25 +113,49 @@ const endpoints = [
       // You would add OAuth client management endpoints here as well
     ]
   },
+  // In app/docs/page.tsx, replace the 'OAuth API (v1)' object with this:
+
   {
     category: 'OAuth API (v1)',
-    description: 'Standard OAuth 2.0 flow for third-party applications.',
+    description: 'Standard OAuth 2.0 Authorization Code flow for third-party applications to securely access user data on their behalf.',
     endpoints: [
       {
         method: 'GET',
         path: '/oauth/authorize',
-        description: 'OAuth authorization endpoint to request user permission.',
-        auth: 'None',
-        params: [ { name: 'client_id', type: 'string', required: true, description: 'Your OAuth App Client ID' }, /* ... */ ],
-        response: 'Redirects to your redirect_uri with an authorization code.'
+        description: 'The first step of the OAuth flow. Redirect the user to this endpoint to request their permission for your application to access their data.',
+        auth: 'None (User Session)',
+        params: [
+          { name: 'client_id', type: 'string', required: true, description: 'The Client ID of your registered OAuth Application.' },
+          { name: 'redirect_uri', type: 'string', required: true, description: 'The callback URL where the user will be sent after authorization. Must exactly match one of the URIs in your app settings.' },
+          { name: 'response_type', type: 'string', required: true, description: 'Must be the literal string "code".' },
+          { name: 'scope', type: 'string', required: true, description: 'A space-delimited list of permissions your app is requesting. Example: "profile:read email:read".' },
+          { name: 'state', type: 'string', required: false, description: 'An opaque value used to prevent CSRF attacks. It will be returned to you in the redirect.' }
+        ],
+        response: 'Redirects the user to your `redirect_uri` with an authorization `code` and the original `state` in the query parameters upon success. On failure, it redirects with an `error` parameter.'
       },
       {
         method: 'POST',
         path: '/api/v1/oauth/token',
-        description: 'Exchange an authorization code for an access token.',
+        description: 'The second step of the OAuth flow. Your server exchanges an authorization code or a refresh token for a new access token.',
         auth: 'None',
-        body: { client_id: '...', client_secret: '...', code: '...', grant_type: 'authorization_code' },
-        response: { access_token: '...', token_type: 'Bearer', user: { /* ... */ } }
+        body: {
+          grant_type: '"authorization_code" or "refresh_token"',
+          client_id: 'your_client_id',
+          client_secret: 'your_client_secret',
+          '//--- If': 'grant_type is "authorization_code" ---',
+          code: 'the_authorization_code_from_the_redirect',
+          redirect_uri: 'the_exact_same_redirect_uri_from_the_first_step',
+          '//--- Or if': 'grant_type is "refresh_token" ---',
+          refresh_token: 'the_refresh_token_from_a_previous_exchange'
+        },
+        response: {
+          access_token: 'wyi_at_new_access_token...',
+          token_type: 'Bearer',
+          expires_in: 3600,
+          refresh_token: 'wyi_rt_a_brand_new_refresh_token...',
+          scope: 'profile:read email:read',
+          '//--- IMPORTANT!': 'Refresh Token Rotation is enabled. Each time you use a refresh token, you will receive a NEW refresh token in the response. You MUST save this new one for future use, as the old one is immediately invalidated.'
+        }
       }
     ]
   }
@@ -163,7 +187,7 @@ export default function APIDocsPage() {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      
+
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-blue-50 to-white py-16">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -172,7 +196,7 @@ export default function APIDocsPage() {
               API Reference
             </h1>
             <p className="mt-6 text-lg leading-8 text-gray-600 max-w-3xl mx-auto">
-              Complete REST API documentation for What'sYour.Info. 
+              Complete REST API documentation for What'sYour.Info.
               Build powerful integrations with our comprehensive API.
             </p>
             <div className="mt-8 flex items-center justify-center gap-x-6">
@@ -192,7 +216,7 @@ export default function APIDocsPage() {
           </div>
         </div>
       </section>
-{/* Base URL (Updated) */}
+      {/* Base URL (Updated) */}
       <section className="py-8 bg-gray-50">
         <div className="mx-auto max-w-4xl px-6 lg:px-8">
           <Card className="border-gray-200">
@@ -219,7 +243,7 @@ export default function APIDocsPage() {
             <h2 className="text-3xl font-bold tracking-tight text-gray-900">Authentication</h2>
             <p className="mt-4 text-lg text-gray-600">Our API uses a simple, secure token-based authentication system.</p>
           </div>
-          
+
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {authMethods.map((method, index) => (
               <Card key={index} className="border-gray-200">
@@ -252,7 +276,7 @@ export default function APIDocsPage() {
             <h2 className="text-3xl font-bold tracking-tight text-gray-900">API Endpoints</h2>
             <p className="mt-4 text-lg text-gray-600">Complete reference for all available endpoints.</p>
           </div>
-          
+
           <div className="space-y-12">
             {endpoints.map((category, categoryIndex) => (
               <div key={categoryIndex}>
@@ -260,29 +284,29 @@ export default function APIDocsPage() {
                   <h3 className="text-2xl font-bold text-gray-900 mb-1">{category.category}</h3>
                   <p className="text-gray-600">{category.description}</p>
                 </div>
-                
+
                 <div className="space-y-6">
                   {category.endpoints.map((endpoint, endpointIndex) => (
                     <Card key={endpointIndex} className="border-gray-200 overflow-hidden">
                       <CardHeader className="bg-gray-50/50">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
-                            <Badge 
+                            <Badge
                               className={
                                 endpoint.method === 'GET' ? 'bg-green-100 text-green-800 border-green-200'
-                                : endpoint.method === 'POST' ? 'bg-blue-100 text-blue-800 border-blue-200'
-                                : endpoint.method === 'PUT' ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
-                                : 'bg-red-100 text-red-800 border-red-200'
+                                  : endpoint.method === 'POST' ? 'bg-blue-100 text-blue-800 border-blue-200'
+                                    : endpoint.method === 'PUT' ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
+                                      : 'bg-red-100 text-red-800 border-red-200'
                               }
                             >
                               {endpoint.method}
                             </Badge>
                             <code className="text-lg font-mono text-gray-900">{endpoint.path}</code>
                           </div>
-                          <Badge 
+                          <Badge
                             className={
                               endpoint.auth === 'None' ? 'bg-gray-100 text-gray-800 border-gray-200'
-                              : 'bg-red-100 text-red-800 border-red-200'
+                                : 'bg-red-100 text-red-800 border-red-200'
                             }
                           >
                             Auth: {endpoint.auth}
@@ -337,8 +361,8 @@ export default function APIDocsPage() {
                             <h4 className="font-medium text-gray-900 mb-3">Example Response</h4>
                             <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-sm overflow-x-auto">
                               <code>
-                                {typeof endpoint.response === 'string' 
-                                  ? endpoint.response 
+                                {typeof endpoint.response === 'string'
+                                  ? endpoint.response
                                   : JSON.stringify(endpoint.response, null, 2)
                                 }
                               </code>
@@ -354,7 +378,7 @@ export default function APIDocsPage() {
           </div>
         </div>
       </section>
-      
+
       {/* Rate Limits */}
       <section className="py-16 bg-white">
         <div className="mx-auto max-w-4xl px-6 lg:px-8">
@@ -422,14 +446,14 @@ export default function APIDocsPage() {
                 ].map((error, index) => (
                   <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
                     <div className="flex items-center space-x-3">
-                      <Badge 
+                      <Badge
                         variant={error.code.startsWith('2') ? 'secondary' : 'default'}
                         className={
-                          error.code.startsWith('2') 
+                          error.code.startsWith('2')
                             ? 'bg-green-100 text-green-800'
                             : error.code.startsWith('4')
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-red-100 text-red-800'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-red-100 text-red-800'
                         }
                       >
                         {error.code}

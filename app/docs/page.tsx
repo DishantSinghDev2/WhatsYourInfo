@@ -50,7 +50,7 @@ const apiEndpoints = [
   {
     method: 'POST',
     endpoint: '/api/v1/auth/login',
-    description: 'Authenticate a user',
+    description: 'Exchange an API Key for a short-lived JWT',
     auth: 'API Key',
   },
   {
@@ -65,6 +65,20 @@ const apiEndpoints = [
     description: 'Update user profile',
     auth: 'Bearer Token',
   },
+  // --- Start of newly added OAuth endpoints ---
+  {
+    method: 'GET',
+    endpoint: '/oauth/authorize',
+    description: 'Initiate the OAuth 2.0 authorization flow for a user.',
+    auth: 'None',
+  },
+  {
+    method: 'POST',
+    endpoint: '/api/v1/oauth/token',
+    description: 'Exchange an authorization code or refresh token for an access token.',
+    auth: 'None',
+  },
+  // --- End of newly added OAuth endpoints ---
 ];
 
 const sdks = [
@@ -183,7 +197,7 @@ export default function DocsPage() {
                 Core Endpoints
               </CardTitle>
               <CardDescription>
-                Base URL: https://whatsyour.info/api/v1
+                Base URL: https://whatsyour.info
               </CardDescription>
             </CardHeader>
             <CardContent>

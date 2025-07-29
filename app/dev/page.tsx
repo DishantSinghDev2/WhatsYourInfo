@@ -22,6 +22,8 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { User } from '@/lib/auth';
+import { Checkbox } from '@/components/ui/checkbox';
+import { motion } from 'framer-motion';
 
 interface ApiKey {
   _id: string;
@@ -35,13 +37,25 @@ interface ApiKey {
 interface OAuthClient {
   _id: string;
   name: string;
+  description: string;
+  appLogo?: string;
+  homepageUrl?: string;
   clientId: string;
   clientSecret: string;
   redirectUris: string[];
-  description: string;
+  grantedScopes: string[];
   createdAt: string;
-  isActive: boolean;
 }
+
+// --- NEW: Define the available scopes for your API ---
+const AVAILABLE_SCOPES = [
+  { id: 'profile:read', description: 'Read basic profile information (name, bio, avatar).' },
+  { id: 'email:read', description: 'Read the user\'s email address.' },
+  { id: 'profile:write', description: 'Update the user\'s profile information.' },
+  { id: 'links:read', description: 'Read user\'s links.' },
+  { id: 'links:write', description: 'Add or update user\'s links.' },
+];
+
 
 // --- New Interface for our Stats API response ---
 interface DevStats {
@@ -56,52 +70,47 @@ export default function DeveloperDashboard() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // State for the lists
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [oauthClients, setOAuthClients] = useState<OAuthClient[]>([]);
-  
+
   // State for the new live stats
   const [stats, setStats] = useState<DevStats | null>(null);
-  
+
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
   const [isCreatingKey, setIsCreatingKey] = useState(false);
-  const [isCreatingClient, setIsCreatingClient] = useState(false);
   const [newKeyName, setNewKeyName] = useState('');
-  const [newClient, setNewClient] = useState({ name: '', description: '', redirectUris: [''] });
 
   useEffect(() => {
-    // Fetch all developer data in parallel
     const fetchAllData = async () => {
-        try {
-            // Authenticate user first
-            const userRes = await fetch('/api/auth/user');
-            if (!userRes.ok) {
-                if(userRes.status === 401) router.push('/login');
-                throw new Error('Authentication failed');
-            }
-            const userData = await userRes.json();
-            setUser(userData.user);
-
-            // Fetch lists and stats concurrently
-            const [keysRes, clientsRes, statsRes] = await Promise.all([
-                fetch('/api/dev/keys'),
-                fetch('/api/dev/oauth-clients'),
-                fetch('/api/dev/stats') // Fetching from our new stats endpoint
-            ]);
-
-            if (keysRes.ok) setApiKeys((await keysRes.json()).keys);
-            if (clientsRes.ok) setOAuthClients((await clientsRes.json()).clients);
-            if (statsRes.ok) setStats(await statsRes.json());
-            
-        } catch (error) {
-            toast.error(error instanceof Error ? error.message : "Failed to load developer data.");
-        } finally {
-            setIsLoading(false);
+      try {
+        const userRes = await fetch('/api/auth/user');
+        if (!userRes.ok) {
+          if (userRes.status === 401) router.push('/login');
+          throw new Error('Authentication failed');
         }
+        const userData = await userRes.json();
+        setUser(userData.user);
+
+        const [keysRes, clientsRes, statsRes] = await Promise.all([
+          fetch('/api/dev/keys'),
+          fetch('/api/dev/oauth-clients'),
+          fetch('/api/dev/stats'),
+        ]);
+
+        if (keysRes.ok) setApiKeys((await keysRes.json()).keys);
+        if (clientsRes.ok) setOAuthClients((await clientsRes.json()).clients);
+        if (statsRes.ok) setStats(await statsRes.json());
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Failed to load developer data.");
+      } finally {
+        setIsLoading(false);
+      }
     };
     fetchAllData();
   }, [router]);
+
 
   useEffect(() => {
     fetchUserProfile();
@@ -181,50 +190,6 @@ export default function DeveloperDashboard() {
     }
   };
 
-  const createOAuthClient = async () => {
-    if (!newClient.name.trim() || !newClient.description.trim()) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    setIsCreatingClient(true);
-    try {
-      const response = await fetch('/api/dev/oauth-clients', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newClient),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setOAuthClients(prev => [...prev, data.client]);
-        setNewClient({
-          name: '',
-          description: '',
-          redirectUris: [''],
-        });
-        toast.success('OAuth client created successfully!');
-      } else {
-        const error = await response.json();
-        toast.error(error.message || 'Failed to create OAuth client');
-      }
-    } catch {
-      toast.error('Network error. Please try again.');
-    } finally {
-      setIsCreatingClient(false);
-    }
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success('Copied to clipboard!');
-  };
-
-  const toggleSecretVisibility = (id: string) => {
-    setShowSecrets(prev => ({ ...prev, [id]: !prev[id] }));
-  };
 
   const deleteApiKey = async (keyId: string) => {
     if (!confirm('Are you sure you want to delete this API key? This action cannot be undone.')) {
@@ -246,6 +211,24 @@ export default function DeveloperDashboard() {
       toast.error('Network error. Please try again.');
     }
   };
+
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard!');
+  };
+
+  const toggleSecretVisibility = (id: string) => {
+    setShowSecrets((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -277,7 +260,7 @@ export default function DeveloperDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -300,7 +283,7 @@ export default function DeveloperDashboard() {
         </div>
 
         {/* Quick Stats */}
-        
+
         {/* --- LIVE STATS GRID --- */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
@@ -440,113 +423,58 @@ export default function DeveloperDashboard() {
           </div>
 
           {/* OAuth Applications */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center">
-                      <Shield className="h-5 w-5 mr-2" />
-                      OAuth Applications
-                    </CardTitle>
-                    <CardDescription>
-                      Create OAuth apps for "Sign in with What'sYour.Info"
-                    </CardDescription>
-                  </div>
+          {/* --- OAuth Applications --- */}
+          <Card className="mb-8">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center">
+                    <Shield className="h-5 w-5 mr-2" />
+                    OAuth Applications
+                  </CardTitle>
+                  <CardDescription>Your applications using "Sign in with What'sYour.Info"</CardDescription>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {/* Create New OAuth Client */}
-                  <div className="border rounded-lg p-4 bg-gray-50">
-                    <h4 className="font-medium text-gray-900 mb-3">Create New OAuth App</h4>
-                    <div className="space-y-3">
-                      <Input
-                        placeholder="Application Name"
-                        value={newClient.name}
-                        onChange={(e) => setNewClient(prev => ({ ...prev, name: e.target.value }))}
-                      />
-                      <Input
-                        placeholder="Application Description"
-                        value={newClient.description}
-                        onChange={(e) => setNewClient(prev => ({ ...prev, description: e.target.value }))}
-                      />
-                      <Input
-                        placeholder="Redirect URI (https://yourapp.com/callback)"
-                        value={newClient.redirectUris[0]}
-                        onChange={(e) => setNewClient(prev => ({ 
-                          ...prev, 
-                          redirectUris: [e.target.value] 
-                        }))}
-                      />
-                      <Button onClick={createOAuthClient} disabled={isCreatingClient} className="w-full">
-                        <Plus className="h-4 w-4 mr-2" />
-                        {isCreatingClient ? 'Creating...' : 'Create OAuth App'}
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Existing OAuth Clients */}
-                  <div className="space-y-3">
-                    {oauthClients.length === 0 ? (
-                      <p className="text-gray-500 text-center py-8">
-                        No OAuth applications created yet. Create your first OAuth app to enable SSO.
-                      </p>
-                    ) : (
-                      oauthClients.map((client) => (
-                        <div key={client._id} className="border rounded-lg p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <h5 className="font-medium text-gray-900">{client.name}</h5>
-                            <div className="flex items-center space-x-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => toggleSecretVisibility(client._id)}
-                              >
-                                {showSecrets[client._id] ? (
-                                  <EyeOff className="h-4 w-4" />
-                                ) : (
-                                  <Eye className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </div>
-                          </div>
-                          <p className="text-sm text-gray-600 mb-3">{client.description}</p>
-                          
-                          <div className="space-y-2">
-                            <div>
-                              <label className="text-xs font-medium text-gray-500">Client ID</label>
-                              <code className="block bg-gray-100 p-2 rounded text-sm font-mono break-all">
-                                {client.clientId}
-                              </code>
-                            </div>
-                            <div>
-                              <label className="text-xs font-medium text-gray-500">Client Secret</label>
-                              <code className="block bg-gray-100 p-2 rounded text-sm font-mono break-all">
-                                {showSecrets[client._id] ? client.clientSecret : client.clientSecret.replace(/./g, '•')}
-                              </code>
-                            </div>
-                            <div>
-                              <label className="text-xs font-medium text-gray-500">Redirect URIs</label>
-                              {client.redirectUris.map((uri, index) => (
-                                <code key={index} className="block bg-gray-100 p-2 rounded text-sm font-mono break-all mt-1">
-                                  {uri}
-                                </code>
-                              ))}
-                            </div>
-                          </div>
-                          
-                          <div className="mt-2 text-xs text-gray-500">
-                            Created: {new Date(client.createdAt).toLocaleDateString()}
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
+                <Button onClick={() => router.push('/dev/oauth/new')}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create New App
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {oauthClients.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">No OAuth applications created yet.</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {oauthClients.map((client, i) => (
+                    <motion.div
+                      key={client._id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: i * 0.05 }}
+                    >
+                      <Card className="hover:shadow-lg transition-shadow duration-300">
+                        <CardContent className="p-4 flex flex-col items-center text-center">
+                          <img
+                            src={client.appLogo || 'https://via.placeholder.com/80'}
+                            alt={`${client.name} Logo`}
+                            className="w-20 h-20 rounded-full object-cover mb-4 border"
+                          />
+                          <h3 className="font-bold text-lg">{client.name}</h3>
+                          <p className="text-sm text-gray-500 mb-4 h-10 overflow-hidden">{client.description}</p>
+                          <Button
+                            className="w-full"
+                            onClick={() => router.push(`/dev/oauth/${client._id}`)}
+                          >
+                            View Details
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Documentation Links */}
