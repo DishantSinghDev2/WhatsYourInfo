@@ -4,12 +4,14 @@ import { useEffect, useRef, useState } from 'react';
 import { UploadCloud, Trash2, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
+import ProCrownBadge from './icon/pro';
 
 interface Props {
   design: Record<string, any>;
   onUploadComplete: (type: 'header' | 'background', url: string) => void;
   handleRemoveImage: (type: 'header' | 'background') => void;
   onDesignSettingsChange: (changes: { backgroundBlur?: number; backgroundOpacity?: number }) => void;
+  isPro?: boolean;
 }
 
 const GALLERY_IMAGES: Record<'header' | 'background', string[]> = {
@@ -22,6 +24,7 @@ export default function ImageUploadButtons({
   onUploadComplete,
   handleRemoveImage,
   onDesignSettingsChange,
+  isPro
 }: Props) {
   const inputRefs = {
     header: useRef<HTMLInputElement>(null),
@@ -122,8 +125,8 @@ export default function ImageUploadButtons({
             <button
               type="button"
               onClick={() => inputRefs[type].current?.click()}
-              className="flex items-center justify-between p-3 rounded-lg border bg-white hover:border-gray-500 transition duration-300 relative w-full"
-              disabled={isUploading}
+              className={`${(type === "background" && !isPro) ? 'bg-gray-200 transition duration-300' : "bg-white hover:border-gray-500 transition duration-300"} flex items-center justify-between p-3 rounded-lg border  relative w-full`}
+              disabled={isUploading || (type === "background" && !isPro)}
             >
               <input
                 type="file"
@@ -153,11 +156,27 @@ export default function ImageUploadButtons({
                   )}
                 </div>
                 <span className="text-sm font-medium text-gray-800 capitalize">
-                  Custom {type}
+                      Custom {type}
                 </span>
               </div>
               <span className="text-xs text-gray-500">
-                {isUploading ? 'Uploading...' : imageExists ? 'Change' : 'Upload'}
+                {isUploading ? 'Uploading...' : imageExists ? (
+                  <>
+                  {type === "background" && !isPro ? <ProCrownBadge /> : (
+                    <>
+                      Change
+                    </>
+                  )}
+                  </>
+                ) : (
+                  <>
+                  {type === "background" && !isPro ? <ProCrownBadge /> : (
+                    <>
+                      Update
+                    </>
+                  )}
+                  </>
+                )}
               </span>
             </button>
 
@@ -195,6 +214,7 @@ export default function ImageUploadButtons({
                     'relative border rounded-lg overflow-hidden hover:scale-[1.02] transition-transform',
                     selectedGallery[type] === url ? 'ring-2 ring-blue-500' : ''
                   )}
+                  disabled={isUploading || (type === "background" && !isPro)}
                 >
                   <img
                     src={url}

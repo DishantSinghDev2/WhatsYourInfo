@@ -7,6 +7,7 @@ export interface Env {
   AVATAR_BUCKET: R2Bucket;
   HEADER_BUCKET: R2Bucket;
   BACKGROUND_BUCKET: R2Bucket;
+  GALLERY_BUCKET: R2Bucket; // New gallery bucket
 }
 
 // Helper function to select the correct bucket based on type
@@ -18,6 +19,8 @@ function getBucket(type: string | null, env: Env): R2Bucket | null {
       return env.HEADER_BUCKET;
     case 'background':
       return env.BACKGROUND_BUCKET;
+    case 'gallery': // Handle the 'gallery' type
+      return env.GALLERY_BUCKET;
     default:
       return null;
   }
@@ -52,7 +55,6 @@ export default {
       if (!key) return new Response('Missing "key" query parameter', { status: 400 });
       if (!bucket) return new Response('Invalid "type" specified', { status: 400 });
       
-      // Delete the object from the selected bucket
       await bucket.delete(key);
 
       return new Response(JSON.stringify({ message: 'Object deleted successfully', key }), { status: 200, headers: { 'Content-Type': 'application/json' } });
@@ -66,6 +68,7 @@ export default {
       if (pathname.startsWith('/avatars/')) bucket = env.AVATAR_BUCKET;
       else if (pathname.startsWith('/headers/')) bucket = env.HEADER_BUCKET;
       else if (pathname.startsWith('/backgrounds/')) bucket = env.BACKGROUND_BUCKET;
+      else if (pathname.startsWith('/gallery/')) bucket = env.GALLERY_BUCKET; // Serve from gallery bucket
       else return new Response('Not Found', { status: 404 });
 
       const object = await bucket.get(key);

@@ -33,8 +33,10 @@ export interface UserProfile {
     address: string;
   }[];
   gallery?: {
-    imageUrl: string;
-    caption: string;
+    _id: string;      // Unique identifier for the gallery item
+    key: string;      // R2 object key (e.g., "gallery/username/timestamp.png")
+    caption?: string;
+    url?: string; // only for sending data from photos panel to preview
   }[];
   design: {
     theme: string;

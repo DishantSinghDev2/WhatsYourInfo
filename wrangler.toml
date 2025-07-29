@@ -22,3 +22,9 @@ preview_bucket_name = "whatsyourinfo-headers-preview"
 binding = "BACKGROUND_BUCKET"
 bucket_name = "whatsyourinfo-backgrounds"
 preview_bucket_name = "whatsyourinfo-backgrounds-preview"
+
+# --- BUCKET FOR GALLERY IMAGES ---
+[[r2_buckets]]
+binding = "GALLERY_BUCKET"
+bucket_name = "whatsyourinfo-gallery"
+preview_bucket_name = "whatsyourinfo-gallery-preview"

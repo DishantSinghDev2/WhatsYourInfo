@@ -12,7 +12,7 @@ const walletAddressSchema = z.object({
 // We only need PUT since we will replace the whole array each time for simplicity
 export async function PUT(request: NextRequest) {
   const user = await getUserFromToken(request);
-  if (!user || !user.isProUser) {
+  if (!user) {
     return NextResponse.json({ error: 'Unauthorized or Pro subscription required' }, { status: 403 });
   }
 

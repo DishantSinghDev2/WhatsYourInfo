@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { UserProfile } from '@/types';
+import ProCrownBadge from '../icon/pro';
 
 const navItems = [
   { id: 'profile', title: 'My Profile', description: 'Name, bio, and basic info.', icon: User },
@@ -11,7 +12,7 @@ const navItems = [
   { id: 'avatars', title: 'Avatars', description: 'Manage your profile pictures.', icon: ImageIcon },
   { id: 'links', title: 'Links', description: 'Share your important websites.', icon: LinkIcon },
   { id: 'verified', title: 'Verified Accounts', description: 'Connect your social media.', icon: BadgeCheck },
-  { id: 'wallet', title: 'Wallet', description: 'Add payment & crypto addresses.', icon: Wallet, pro: true },
+  { id: 'wallet', title: 'Wallet', description: 'Add payment & crypto addresses.', icon: Wallet},
   { id: 'photos', title: 'Photos', description: 'Create a visual gallery.', icon: Camera, pro: true },
   { id: 'tools', title: 'Tools', description: 'Signatures, redirects, and more.', icon: Wrench },
   { id: 'settings', title: 'Account Settings', description: 'Manage your account data.', icon: Cog },
@@ -33,7 +34,7 @@ export default function DashboardNav({ setActivePanel, user }: { setActivePanel:
           >
             <div className="flex items-center justify-between">
               <item.icon className="h-6 w-6 text-gray-700" />
-              {item.pro && !user.isProUser && <span className="text-xs font-bold text-yellow-600 bg-yellow-100 px-2 py-1 rounded-full">PRO</span>}
+              {item.pro && !user.isProUser && <ProCrownBadge />}
             </div>
             <h3 className="text-md font-semibold mt-3">{item.title}</h3>
             <p className="text-xs text-gray-500 mt-1">{item.description}</p>

@@ -16,7 +16,7 @@ const ALL_SECTIONS = [
   { key: 'Introduction', name: 'Introduction', pro: false, isPinned: true },
   { key: 'Links', name: 'Links', pro: false, isPinned: false },
   { key: 'Wallet', name: 'Wallet', pro: false, isPinned: false },
-  { key: 'Gallery', name: 'Photos', pro: false, isPinned: false },
+  { key: 'Gallery', name: 'Photos', pro: true, isPinned: false },
   { key: 'VerifiedAccounts', name: 'Verified Accounts', pro: false, isPinned: false },
   { key: 'Interests', name: 'Interests', pro: false, isPinned: false },
   { key: 'LeadCapture', name: 'Lead Capture (Pro)', pro: true, isPinned: false },
@@ -232,6 +232,7 @@ export default function DesignPanel({
             setHasChanges(true);
             changesSaved(false);
           }}
+          isPro={user.isProUser}
         />
 
         {/* ... (Save button remains the same) ... */}
