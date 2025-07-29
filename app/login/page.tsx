@@ -21,6 +21,15 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [callbackUrl, setCallbackUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const message = searchParams.get('message');
+    const callback = searchParams.get('callbackUrl');
+    if (message) toast.success(message);
+    if (callback) setCallbackUrl(callback);
+  }, [searchParams]);
+
 
   useEffect(() => {
     const message = searchParams.get('message');
@@ -66,12 +75,19 @@ export default function LoginPage() {
 
       if (response.ok) {
         if (data.emailVerified === false) {
-          toast.error("Email not verified. Please verify your email.")
-          router.push("/verify-otp")
+          toast.error("Email not verified. Please verify your email.");
+          router.push(`/verify-otp${callbackUrl && `?callbackUrl=${callbackUrl}`}`);
+          return;
         }
+
         toast.success('Welcome back!');
-        router.push('/profile');
-      } else {
+        if (callbackUrl) {
+          router.push(callbackUrl);
+        } else {
+          router.push('/profile');
+        }
+      }
+      else {
         toast.error(data.error || 'Login failed');
         if (data.details) {
           const fieldErrors: Record<string, string> = {};
@@ -222,7 +238,7 @@ export default function LoginPage() {
                 </div>
 
                 <div className="mt-6 text-center">
-                  <Link href="/register">
+                  <Link href={`/register${callbackUrl && `?callbackUrl=${callbackUrl}`}`}>
                     <Button variant="outline" className="w-full">
                       Create Account
                     </Button>

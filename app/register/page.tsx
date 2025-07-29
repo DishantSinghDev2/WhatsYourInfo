@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -28,6 +28,7 @@ function useDebounce(value: string, delay: number) {
 
 export default function RegisterPage() {
   const router = useRouter();
+    const searchParams = useSearchParams();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -46,6 +47,12 @@ export default function RegisterPage() {
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'available' | 'taken' | 'invalid'>('idle');
   const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([]);
   const debouncedUsername = useDebounce(formData.username, 500); // 500ms delay
+  const [callbackUrl, setCallbackUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const callback = searchParams.get('callbackUrl');
+    if (callback) setCallbackUrl(callback);
+  }, [searchParams]);
   // --- End of new feature state ---
 
   // --- Effect to check username when user stops typing ---
@@ -149,7 +156,7 @@ export default function RegisterPage() {
 
       if (response.ok) {
         toast.success('Account created! Please check your email to verify your account.');
-        router.push(`/verify-otp`);
+        router.push(`/verify-otp${callbackUrl && `?callbackUrl=${callbackUrl}`}`);
       } else {
         toast.error(data.error || 'Registration failed');
         if (data.details) {
@@ -291,7 +298,7 @@ export default function RegisterPage() {
                   <div className="relative flex justify-center text-sm"><span className="bg-white px-2 text-gray-500">Already have an account?</span></div>
                 </div>
                 <div className="mt-6 text-center">
-                  <Link href="/login"><Button variant="outline" className="w-full">Sign In Instead</Button></Link>
+                  <Link href={`/login${callbackUrl && `?callbackUrl=${callbackUrl}`}`}><Button variant="outline" className="w-full">Sign In Instead</Button></Link>
                 </div>
               </div>
             </CardContent>

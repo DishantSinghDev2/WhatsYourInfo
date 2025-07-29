@@ -165,6 +165,11 @@ export default function Header() {
                       <Code className="w-4 h-4 mr-2" /> Developers
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings" className="flex items-center cursor-pointer">
+                      <Settings className="w-4 h-4 mr-2" /> Settings
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleLogout}

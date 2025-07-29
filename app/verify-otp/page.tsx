@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -12,10 +12,17 @@ import toast from 'react-hot-toast';
 
 export default function VerifyOtpPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [otp, setOtp] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [email, setEmail] = useState('');
+    const [callbackUrl, setCallbackUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        const callback = searchParams.get('callbackUrl');
+        if (callback) setCallbackUrl(callback);
+    }, [searchParams]);
 
     const fetchUser = async () => {
         try {
@@ -68,7 +75,7 @@ export default function VerifyOtpPage() {
                 toast.error(data.error || 'OTP resend failed.');
                 router.push('/login')
             }
-        } catch (error ) { 
+        } catch (error) {
             toast.error(error.message)
             setError(error.message)
         } finally {
@@ -98,7 +105,11 @@ export default function VerifyOtpPage() {
             const data = await response.json();
 
             if (response.ok) {
-                router.push('/profile');
+                if (callbackUrl) {
+                    router.push(callbackUrl);
+                } else {
+                    router.push('/profile');
+                }
             } else {
                 setError(data.error || 'Invalid or expired OTP. Please try again.');
                 toast.error(data.error || 'OTP verification failed.');

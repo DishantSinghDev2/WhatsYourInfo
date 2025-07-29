@@ -1,4 +1,6 @@
 import nodemailer from 'nodemailer';
+import clientPromise from './mongodb';
+import crypto from "crypto"
 
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
@@ -98,7 +100,7 @@ export async function sendOtpEmail({ to, otp, name }: SendOtpEmailOptions) {
 <body>
     <div class="container">
         <div class="header">
-            <img src="https://i.ibb.co/KpbW193X/Chat-GPT-Image-Jul-22-2025-10-27-46-PM.png" alt="WhatsYour.Info Logo">
+            <img src="https://whatsyour.info/logotext.png" alt="WhatsYour.Info Logo">
         </div>
         <div class="content">
             <p class="greeting">Hello ${name},</p>
@@ -120,5 +122,81 @@ export async function sendOtpEmail({ to, otp, name }: SendOtpEmailOptions) {
   } catch (error) {
     console.error('Error sending OTP email:', error);
     throw new Error('Failed to send OTP email.');
+  }
+}
+
+
+// --- NEW: Function to send a verification link ---
+interface SendVerificationEmailOptions {
+  to: string;
+  name: string;
+}
+
+export async function sendVerificationEmail({ to, name }: SendVerificationEmailOptions) {
+  try {
+    // 1. Generate a secure, unique verification token
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24-hour expiry
+
+    // 2. Store the token and expiry date in the user's database record
+    const client = await clientPromise;
+    const db = client.db('whatsyourinfo');
+    await db.collection('users').updateOne(
+      { email: to },
+      { $set: { emailVerificationToken: verificationToken, emailVerificationExpires: verificationExpires } }
+    );
+
+    // 3. Create the verification URL
+    const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${verificationToken}`;
+
+    // 4. Send the email with a professional template
+    await transporter.sendMail({
+      from: `"WhatsYour.Info" <${process.env.EMAIL_FROM}>`,
+      to,
+      subject: 'Verify Your Email Address for WhatsYour.Info',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                /* Your existing beautiful email styles */
+                .button {
+                    display: inline-block;
+                    padding: 12px 24px;
+                    font-size: 16px;
+                    font-weight: 500;
+                    color: #ffffff;
+                    background-color: #1faaff;
+                    text-decoration: none;
+                    border-radius: 5px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <img src="https://whatsyour.info/logotext.png" alt="WhatsYour.Info Logo">
+                </div>
+                <div class="content">
+                    <p class="greeting">Hello ${name},</p>
+                    <p class="instructions">Welcome to WhatsYour.Info! To complete your registration, please verify your email address by clicking the button below:</p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="${verificationUrl}" class="button" target="_blank">Verify Email Address</a>
+                    </div>
+                    <p class="instructions">This link is valid for 24 hours. If you did not create an account, you can safely ignore this email.</p>
+                    <p class="instructions" style="font-size: 12px; color: #888888; margin-top: 20px;">If the button doesn't work, you can copy and paste this URL into your browser: ${verificationUrl}</p>
+                </div>
+                <div class="footer">
+                    <p>© ${new Date().getFullYear()} WhatsYour.Info. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+      `,
+    });
+
+  } catch (error) {
+    console.error('Error sending verification email:', error);
+    throw new Error('Failed to send verification email.');
   }
 }

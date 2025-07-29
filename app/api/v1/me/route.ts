@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   };
 
   const userProfile = await db.collection('users').findOne(
-    { _id: new ObjectId(tokenPayload.user._id) },
+    { _id: new ObjectId(tokenPayload.userId) },
     { projection: publicProjection }
   );
 
