@@ -115,7 +115,8 @@ export default function PricingPage() {
       }
     } catch (err: Error | unknown) {
       console.error('Error initiating PayPal payment:', err);
-      setError('Could not connect to PayPal. Please try again.');
+      setError('You are not loggedIn. Redirecting...');
+      router.push('/login')
       setIsLoading(false);
     }
   };
