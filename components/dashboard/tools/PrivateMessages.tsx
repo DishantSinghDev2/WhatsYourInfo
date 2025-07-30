@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/Button';
 import { MailCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { UserProfile } from '@/types';
@@ -13,7 +12,7 @@ export default function PrivateMessages({
   onUpdate,
 }: {
   user: UserProfile;
-  onUpdate: (d: any) => void;
+  onUpdate: (data: Partial<UserProfile>) => void
 }) {
   const [isEnabled, setIsEnabled] = useState(user.settings?.privateMessagesEnabled || false);
   const [isSaving, setIsSaving] = useState(false);
@@ -38,7 +37,7 @@ export default function PrivateMessages({
       onUpdate({ settings: { ...user.settings, privateMessagesEnabled: checked } });
 
       toast.success(`Private messages ${checked ? 'enabled' : 'disabled'}.`);
-    } catch (err) {
+    } catch {
       toast.error('Could not update your settings.');
       setIsEnabled(!checked); // Revert toggle
     } finally {

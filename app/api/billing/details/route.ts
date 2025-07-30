@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
         brand: 'PayPal', // PayPal is always the source
         last4: user.email, // Show user's email as identifier
       },
-      billingHistory: (transactionsData.transactions || []).map((txn: any) => ({
+      billingHistory: (transactionsData.transactions || []).map((txn: {id: string, time: Date, amount_with_breakdown: {gross_amount: {value: string}}, status: string}) => ({
         id: txn.id,
         date: new Date(txn.time),
         amount: txn.amount_with_breakdown?.gross_amount?.value,

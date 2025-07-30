@@ -35,7 +35,7 @@ export async function GET(
     }
 
     if (user.avatar.startsWith('avatars/')) {
-      const avatarUrl = `${process.env.R2_PUBLIC_DOMAIN}/${user.avatar}`;
+      const avatarUrl = `${process.env.R2_PUBLIC_URL}/${user.avatar}`;
       return NextResponse.redirect(avatarUrl);
     }
 

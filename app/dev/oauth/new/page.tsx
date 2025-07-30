@@ -74,7 +74,7 @@ export default function CreateOAuthClientPage() {
         const errorMessage = data.details ? data.details[0].message : (data.error || 'Failed to create OAuth client');
         toast.error(errorMessage);
       }
-    } catch (error) {
+    } catch {
       toast.error('A network error occurred. Please try again.');
     } finally {
       setIsCreatingClient(false);

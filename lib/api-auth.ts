@@ -1,6 +1,6 @@
 // lib/api-auth.ts
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { logApiCall } from '@/lib/logging';
@@ -13,7 +13,7 @@ const PRO_TIER = { hourly: 1000, daily: 10000 };
 
 // Unchanged. This is for JWTs, which are checked *after* the initial login.
 
-export function verifyApiToken(request: NextRequest): { userId: string; [key: string]: any } | null {
+export function verifyApiToken(request: NextRequest): { userId: string; [key: string]: unknown } | null {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return null;
@@ -24,8 +24,8 @@ export function verifyApiToken(request: NextRequest): { userId: string; [key: st
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-    return decoded as { userId: string; [key: string]: any };
-  } catch (error) {
+    return decoded as { userId: string; [key: string]: unknown };
+  } catch {
     // Token is invalid or expired
     return null;
   }

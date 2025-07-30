@@ -10,7 +10,7 @@ import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Switch } from '@/components/ui/switch'; // Assuming you have a Switch component from shadcn/ui
 import { Label } from '@/components/ui/label';   // Assuming you have a Label component
-import { Dialog, DialogContent, DialogTrigger, DialogClose, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogClose, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 
 const featureCategories = [

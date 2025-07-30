@@ -4,11 +4,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import Header from '@/components/Header';
-import { CreditCard, DollarSign, ExternalLink, Calendar, Loader2, ShieldCheck, LifeBuoy, Crown } from 'lucide-react';
+import { Loader2, Crown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { User } from '@/lib/auth';
 

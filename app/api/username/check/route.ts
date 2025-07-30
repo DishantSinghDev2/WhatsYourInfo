@@ -37,7 +37,11 @@ const RESERVED_USERNAMES = new Set([
  * Generates a list of alternative username suggestions.
  */
 async function getUsernameSuggestions(
-  db: any,
+  db: {
+    collection: (name: string) => {
+      findOne: (data: {}) => {}
+    }
+  },
   firstName: string,
   lastName: string,
   baseUsername: string

@@ -1,13 +1,13 @@
 'use client';
 
 import { useMemo, useState, useEffect, useRef } from 'react';
-import { ChevronDown } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/Input';
 import { GradientEditor } from './GradientEditor';
 import { motion, AnimatePresence } from 'framer-motion';
+import { UserProfile } from '@/types';
 
-export function CustomColorMenu({ design, setDesign }: { design: any; setDesign: (cb: any) => void }) {
+export function CustomColorMenu({ design, setDesign }: { design: UserProfile['design']; setDesign: (cb: any) => void }) {
   const [openKey, setOpenKey] = useState<string | null>(null);
   const isSelected = design.theme === 'custom';
   const customMenuRef = useRef<HTMLDivElement>(null);
@@ -44,7 +44,7 @@ export function CustomColorMenu({ design, setDesign }: { design: any; setDesign:
         <button
           onClick={() => {
             if (!isSelected) {
-              setDesign((prev: any) => ({
+              setDesign((prev: UserProfile['design']) => ({
                 ...prev,
                 theme: 'custom',
                 customColors,
@@ -119,7 +119,7 @@ export function CustomColorMenu({ design, setDesign }: { design: any; setDesign:
                                     className="w-full h-10"
                                     value={customColors[openKey]}
                                     onChange={(e) =>
-                                    setDesign((prev: any) => ({
+                                    setDesign((prev: UserProfile['design']) => ({
                                         ...prev,
                                         customColors: {
                                         ...prev.customColors,
@@ -134,7 +134,7 @@ export function CustomColorMenu({ design, setDesign }: { design: any; setDesign:
                                 <GradientEditor
                                     value={customColors[openKey]}
                                     onChange={(val) =>
-                                    setDesign((prev: any) => ({
+                                    setDesign((prev: UserProfile['design']) => ({
                                         ...prev,
                                         customColors: {
                                         ...prev.customColors,

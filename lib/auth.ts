@@ -7,9 +7,7 @@ import { UserProfile } from '@/types';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-export interface User extends UserProfile{
-  
-}
+export type User = UserProfile;
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12);
@@ -103,6 +101,7 @@ export async function createUser(userData: {
     _id: result.insertedId.toString(),
   } as User;
 }
+
 
 export async function authenticateUser(email: string, password: string): Promise<User | null> {
   try {

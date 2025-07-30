@@ -6,6 +6,8 @@ import { z } from 'zod';
 
 // Use your existing in-house auth system to get the logged-in user
 import { getInHouseUserFromRequest } from '@/lib/in-house-auth';
+import { UserProfile } from '@/types';
+import { getUserFromToken } from '@/lib/auth';
 
 // --- Zod Schema for validation on PUT requests ---
 const updateProfileSchema = z.object({
@@ -19,9 +21,9 @@ const updateProfileSchema = z.object({
     website: z.string().url().or(z.literal('')).optional(),
   }).optional(),
   spotlightButton: z.object({
-    text: z.string().max(30).optional(),
-    url: z.string().url().or(z.literal('')).optional(),
-    color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be a valid hex color').optional(),
+    text: z.string().max(30),
+    url: z.string().url().or(z.literal('')),
+    color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be a valid hex color'),
   }).optional(),
 });
 
@@ -32,7 +34,7 @@ const updateProfileSchema = z.object({
  */
 export async function GET(request: NextRequest) {
   try {
-    const userFromToken = await getInHouseUserFromRequest();
+    const userFromToken = await getUserFromToken(request);
 
     if (!userFromToken || !userFromToken._id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -66,7 +68,7 @@ export async function GET(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    const userFromToken = await getInHouseUserFromRequest();
+    const userFromToken = await getUserFromToken(request);
 
     if (!userFromToken || !userFromToken._id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -79,11 +81,11 @@ export async function PUT(request: NextRequest) {
     const db = client.db('whatsyourinfo');
 
     // Construct the data payload to be set in the database
-    const updatePayload: any = {
+    const updatePayload: Partial<UserProfile> = {
       firstName: validatedData.firstName,
       lastName: validatedData.lastName,
       bio: validatedData.bio || '',
-      socialLinks: validatedData.socialLinks || {},
+      spotlightButton: validatedData.spotlightButton,
       updatedAt: new Date(),
     };
 

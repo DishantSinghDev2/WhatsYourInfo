@@ -20,7 +20,12 @@ const tools = [
   { id: 'redirects', title: 'Smart Redirects', icon: SiMinutemailer, pro: true },
 ];
 
-const toolComponents: Record<string, React.ComponentType<any>> = {
+interface ToolsProps {
+  user: UserProfile;
+  onUpdate: (data: Partial<UserProfile>) => void
+}
+
+const toolComponents: Record<string, React.ComponentType<ToolsProps>> = {
   'ai-builder': AIProfileBuilder,
   'card': DigitalBusinessCard,
   'signature': EmailSignature,
@@ -28,7 +33,9 @@ const toolComponents: Record<string, React.ComponentType<any>> = {
   'redirects': SmartRedirects,
 };
 
-export default function ToolsPanel({ user, onUpdate, aTool, changesSaved }: { user: UserProfile, onUpdate: (data: Partial<UserProfile>) => void, aTool?: string | null, changesSaved: (a: boolean) => void }) {
+export interface ToolsPanelProps { user: UserProfile, onUpdate: (data: Partial<UserProfile>) => void, aTool?: string | null, changesSaved: (a: boolean) => void }
+
+export default function ToolsPanel({ user, onUpdate, aTool, changesSaved }: ToolsPanelProps ) {
   const [activeTool, setActiveTool] = useState<string | null>(aTool || null);
   const ActiveTool = activeTool ? toolComponents[activeTool] : null;
 

@@ -15,7 +15,7 @@ interface GalleryItem {
   caption?: string;
 }
 
-interface PhotosPanelProps {
+export interface PhotosPanelProps {
   user: UserProfile;
   onUpdate: (data: Partial<UserProfile>) => void;
 }
@@ -39,8 +39,8 @@ export default function PhotosPanel({ user, onUpdate }: PhotosPanelProps) {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed to fetch photos.");
         setPhotos(data.items);
-      } catch (error: any) {
-        toast.error(error.message);
+      } catch {
+        toast.error('Failed to fetch photos.');
       } finally {
         setIsLoading(false);
       }
@@ -68,8 +68,8 @@ export default function PhotosPanel({ user, onUpdate }: PhotosPanelProps) {
       setPhotos(prev => [...prev, data.item]);
       onUpdate({ gallery: [...photos, data.item] })
       toast.success('Photo added!', { id: toastId });
-    } catch (err: any) {
-      toast.error(err.message, { id: toastId });
+    } catch {
+      toast.error('Upload failed.', { id: toastId });
     } finally {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -89,8 +89,8 @@ export default function PhotosPanel({ user, onUpdate }: PhotosPanelProps) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to delete photo.');
       toast.success('Photo removed.');
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch {
+      toast.error('Failed to delete photo.');
       setPhotos(originalPhotos);
     }
   };

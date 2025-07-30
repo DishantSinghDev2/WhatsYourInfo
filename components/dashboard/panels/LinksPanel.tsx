@@ -10,7 +10,7 @@ import { AnimatePresence, motion, Reorder } from 'framer-motion';
 
 type LinkItem = { _id: string; title: string; url: string };
 
-interface LinksPanelProps {
+export interface LinksPanelProps {
   user: UserProfile;
   onUpdate: (data: Partial<UserProfile>) => void;
   changesSaved: (a: boolean) => void
@@ -18,7 +18,6 @@ interface LinksPanelProps {
 
 export default function LinksPanel({ user, onUpdate, changesSaved }: LinksPanelProps) {
   const [links, setLinks] = useState<LinkItem[]>(user.links || []);
-  const [originalLinks, setOriginalLinks] = useState<LinkItem[]>(user.links || []);
   const [newLink, setNewLink] = useState({ title: '', url: '' });
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -45,12 +44,11 @@ export default function LinksPanel({ user, onUpdate, changesSaved }: LinksPanelP
 
       const updated = [...links, data.link];
       setLinks(updated);
-      setOriginalLinks(updated);
       setNewLink({ title: '', url: '' });
       onUpdate({ links: updated });
       changesSaved(true)
       toast.success('Link added', { id: toastId });
-    } catch (err) {
+    } catch {
       toast.error('Failed to add link', { id: toastId });
     } finally {
       setIsAdding(false);
@@ -60,7 +58,6 @@ export default function LinksPanel({ user, onUpdate, changesSaved }: LinksPanelP
   const handleDeleteLink = async (id: string) => {
     const updated = links.filter(l => l._id !== id);
     setLinks(updated);
-    setOriginalLinks(updated);
     onUpdate({ links: updated });
 
     try {
@@ -81,7 +78,7 @@ export default function LinksPanel({ user, onUpdate, changesSaved }: LinksPanelP
         body: JSON.stringify(payload),
       });
       toast.success('Saved order');
-      setOriginalLinks(links);
+      setLinks(links);
       setReordered(false);
       onUpdate({ links });
       changesSaved(true)
@@ -95,7 +92,6 @@ export default function LinksPanel({ user, onUpdate, changesSaved }: LinksPanelP
       l._id === id ? { ...l, ...editingData } : l
     );
     setLinks(updated);
-    setOriginalLinks(updated);
     setEditingId(null);
     onUpdate({ links: updated });
 

@@ -90,7 +90,7 @@ export default function OAuthClientDetailsPage() {
         setIsEditing(!isEditing);
     };
 
-    const handleInputChange = (field: keyof OAuthClient, value: any) => {
+    const handleInputChange = (field: keyof OAuthClient, value: unknown) => {
         setEditData(prev => ({ ...prev, [field]: value }));
     };
 
@@ -359,7 +359,7 @@ export default function OAuthClientDetailsPage() {
                                         <p className="text-sm text-gray-600">Deleting your application is permanent. Please be certain.</p>
                                         <Button variant="destructive" onClick={deleteClient}>
                                             <Trash2 className="h-4 w-4 mr-2" />
-                                            Delete Application
+                                            {isDeleting ? 'Deleting...' : 'Delete Application'}
                                         </Button>
                                     </div>
                                 </div>

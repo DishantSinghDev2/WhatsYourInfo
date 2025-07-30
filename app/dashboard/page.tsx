@@ -16,8 +16,7 @@ import {
   Code,
   Settings,
   Crown,
-  Loader2,
-  Key
+  Loader2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { User as AuthUser } from '@/lib/auth';

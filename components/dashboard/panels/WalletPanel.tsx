@@ -13,9 +13,10 @@ import {
   SiDogecoin, SiBuymeacoffee, SiKofi, SiCashapp, SiSolana, SiRipple, SiCardano
 } from 'react-icons/si';
 import { MinimalDialog } from '@/components/ui/MinimalDialog';
+import { IconType } from 'react-icons/lib';
 
 // Expanded wallet icons with more cryptos and a generic fallback
-const walletIcons: Record<string, any> = {
+const walletIcons: Record<string, IconType> = {
   'PayPal.me': SiPaypal,
   'Venmo': SiVenmo,
   'Cash App': SiCashapp,
@@ -37,7 +38,7 @@ const supportedWallets = [
   'Bitcoin (BTC)', 'Ethereum (ETH)', 'Solana (SOL)'
 ];
 
-interface WalletPanelProps {
+export interface WalletPanelProps {
   user: UserProfile;
   onUpdate: (data: Partial<UserProfile>) => void;
   changesSaved: (a: boolean) => void;
@@ -111,23 +112,6 @@ export default function WalletPanel({ user, onUpdate, changesSaved }: WalletPane
       changesSaved(true)
     } catch {
       toast.error('Failed to remove wallet.');
-    }
-  };
-
-  const handleUpdateAddress = async (id: string, newAddress: string) => {
-    const updated = wallet.map(w => w.id === id ? { ...w, address: newAddress } : w);
-    setWallet(updated);
-    onUpdate({ wallet: updated });
-    setEditingId(null);
-    try {
-      await fetch('/api/profile/wallet', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wallet: updated }),
-      });
-      toast.success('Wallet updated!');
-    } catch {
-      toast.error('Failed to update wallet.');
     }
   };
 

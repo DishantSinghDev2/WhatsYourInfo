@@ -11,18 +11,31 @@ import DashboardNav from '@/components/dashboard/DashboardNav';
 import { UserProfile } from '@/types';
 
 // Panels
-import MyProfilePanel from '@/components/dashboard/panels/MyProfilePanel';
-import DesignPanel from '@/components/dashboard/panels/DesignPanel';
-import AvatarsPanel from '@/components/dashboard/panels/AvatarsPanel';
-import LinksPanel from '@/components/dashboard/panels/LinksPanel';
-import VerifiedAccountsPanel from '@/components/dashboard/panels/VerifiedAccountsPanel';
-import WalletPanel from '@/components/dashboard/panels/WalletPanel';
-import PhotosPanel from '@/components/dashboard/panels/PhotosPanel';
-import ToolsPanel from '@/components/dashboard/panels/ToolsPanel';
-import AccountSettingsPanel from '@/components/dashboard/panels/AccountSettingsPanel';
+import MyProfilePanel, { MyProfilePanelProps } from '@/components/dashboard/panels/MyProfilePanel';
+import DesignPanel, { DesignPanelProps } from '@/components/dashboard/panels/DesignPanel';
+import AvatarsPanel, { AvatarsPanelProps } from '@/components/dashboard/panels/AvatarsPanel';
+import LinksPanel, { LinksPanelProps } from '@/components/dashboard/panels/LinksPanel';
+import VerifiedAccountsPanel, { VerifiedAccountsPanelProps } from '@/components/dashboard/panels/VerifiedAccountsPanel';
+import WalletPanel, { WalletPanelProps } from '@/components/dashboard/panels/WalletPanel';
+import PhotosPanel, { PhotosPanelProps } from '@/components/dashboard/panels/PhotosPanel';
+import ToolsPanel, { ToolsPanelProps } from '@/components/dashboard/panels/ToolsPanel';
+import AccountSettingsPanel, { AccountSettingsPanelProps } from '@/components/dashboard/panels/AccountSettingsPanel';
 import { ChevronLeft } from 'lucide-react';
 
-const panelComponents: Record<string, React.ComponentType<any>> = {
+
+interface PanelRegistry {
+  profile: React.ComponentType<MyProfilePanelProps>;
+  design: React.ComponentType<DesignPanelProps>;
+  avatars: React.ComponentType<AvatarsPanelProps>;
+  links: React.ComponentType<LinksPanelProps>;
+  verified: React.ComponentType<VerifiedAccountsPanelProps>;
+  wallet: React.ComponentType<WalletPanelProps>;
+  photos: React.ComponentType<PhotosPanelProps>;
+  tools: React.ComponentType<ToolsPanelProps>;
+  settings: React.ComponentType<AccountSettingsPanelProps>;
+}
+
+const panelComponents: PanelRegistry = {
   profile: MyProfilePanel,
   design: DesignPanel,
   avatars: AvatarsPanel,

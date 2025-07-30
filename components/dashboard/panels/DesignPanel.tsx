@@ -37,16 +37,17 @@ export const colorThemes = {
   Grape: { background: '#F3E8FF', surface: '#E9D5FF', accent: '#7C3AED' },
 };
 
+export interface DesignPanelProps{
+  user: UserProfile;
+  onUpdate: (data: Partial<UserProfile>) => void;
+  changesSaved: (a: boolean) => void;
+}
 
 export default function DesignPanel({
   user,
   onUpdate,
   changesSaved,
-}: {
-  user: UserProfile;
-  onUpdate: (data: Partial<UserProfile>) => void;
-  changesSaved: (a: boolean) => void;
-}) {
+}: DesignPanelProps) {
   const [design, setDesign] = useState(user.design || {});
   // ... (sections and visibility state remain the same) ...
   const initializeSections = () => {
@@ -79,7 +80,11 @@ export default function DesignPanel({
     setVisibility(prev => ({ ...prev, [sectionKey]: !prev[sectionKey] }));
   };
 
-  const handleThemeClick = (name: string, colors: any) => {
+  const handleThemeClick = (name: string, colors: {
+    background: string;
+    surface: string;
+    accent: string;
+}) => {
     setHasChanges(true);
     changesSaved(false);
     setDesign({ ...design, theme: name.toLowerCase(), customColors: colors });
@@ -130,7 +135,7 @@ export default function DesignPanel({
       toast.success('Design Saved!', { id: toastId });
       setHasChanges(false);
       changesSaved(true);
-    } catch (err) {
+    } catch {
       toast.error('Could not save design.', { id: toastId });
     } finally {
       setIsSaving(false);
@@ -166,7 +171,7 @@ export default function DesignPanel({
               )
             })}
           </div>
-          <CustomColorMenu design={design} setDesign={(cb: any) => {
+          <CustomColorMenu design={design} setDesign={(cb: UserProfile['design']) => {
             setDesign(cb)
             setHasChanges(true);
             changesSaved(false);

@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromToken } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
 import crypto from 'crypto';
-import { ObjectId } from 'mongodb';
+import { ObjectId, WithId, Document } from 'mongodb';
 
 // --- NEW: The GET handler that starts the OAuth flow ---
 export async function GET(request: NextRequest) {
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
 
 
 // --- NEW: Helper function to avoid duplicating code ---
-async function generateCodeAndRedirect(userId: ObjectId, oauthClient: any, redirectUri: string, state: string | null, scopes: string[]) {
+async function generateCodeAndRedirect(userId: ObjectId, oauthClient: WithId<Document>, redirectUri: string, state: string | null, scopes: string[]) {
     const client = await clientPromise;
     const db = client.db('whatsyourinfo');
 

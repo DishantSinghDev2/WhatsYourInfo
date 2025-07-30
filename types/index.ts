@@ -14,6 +14,9 @@ export interface UserProfile {
   nextDue?: Date;
   customDomain?: string;
   emailVerified: boolean;
+  settings?: {
+    privateMessagesEnabled: boolean
+  };
   spotlightButton?: {
     text: string;
     url: string;

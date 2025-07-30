@@ -8,7 +8,7 @@ import { saveAs } from 'file-saver';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 import { UserProfile } from '@/types';
-import { Wallet, Loader2, Crown } from 'lucide-react';
+import { Wallet, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { SiGithub, SiX, SiLinktree, SiInstagram, SiLinkedin, SiTiktok } from 'react-icons/si';
 import { FiRepeat } from 'react-icons/fi';

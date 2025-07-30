@@ -160,64 +160,66 @@ export async function DELETE(request: NextRequest) {
 }
 
 const updateClientSchema = z.object({
-  name: z.string().min(1, 'Application name is required').max(50).optional(),
-  description: z.string().max(300).optional().nullable(),
-  homepageUrl: z.string().url('Homepage URL must be a valid URL.').optional().nullable(),
-  appLogo: z.string().url('Logo URL must be a valid URL.').optional().nullable(),
-  redirectUris: z.array(z.string().url()).min(1, 'At least one Redirect URI is required.').optional(),
-  grantedScopes: z.array(z.string()).optional(),
+    name: z.string().min(1, 'Application name is required').max(50).optional(),
+    description: z.string().max(300).optional().nullable(),
+    homepageUrl: z.string().url('Homepage URL must be a valid URL.').optional().nullable(),
+    appLogo: z.string().url('Logo URL must be a valid URL.').optional().nullable(),
+    redirectUris: z.array(z.string().url()).min(1, 'At least one Redirect URI is required.').optional(),
+    grantedScopes: z.array(z.string()).optional(),
 });
 
 // --- NEW: Add a PATCH handler for updating clients ---
 export async function PATCH(request: NextRequest) {
-  try {
-    const user = await getUserFromToken(request);
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-
-    if (!id || !ObjectId.isValid(id)) {
-      return NextResponse.json({ error: 'Valid Client ID is required' }, { status: 400 });
-    }
-
-    const body = await request.json();
-    const validatedData = updateClientSchema.parse(body);
-
-    const client = await clientPromise;
-    const db = client.db('whatsyourinfo');
-
-    // Construct the update object to avoid clearing fields with undefined
-    const updateFields: { [key: string]: any } = {};
-    Object.keys(validatedData).forEach(key => {
-        const value = (validatedData as any)[key];
-        if (value !== undefined) {
-            updateFields[key] = value;
+    try {
+        const user = await getUserFromToken(request);
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
-    });
 
-    if (Object.keys(updateFields).length === 0) {
-        return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
+        const { searchParams } = new URL(request.url);
+        const id = searchParams.get('id');
+
+        if (!id || !ObjectId.isValid(id)) {
+            return NextResponse.json({ error: 'Valid Client ID is required' }, { status: 400 });
+        }
+
+        const body = await request.json();
+        const validatedData = updateClientSchema.parse(body);
+
+        const client = await clientPromise;
+        const db = client.db('whatsyourinfo');
+
+        // Construct the update object to avoid clearing fields with undefined
+        const updateFields: { [key: string]: unknown } = {};
+
+        Object.keys(validatedData).forEach((key: string) => {
+            const value = (validatedData as Record<string, unknown>)[key];
+            if (value !== undefined) {
+                updateFields[key] = value;
+            }
+        });
+
+
+        if (Object.keys(updateFields).length === 0) {
+            return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
+        }
+
+        const result = await db.collection('oauth_clients').updateOne(
+            { _id: new ObjectId(id), userId: user._id }, // Ensure user owns the client
+            { $set: updateFields }
+        );
+
+        if (result.matchedCount === 0) {
+            return NextResponse.json({ error: 'Client not found or you do not have permission' }, { status: 404 });
+        }
+
+        return NextResponse.json({ message: 'Application updated successfully' }, { status: 200 });
+
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 });
+        }
+        console.error('OAuth client update error:', error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
-
-    const result = await db.collection('oauth_clients').updateOne(
-      { _id: new ObjectId(id), userId: user._id }, // Ensure user owns the client
-      { $set: updateFields }
-    );
-
-    if (result.matchedCount === 0) {
-      return NextResponse.json({ error: 'Client not found or you do not have permission' }, { status: 404 });
-    }
-
-    return NextResponse.json({ message: 'Application updated successfully' }, { status: 200 });
-
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 });
-    }
-    console.error('OAuth client update error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
 }

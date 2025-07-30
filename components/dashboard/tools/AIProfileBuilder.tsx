@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/Input';
 import toast from 'react-hot-toast';
 import { UserProfile } from '@/types';
 
-export default function AIProfileBuilder({ user, onUpdate }: { user: UserProfile, onUpdate: ({}) => void }) {
+export default function AIProfileBuilder({ user, onUpdate }: { user: UserProfile, onUpdate: (data: Partial<UserProfile>) => void }) {
   const [keywords, setKeywords] = useState('');
   const [tone, setTone] = useState('Professional');
   const [detail, setDetail] = useState('Medium');

@@ -51,7 +51,7 @@ export default function LeadsPage() {
         setUser(userData.user);
         
         if (userData.user.isProUser) {
-          fetchLeads(userData.user._id);
+          fetchLeads();
         }
       } else if (response.status === 401) {
         router.push('/login');
@@ -63,7 +63,7 @@ export default function LeadsPage() {
     }
   };
 
-  const fetchLeads = async (userId: string) => {
+  const fetchLeads = async () => {
     try {
       const response = await fetch(`/api/leads`);
       if (response.ok) {

@@ -73,10 +73,10 @@ const DEFAULT_VISIBILITY = DEFAULT_SECTIONS.reduce(
 
 export default function PublicProfileView({
   profile,
-  isPreview = false,
+  // isPreview = false,
 }: {
   profile: UserProfile;
-  isPreview?: boolean;
+  // isPreview?: boolean;
 }) {
   const background =
     profile.design?.customColors?.background || '#ffffff';
@@ -248,6 +248,11 @@ export default function PublicProfileView({
     ) : null,
   };
 
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    e.currentTarget.src = '/default-avatar.png'; // or any default image path
+  };
+  
+
   return (
     <>
       <div
@@ -292,9 +297,7 @@ export default function PublicProfileView({
                   className="w-36 h-36 rounded-md border-4 object-cover bg-white"
                   style={{ borderColor: background }}
                   alt={`${profile.firstName}'s avatar`}
-                  onError={(e: any) =>
-                    (e.target.src = '/default-avatar.png')
-                  }
+                  onError={handleImageError}
                 />
                 <div className="pb-2 sm:pb-0">
                   <h1

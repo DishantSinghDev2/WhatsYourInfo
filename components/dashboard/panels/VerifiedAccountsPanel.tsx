@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { SiX, SiGithub, SiLinkedin } from 'react-icons/si';
 import { Button } from '@/components/ui/Button';
 import { UserProfile } from '@/types';
@@ -17,15 +16,15 @@ const services = [
   { id: 'linkedin', name: 'LinkedIn', icon: SiLinkedin },
 ];
 
-export default function VerifiedAccountsPanel({
-  user,
-  onUpdate,
-  changesSaved
-}: {
+export interface VerifiedAccountsPanelProps{
   user: UserProfile;
   onUpdate: (data: Partial<UserProfile>) => void;
-  changesSaved: (a: boolean) => void;
-}) {
+}
+
+export default function VerifiedAccountsPanel({
+  user,
+  onUpdate
+}: VerifiedAccountsPanelProps ) {
   const router = useRouter();
 
   const connectedAccounts = user.verifiedAccounts || [];
@@ -50,7 +49,7 @@ export default function VerifiedAccountsPanel({
       onUpdate({ verifiedAccounts: updated });
       toast.success(`${providerId} disconnected`, { id: toastId });
       router.refresh();
-    } catch (err) {
+    } catch {
       toast.error(`Could not disconnect ${providerId}`, { id: toastId });
     }
   };

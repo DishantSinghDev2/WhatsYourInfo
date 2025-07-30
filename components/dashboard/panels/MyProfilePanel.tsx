@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { UserProfile } from '@/types';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,7 +9,7 @@ import { Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 
-interface MyProfilePanelProps {
+export interface MyProfilePanelProps {
   user: UserProfile;
   onUpdate: (data: Partial<UserProfile>) => void;
   changesSaved: (a: boolean) => void
@@ -31,7 +31,7 @@ export default function MyProfilePanel({ user, onUpdate, changesSaved }: MyProfi
     if (keys.length > 1) {
       setFormData((prev) => {
         const updated = { ...prev };
-        let current: any = updated;
+        let current: Partial<UserProfile> = updated;
         for (let i = 0; i < keys.length - 1; i++) current = current[keys[i]];
         current[keys[keys.length - 1]] = value;
         return updated;
@@ -56,7 +56,7 @@ export default function MyProfilePanel({ user, onUpdate, changesSaved }: MyProfi
       if (!res.ok) throw new Error('Failed to save profile');
       toast.success('Profile updated!', { id: toastId });
       changesSaved(true)
-    } catch (err) {
+    } catch {
       toast.error('Could not save profile.', { id: toastId });
     } finally {
       setIsSaving(false);

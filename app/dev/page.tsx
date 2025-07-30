@@ -22,7 +22,6 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { User } from '@/lib/auth';
-import { Checkbox } from '@/components/ui/checkbox';
 import { motion } from 'framer-motion';
 
 interface ApiKey {
@@ -46,15 +45,6 @@ interface OAuthClient {
   grantedScopes: string[];
   createdAt: string;
 }
-
-// --- NEW: Define the available scopes for your API ---
-const AVAILABLE_SCOPES = [
-  { id: 'profile:read', description: 'Read basic profile information (name, bio, avatar).' },
-  { id: 'email:read', description: 'Read the user\'s email address.' },
-  { id: 'profile:write', description: 'Update the user\'s profile information.' },
-  { id: 'links:read', description: 'Read user\'s links.' },
-  { id: 'links:write', description: 'Add or update user\'s links.' },
-];
 
 
 // --- New Interface for our Stats API response ---

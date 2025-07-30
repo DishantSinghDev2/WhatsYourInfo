@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     }
 
     const subscription = await subResp.json();
-    const approvalLink = (subscription.links || []).find((l: any) => l.rel === 'approve');
+    const approvalLink = (subscription.links || []).find((l: {rel: string}) => l.rel === 'approve');
     if (!approvalLink) {
       console.error('Approval link missing in PayPal response', subscription);
       return NextResponse.json({ error: 'Approval link not found' }, { status: 500 });

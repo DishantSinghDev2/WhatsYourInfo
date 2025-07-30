@@ -4,6 +4,18 @@ import clientPromise from '@/lib/mongodb';
 import { z } from 'zod';
 import { ObjectId } from 'mongodb';
 
+interface Link {
+  _id: ObjectId;
+  title: string;
+  url: string;
+}
+
+interface UserDocument {
+  _id: ObjectId;
+  links: Link[]; // define `links` as an array
+  // Add other fields if needed
+}
+
 // Schema for a single link
 const linkSchema = z.object({
   id: z.string().optional(), // Used for identifying existing links to update
@@ -32,14 +44,18 @@ export async function POST(request: NextRequest) {
     };
 
     const client = await clientPromise;
-    const db = client.db('whatsyourinfo');
-    await db.collection('users').updateOne(
-      { _id: user._id },
-      { $push: { links: newLink } }
-    );
+const db = client.db('whatsyourinfo');
+
+// Use typed collection
+const usersCollection = db.collection<UserDocument>('users');
+
+await usersCollection.updateOne(
+  { _id: new ObjectId(user._id) },
+  { $push: { links: newLink } }
+);
 
     return NextResponse.json({ message: 'Link added successfully', link: newLink }, { status: 201 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to add link' }, { status: 500 });
   }
 }
@@ -62,7 +78,7 @@ export async function PUT(request: NextRequest) {
       
       // Atomically update the entire array
       await db.collection('users').updateOne(
-        { _id: user._id },
+        { _id: new ObjectId(user._id) },
         { $set: { links: validatedLinks.map(l => ({...l, _id: new ObjectId(l.id)})) } }
       );
       
@@ -78,13 +94,13 @@ export async function PUT(request: NextRequest) {
     const client = await clientPromise;
     const db = client.db('whatsyourinfo');
     await db.collection('users').updateOne(
-        { _id: user._id, "links._id": new ObjectId(id) },
+        { _id: new ObjectId(user._id), "links._id": new ObjectId(id) },
         { $set: { "links.$.title": linkData.title, "links.$.url": linkData.url } }
     );
     
     return NextResponse.json({ message: 'Link updated successfully.' });
 
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to update link(s)' }, { status: 500 });
   }
 }
@@ -103,13 +119,13 @@ export async function DELETE(request: NextRequest) {
   try {
     const client = await clientPromise;
     const db = client.db('whatsyourinfo');
-    await db.collection('users').updateOne(
-        { _id: user._id },
+    await db.collection<UserDocument>('users').updateOne(
+        { _id: new ObjectId(user._id) },
         { $pull: { links: { _id: new ObjectId(linkId) } } }
     );
 
     return NextResponse.json({ message: 'Link removed successfully' });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to remove link' }, { status: 500 });
   }
 }

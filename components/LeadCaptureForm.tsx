@@ -38,7 +38,6 @@ export default function LeadCaptureForm({
   const { accent = '#111827', background = '#ffffff', surface = '#f9fafb' } = design?.customColors || {};
 
   const isAccentGradient = isGradient(accent);
-  const isBackgroundGradient = isGradient(background);
   const isSurfaceGradient = isGradient(surface);
 
   const textColor = isAccentGradient ? '#fff' : isDarkColor(accent) ? '#fff' : '#000';

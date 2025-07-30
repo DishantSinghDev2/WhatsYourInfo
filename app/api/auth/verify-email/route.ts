@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
       verifyPageUrl.searchParams.set('error', 'invalid_token');
       return NextResponse.redirect(verifyPageUrl);
     }
-  } catch (error) {
+  } catch {
     const verifyPageUrl = new URL('/verify-email', request.nextUrl.origin);
     verifyPageUrl.searchParams.set('error', 'server_error');
     return NextResponse.redirect(verifyPageUrl);
@@ -79,7 +79,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid or expired verification token' }, { status: 400 });
     }
 
-  } catch (error) {
-    // ... (your existing Zod and server error handling)
+  } catch  {
+    const verifyPageUrl = new URL('/verify-email', request.nextUrl.origin);
+    verifyPageUrl.searchParams.set('error', 'server_error');
+    return NextResponse.redirect(verifyPageUrl);
   }
 }

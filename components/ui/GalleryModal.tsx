@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
-import Image from 'next/image';
 
 interface GalleryImage {
     _id: string;

@@ -1,4 +1,4 @@
-import NextAuth, { Account, Profile, User } from "next-auth"
+import NextAuth, { Account } from "next-auth"
 import clientPromise from "@/lib/mongodb"
 import GitHubProvider from "next-auth/providers/github"
 import TwitterProvider from "next-auth/providers/twitter"
@@ -27,7 +27,14 @@ export const authOptions = {
      * This callback is invoked when a user successfully returns from a provider.
      * This is where we will link the account to YOUR existing user.
      */
-    async signIn({ user, account, profile }: { user: User, account: Account | null, profile?: any }) {
+    async signIn({ account, profile }: { account: Account | null, profile?: {
+      url: string,
+      data: {
+        username: string
+      },
+      html_url: string;
+      login: string
+    } }) {
       if (!account || !profile) {
         return false; // Abort if OAuth data is missing
       }

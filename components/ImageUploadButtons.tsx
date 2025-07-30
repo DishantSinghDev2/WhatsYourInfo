@@ -5,9 +5,10 @@ import { UploadCloud, Trash2, Loader2, ChevronDown, ChevronUp } from 'lucide-rea
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import ProCrownBadge from './icon/pro';
+import { UserProfile } from '@/types';
 
 interface Props {
-  design: Record<string, any>;
+  design: UserProfile['design'];
   onUploadComplete: (type: 'header' | 'background', url: string) => void;
   handleRemoveImage: (type: 'header' | 'background') => void;
   onDesignSettingsChange: (changes: { backgroundBlur?: number; backgroundOpacity?: number }) => void;
@@ -77,8 +78,8 @@ export default function ImageUploadButtons({
 
       toast.success('Image uploaded!', { id: toastId });
       onUploadComplete(type, data.imageUrl);
-    } catch (err: any) {
-      toast.error(err.message || 'Upload failed', { id: toastId });
+    } catch {
+      toast.error('Upload failed', { id: toastId });
     } finally {
       setUploadingType(null);
       e.target.value = '';

@@ -15,7 +15,6 @@ import {
   Lock,
   Palette,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 
 const features = [
   {

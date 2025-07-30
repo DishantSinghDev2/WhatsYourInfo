@@ -106,7 +106,7 @@ export async function PUT(request: NextRequest) {
     const validatedData = updateProfileSchema.parse(body);
     
     // --- Construct the update payload securely ---
-    const updatePayload: Record<string, any> = { ...validatedData };
+    const updatePayload: Record<string, unknown> = { ...validatedData };
     
     // Pro-level feature check: Spotlight Button
     // If the user is NOT pro, remove the spotlightButton from the payload

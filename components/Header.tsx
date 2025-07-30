@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from './ui/Button';
-import { Globe, Menu, X, LogOut, Settings, LayoutDashboard, ChevronDown, Loader2, CreditCard, Users, Code } from 'lucide-react';
+import { Menu, X, LogOut, Settings, LayoutDashboard, ChevronDown, Loader2, CreditCard, Users, Code } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -59,7 +59,7 @@ export default function Header() {
         } else if (response.status === 401) {
           setUser(null); // Explicitly set user to null on 401
         }
-      } catch (error) {
+      } catch {
         toast.error('Error fetching user profile.');
         setUser(null);
       } finally {

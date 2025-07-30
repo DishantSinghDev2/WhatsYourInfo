@@ -59,7 +59,12 @@ function CustomConfirmationDialog({
   );
 }
 
-export default function AccountSettingsPanel({ user, onUpdate }: { user: UserProfile, onUpdate: (data: Partial<UserProfile>) => void; }) {
+export interface AccountSettingsPanelProps {
+user: UserProfile, 
+onUpdate: (data: Partial<UserProfile>) => void;
+}
+
+export default function AccountSettingsPanel({ user, onUpdate }: AccountSettingsPanelProps) {
   const [username, setUsername] = useState(user.username);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);

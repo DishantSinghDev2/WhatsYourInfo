@@ -12,7 +12,7 @@ export async function getInHouseUserFromRequest() {
         const decoded = jwt.verify(token, process.env.JWT_SECRET!);
         // You might need to fetch the user from the DB with this ID
         return { _id: decoded.userId, /* other user data */ };
-    } catch (error) {
+    } catch {
         return null;
     }
 }

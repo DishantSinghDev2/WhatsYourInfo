@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { UserProfile } from '@/types';
 import toast from 'react-hot-toast';
 import { Upload, Loader2 } from 'lucide-react';
 
-interface AvatarsPanelProps {
+export interface AvatarsPanelProps {
   user: UserProfile;
   onUpdate: (data: Partial<Pick<UserProfile, 'avatar'>>) => void;
 }
@@ -39,13 +39,18 @@ export default function AvatarsPanel({ user, onUpdate }: AvatarsPanelProps) {
 
       toast.success('Avatar updated!', { id: toastId });
       onUpdate({ avatar: `/api/avatars/${user.username}?t=${Date.now()}` });
-    } catch (err: any) {
-      toast.error(err.message || 'Something went wrong', { id: toastId });
+    } catch {
+      toast.error('Something went wrong', { id: toastId });
     } finally {
       setIsUploading(false);
       e.target.value = '';
     }
   }
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    e.currentTarget.src = '/default-avatar.png'; // or any default image path
+  };
+
 
   return (
     <div className="space-y-6">
@@ -61,7 +66,7 @@ export default function AvatarsPanel({ user, onUpdate }: AvatarsPanelProps) {
               src={avatarUrl}
               alt="Current Avatar"
               className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg transition-opacity group-hover:opacity-80"
-              onError={(e: any) => (e.target.src = '/default-avatar.png')}
+              onError={handleImageError}
             />
           </label>
 

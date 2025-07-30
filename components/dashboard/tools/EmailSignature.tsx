@@ -2,8 +2,9 @@
 import { useRef } from 'react';
 import { Button } from '@/components/ui/Button';
 import toast from 'react-hot-toast';
+import { UserProfile } from '@/types';
 
-export default function EmailSignature({ user }: { user: any }) {
+export default function EmailSignature({ user }: { user: UserProfile }) {
     const signatureRef = useRef<HTMLDivElement>(null);
     const profileUrl = `https://whatsyour.info/${user.username}`;
     
@@ -16,7 +17,7 @@ export default function EmailSignature({ user }: { user: any }) {
             try {
                 document.execCommand('copy');
                 toast.success('Signature copied to clipboard!');
-            } catch (err) {
+            } catch {
                 toast.error('Failed to copy.');
             }
             window.getSelection()?.removeAllRanges();
@@ -33,7 +34,7 @@ export default function EmailSignature({ user }: { user: any }) {
                     {user.bio && <p style={{ margin: '2px 0', color: '#555' }}>{user.bio.split('\n')[0]}</p>}
                     <p style={{ margin: '2px 0' }}>
                         <a href={profileUrl} style={{ color: '#007bff', textDecoration: 'none' }}>View My Profile</a>
-                        {user.socialLinks?.linkedin && <> | <a href={user.socialLinks.linkedin} style={{ color: '#007bff', textDecoration: 'none' }}>LinkedIn</a></>}
+                        {user.verifiedAccounts[0] && <> | <a href={user.verifiedAccounts[0].profileUrl} style={{ color: '#007bff', textDecoration: 'none' }}>{user.verifiedAccounts[0].provider}</a></>}
                     </p>
                 </div>
             </div>

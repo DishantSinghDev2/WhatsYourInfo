@@ -2,7 +2,6 @@
 import { notFound } from 'next/navigation';
 import clientPromise from '@/lib/mongodb';
 import { Metadata } from 'next';
-import { User } from '@/lib/auth'; // Assuming you move the User interface to a shared location
 import PublicProfileView from '@/components/profile/PublicProfileView';
 import { UserProfile } from '@/types';
 
