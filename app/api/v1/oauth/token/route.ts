@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 }
 
 // --- Handler for the initial code-for-token exchange ---
-async function handleAuthorizationCodeGrant(body: {}) {
+async function handleAuthorizationCodeGrant(body: unknown) {
   const validation = codeGrantSchema.safeParse(body);
   if (!validation.success) {
     return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
@@ -82,7 +82,7 @@ async function handleAuthorizationCodeGrant(body: {}) {
 }
 
 // --- Handler for the refresh token exchange ---
-async function handleRefreshTokenGrant(body: {}) {
+async function handleRefreshTokenGrant(body: unknown) {
   const validation = refreshTokenGrantSchema.safeParse(body);
   if (!validation.success) {
     return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
@@ -123,7 +123,7 @@ async function handleRefreshTokenGrant(body: {}) {
 // --- Helper to generate and store tokens ---
 async function generateAndStoreTokens(db: {
     collection: (name: string) => {
-      insertOne: (data: {}) => {}
+      insertOne: (data: unknown) => unknown
     }
   }, userId: ObjectId, clientId: ObjectId, scope: string) {
   // 1. Generate Access Token (JWT)

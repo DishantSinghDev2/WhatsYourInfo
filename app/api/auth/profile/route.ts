@@ -3,9 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { z } from 'zod';
-
-// Use your existing in-house auth system to get the logged-in user
-import { getInHouseUserFromRequest } from '@/lib/in-house-auth';
 import { UserProfile } from '@/types';
 import { getUserFromToken } from '@/lib/auth';
 

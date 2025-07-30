@@ -39,7 +39,7 @@ const RESERVED_USERNAMES = new Set([
 async function getUsernameSuggestions(
   db: {
     collection: (name: string) => {
-      findOne: (data: {}) => {}
+      findOne: (data: unknown) => unknown
     }
   },
   firstName: string,

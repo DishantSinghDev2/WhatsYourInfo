@@ -7,7 +7,7 @@ import { GradientEditor } from './GradientEditor';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserProfile } from '@/types';
 
-export function CustomColorMenu({ design, setDesign }: { design: UserProfile['design']; setDesign: (cb: any) => void }) {
+export function CustomColorMenu({ design, setDesign }: { design: UserProfile['design']; setDesign: (cb: UserProfile['design']) => void }) {
   const [openKey, setOpenKey] = useState<string | null>(null);
   const isSelected = design.theme === 'custom';
   const customMenuRef = useRef<HTMLDivElement>(null);

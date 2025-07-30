@@ -35,7 +35,7 @@ export default function LeadCaptureForm({
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [expanded, setExpanded] = useState(false);
 
-  const { accent = '#111827', background = '#ffffff', surface = '#f9fafb' } = design?.customColors || {};
+  const { accent = '#111827', surface = '#f9fafb' } = design?.customColors || {};
 
   const isAccentGradient = isGradient(accent);
   const isSurfaceGradient = isGradient(surface);
