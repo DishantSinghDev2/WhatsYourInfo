@@ -15,37 +15,38 @@ import {
 const tools = [
   {
     name: 'Email Signature Generator',
-    description: 'Create professional email signatures with your profile information',
+    description: 'Create professional email signatures with your profile information.',
     icon: Mail,
-    href: '/tools/email-signature',
+    href: '/tools/email-signature', // Correct path
     color: 'bg-blue-100 text-blue-600',
-    available: true,
+    available: true, // Now available
   },
   {
     name: 'QR Code Generator',
-    description: 'Generate QR codes for your profile to share offline',
+    description: 'Generate custom QR codes for your profile to share offline.',
     icon: Code,
-    href: '/tools/qr-code',
+    href: '/tools/qr-code', // Correct path
     color: 'bg-purple-100 text-purple-600',
-    available: false,
+    available: true, // Now available
   },
   {
     name: 'Social Media Kit',
-    description: 'Download branded assets for your social media profiles',
+    description: 'Download branded assets for your social media profiles.',
     icon: Palette,
-    href: '/tools/social-kit',
+    href: '/tools/social-kit', // Correct path
     color: 'bg-green-100 text-green-600',
-    available: false,
+    available: true, // Now available
   },
   {
     name: 'Link Shortener',
-    description: 'Create short links that redirect to your profile',
+    description: 'Create short, branded, and trackable links for your profile.',
     icon: Globe,
-    href: '/tools/link-shortener',
+    href: '/tools/link-shortener', // Correct path
     color: 'bg-yellow-100 text-yellow-600',
-    available: false,
+    available: true, // Now available
   },
 ];
+
 
 export default function ToolsPage() {
   return (

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,13 +7,7 @@ import { Input } from '@/components/ui/Input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import {
-  Copy,
-  Download,
-  Eye,
-  Settings,
-  Palette,
-} from 'lucide-react';
+import { Copy, Download, Eye, Settings, Palette } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { User } from '@/lib/auth';
 
@@ -38,6 +33,12 @@ const templates = [
   { id: 'minimal', name: 'Minimal', description: 'Simple and elegant' },
   { id: 'creative', name: 'Creative', description: 'Bold and eye-catching' },
 ];
+
+const fontSizeMap = {
+  small: '12px',
+  medium: '14px',
+  large: '16px'
+};
 
 const colorOptions = [
   '#3B82F6', '#8B5CF6', '#10B981', '#F59E0B',
@@ -65,7 +66,6 @@ export default function EmailSignaturePage() {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    // Try to load user data if logged in
     fetchUserData();
   }, []);
 
@@ -75,8 +75,6 @@ export default function EmailSignaturePage() {
       if (response.ok) {
         const userData = await response.json();
         setUser(userData.user);
-        
-        // Pre-fill form with user data
         setSignatureData(prev => ({
           ...prev,
           name: `${userData.user.firstName} ${userData.user.lastName}`,
@@ -86,31 +84,20 @@ export default function EmailSignaturePage() {
         }));
       }
     } catch {
-      // User not logged in, continue with empty form
+      // user not logged in
     }
   };
 
-  const generateSignatureHTML = () => {
-    const { name, title, company, email, phone, website, profileUrl, primaryColor, fontSize } = signatureData;
-    
-    const fontSizeMap = {
-      small: '12px',
-      medium: '14px',
-      large: '16px'
-    };
-
-    const currentFontSize = fontSizeMap[fontSize];
-
-    if (signatureData.template === 'modern') {
+  const templateGenerators = {
+    modern: (data: SignatureData) => {
+      const { name, title, company, email, phone, website, profileUrl, primaryColor, fontSize } = data;
+      const currentFontSize = fontSizeMap[fontSize];
       return `
         <div style="font-family: Arial, sans-serif; font-size: ${currentFontSize}; line-height: 1.4; color: #333;">
           <table cellpadding="0" cellspacing="0" border="0">
             <tr>
               <td style="padding-right: 20px; vertical-align: top;">
-                ${signatureData.includePhoto && user ? `
-                  <img src="https://www.gravatar.com/avatar/${btoa(user.email)}?s=80&d=identicon" 
-                       alt="${name}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
-                ` : ''}
+                ${data.includePhoto && user ? `<img src="https://www.gravatar.com/avatar/${btoa(user.email)}?s=80&d=identicon" alt="${name}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">` : ''}
               </td>
               <td style="vertical-align: top;">
                 <div style="font-weight: bold; font-size: ${parseInt(currentFontSize) + 2}px; color: ${primaryColor};">
@@ -123,27 +110,49 @@ export default function EmailSignaturePage() {
                   ${phone ? `<div style="color: #666;">${phone}</div>` : ''}
                   ${website ? `<div><a href="${website}" style="color: ${primaryColor}; text-decoration: none;">${website}</a></div>` : ''}
                 </div>
-                ${profileUrl ? `
-                  <div style="margin-top: 10px;">
-                    <a href="${profileUrl}" style="background-color: ${primaryColor}; color: white; padding: 6px 12px; text-decoration: none; border-radius: 4px; font-size: 12px;">
-                      View My Profile
-                    </a>
-                  </div>
-                ` : ''}
+                ${profileUrl ? `<div style="margin-top: 10px;"><a href="${profileUrl}" style="background-color: ${primaryColor}; color: white; padding: 6px 12px; text-decoration: none; border-radius: 4px; font-size: 12px;">View My Profile</a></div>` : ''}
               </td>
             </tr>
           </table>
-        </div>
-      `;
+        </div>`;
+    },
+    classic: (data: SignatureData) => {
+      return `<div style="font-family: Times New Roman, serif; font-size: ${fontSizeMap[data.fontSize]}; color: black;">
+        <strong>${data.name}</strong><br>
+        ${data.title ? `${data.title}<br>` : ''}
+        ${data.company ? `${data.company}<br>` : ''}
+        ${data.email ? `<a href="mailto:${data.email}">${data.email}</a><br>` : ''}
+        ${data.phone ? `${data.phone}<br>` : ''}
+        ${data.website ? `<a href="${data.website}">${data.website}</a><br>` : ''}
+        ${data.profileUrl ? `<a href="${data.profileUrl}">Profile</a>` : ''}
+      </div>`;
+    },
+    minimal: (data: SignatureData) => {
+      return `<div style="font-family: Helvetica, sans-serif; font-size: ${fontSizeMap[data.fontSize]}; color: #444;">
+        ${data.name}<br>
+        ${data.title ? `${data.title}<br>` : ''}
+        ${data.company ? `${data.company}<br>` : ''}
+        ${data.email}<br>
+      </div>`;
+    },
+    creative: (data: SignatureData) => {
+      return `<div style="font-family: 'Comic Sans MS', cursive, sans-serif; font-size: ${fontSizeMap[data.fontSize]}; color: ${data.primaryColor};">
+        ✨ <strong>${data.name}</strong> ✨<br>
+        ${data.title ? `${data.title}<br>` : ''}
+        ${data.email ? `<a href="mailto:${data.email}" style="color: ${data.primaryColor};">${data.email}</a><br>` : ''}
+        ${data.profileUrl ? `<a href="${data.profileUrl}" style="color: ${data.primaryColor};">My Profile</a>` : ''}
+      </div>`;
     }
+  };
 
-    // Add other template variations here
-    return generateSignatureHTML();
+  const generateSignatureHTML = () => {
+    const generator = templateGenerators[signatureData.template];
+    if (generator) return generator(signatureData);
+    return '<div style="color: red;">Selected template is not supported.</div>';
   };
 
   const generatePlainText = () => {
     const { name, title, company, email, phone, website, profileUrl } = signatureData;
-    
     let signature = `${name}\n`;
     if (title) signature += `${title}\n`;
     if (company) signature += `${company}\n`;
@@ -152,24 +161,19 @@ export default function EmailSignaturePage() {
     if (phone) signature += `Phone: ${phone}\n`;
     if (website) signature += `Website: ${website}\n`;
     if (profileUrl) signature += `Profile: ${profileUrl}\n`;
-    
     return signature;
   };
 
   const copyToClipboard = () => {
     const content = previewMode === 'html' ? generateSignatureHTML() : generatePlainText();
-    
     if (previewMode === 'html') {
-      // For HTML, we need to copy both HTML and plain text versions
       const clipboardItem = new ClipboardItem({
         'text/html': new Blob([content], { type: 'text/html' }),
         'text/plain': new Blob([generatePlainText()], { type: 'text/plain' })
       });
-      
       navigator.clipboard.write([clipboardItem]).then(() => {
         toast.success('Signature copied to clipboard!');
       }).catch(() => {
-        // Fallback to plain text
         navigator.clipboard.writeText(generatePlainText());
         toast.success('Signature copied as plain text!');
       });
@@ -192,7 +196,7 @@ export default function EmailSignaturePage() {
     URL.revokeObjectURL(url);
     toast.success('Signature downloaded!');
   };
-
+  
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
