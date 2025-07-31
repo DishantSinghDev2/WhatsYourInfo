@@ -17,6 +17,7 @@ export interface UserProfile {
   twoFactorSecret?: string; // Encrypted secret for authenticator apps (TOTP)
   recoveryEmail?: string; // A separate, verified email for recovery
   recoveryCodes?: string[]; // Array of *hashed* one-time use recovery codes
+  sessionId?: string;
   customDomain?: string;
   emailVerified: boolean;
   settings?: {

@@ -73,19 +73,36 @@ export async function PUT(request: NextRequest) {
 }
 
 // --- DELETE: Disable 2FA ---
+
 export async function DELETE(request: NextRequest) {
   const user = await getUserFromToken(request);
   if (!user || !user.twoFactorEnabled) {
-    return NextResponse.json({ error: 'Unauthorized or 2FA is not enabled.' }, { status: 400 });
+    return NextResponse.json({ error: '2FA is not enabled.' }, { status: 400 });
   }
-  // Optional but recommended: require a password to disable 2FA
-  // const { password } = await request.json(); ... verify password ...
+
+  const { password } = await request.json();
+  if (!password) {
+    return NextResponse.json({ error: 'Password is required.' }, { status: 400 });
+  }
 
   const client = await clientPromise;
   const db = client.db('whatsyourinfo');
+  
+  const fullUser = await db.collection('users').findOne({ _id: new ObjectId(user._id) });
+  if (!fullUser) return NextResponse.json({ error: 'User not found.' }, { status: 404 });
+  
+  const isPasswordCorrect = await bcrypt.compare(password, fullUser.password);
+  if (!isPasswordCorrect) {
+    return NextResponse.json({ error: 'Incorrect password.' }, { status: 403 });
+  }
+
+  // Password is correct, proceed with disabling 2FA
   await db.collection('users').updateOne(
     { _id: new ObjectId(user._id) },
-    { $set: { twoFactorEnabled: false }, $unset: { twoFactorSecret: 1, recoveryCodes: 1 } }
+    { 
+      $set: { twoFactorEnabled: false }, 
+      $unset: { twoFactorSecret: 1, recoveryCodes: 1 } 
+    }
   );
 
   return NextResponse.json({ message: 'Two-factor authentication has been disabled.' });
