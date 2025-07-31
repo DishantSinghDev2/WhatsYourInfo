@@ -80,7 +80,24 @@ export default function LoginPage() {
           return;
         }
 
-        toast.success('Welcome back!');
+
+        // --- CRITICAL: Handle the redirect logic on the client-side ---
+
+        toast.success('Login successful!');
+
+        // 1. Check if 2FA is required
+        if (data.twoFactorRequired) {
+          // The API returned a pre-auth token. Redirect to the 2FA page.
+          router.push(`/verify-2fa?token=${data.preAuthToken}`);
+          return; // Stop execution here
+        }
+
+        // 2. Check if the user was trying to access a specific page
+        const redirectUrl = searchParams.get('redirect');
+        // Use router.replace to avoid adding the login page to the browser history
+        if (redirectUrl) {
+          router.replace(redirectUrl);
+        }
         if (callbackUrl !== null) {
           router.push(callbackUrl);
         } else {

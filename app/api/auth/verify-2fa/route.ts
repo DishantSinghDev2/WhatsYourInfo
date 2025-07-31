@@ -38,37 +38,37 @@ export async function POST(request: NextRequest) {
     if (!isValid) {
       return NextResponse.json({ error: 'Invalid authentication code.' }, { status: 400 });
     }
-// --- Session Creation Logic (Almost identical) ---
-const ipAddress = request.headers.get('x-forwarded-for') || request.ip;
-const userAgent = request.headers.get('user-agent');
-const parsedUA = new UAParser(userAgent).getResult();
-const device = `${parsedUA.browser.name} on ${parsedUA.os.name}`;
+    // --- Session Creation Logic (Almost identical) ---
+    const ipAddress = request.headers.get('x-forwarded-for') || request.ip;
+    const userAgent = request.headers.get('user-agent');
+    const parsedUA = new UAParser(userAgent).getResult();
+    const device = `${parsedUA.browser.name} on ${parsedUA.os.name}`;
 
-const sessionToken = crypto.randomBytes(32).toString('hex');
-const hashedSessionToken = crypto.createHash('sha256').update(sessionToken).digest('hex');
+    const sessionToken = crypto.randomBytes(32).toString('hex');
+    const hashedSessionToken = crypto.createHash('sha256').update(sessionToken).digest('hex');
 
-await db.collection('sessions').insertOne({
-    userId: user._id,
-    token: hashedSessionToken,
-    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    createdAt: new Date(),
-    lastUsedAt: new Date(),
-    ipAddress,
-    userAgent: device,
-    is2FAVerified: true, // This session WAS verified with 2FA
-});
-
-// Issue the final JWT, including the session token
-const token = generateToken({ userId: user._id, emailVerified: user.emailVerified, sessionId: sessionToken });
-const response = NextResponse.json({ message: 'Verification successful.' });
-    response.cookies.set('auth-token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60,
-        path: '/',
+    await db.collection('sessions').insertOne({
+      userId: user._id,
+      token: hashedSessionToken,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      createdAt: new Date(),
+      lastUsedAt: new Date(),
+      ipAddress,
+      userAgent: device,
+      is2FAVerified: true, // This session WAS verified with 2FA
     });
-    
+
+    // Issue the final JWT, including the session token
+    const token = generateToken({ userId: user._id, emailVerified: user.emailVerified, sessionId: sessionToken, tfa_passed: true });
+    const response = NextResponse.json({ message: 'Verification successful.' });
+    response.cookies.set('auth-token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60,
+      path: '/',
+    });
+
     // 5. Create a new entry in the `sessions` collection
     // ... logic to create session document with ipAddress, userAgent, etc.
 

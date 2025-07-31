@@ -43,10 +43,10 @@ export default function GalleryModal({
         setCurrent((prev) => (prev - 1 + images.length) % images.length);
 
     return (
-        <div className="fixed inset-0 z-50 bg-black/90 text-white flex flex-col items-center justify-center">
+        <div className="fixed inset-0 z-[71] bg-black/90 text-white flex flex-col items-center justify-center">
             {/* Close */}
             <button
-                className="absolute top-5 right-5 p-2 bg-black/50 rounded-full hover:bg-black"
+                className="absolute top-24 md:top-5 right-5 p-2 bg-black/50 rounded-full hover:bg-black"
                 onClick={onClose}
             >
                 <X className="w-6 h-6" />

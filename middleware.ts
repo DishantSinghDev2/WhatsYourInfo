@@ -1,91 +1,106 @@
+// middleware.ts
+
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { verifyAuthInEdge } from './lib/edge-auth';
 
-function verifyToken(token: string): any {
-  try {
-    const [header, payload, signature] = token.split('.');
-    if (!header || !payload || !signature) return null;
 
-    const decoded = JSON.parse(Buffer.from(payload, 'base64').toString());
-    if (decoded.exp && Date.now() / 1000 > decoded.exp) {
-      return null;
-    }
-    return decoded;
-  } catch {
-    return null;
-  }
-}
-
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || '';
   const url = request.nextUrl.clone();
-  const pathname = url.pathname;
+  const { pathname } = url;
 
-  // ✅ .card username rewrite
+  // --- 1. Handle Special Rewrites First ---
+
+  // Rewrite for username.card URLs to the correct page directory
   const cardMatch = pathname.match(/^\/([\w-]+)\.card$/);
   if (cardMatch) {
     const username = cardMatch[1];
     url.pathname = `/card/${username}`;
     return NextResponse.rewrite(url);
   }
+  
+  // --- 2. Determine Authentication State ---
+  
+  const decodedToken = await verifyAuthInEdge(request);
+  console.log(decodedToken)
 
-  const token = request.cookies.get('auth-token')?.value;
-  const decoded = token ? verifyToken(token) : null;
+  const isLoggedIn = !!decodedToken?.userId;
+  const isEmailVerified = decodedToken?.emailVerified === true;
+  // This new flag is set in the JWT only after the 2FA code is successfully verified.
+  const is2FAPassed = decodedToken?.tfa_passed === true;
 
-  const isLoggedIn = !!(decoded && decoded.userId);
-  const isEmailVerified = decoded?.emailVerified === true;
+  // --- 3. Define Public and Protected Routes ---
 
-  const publicPrefixes = [
-    '/', '/pricing', '/docs', '/blog', '/contact', '/tools', 
-    '/terms', '/privacy', '/status', '/help', '/login', '/register'
+  // All pages are protected by default unless they are in this list.
+  const publicPages = [
+    '/', '/login', '/register', '/pricing', '/docs',
+    '/tools', '/delete', '/verify-email', '/verify-otp', '/verify-2fa',
+    '/terms', '/privacy', '/contact', '/blog', '/go', '/oauth'
   ];
-  const isPublicPage = publicPrefixes.some(p => pathname === p || pathname.startsWith(`${p}/`));
 
-  // 🔒 Redirect unauthenticated users away from protected pages
-  if (!isLoggedIn && !isPublicPage && !pathname.startsWith('/_next') && !pathname.startsWith('/api')) {
+  const isPublicPage = publicPages.some(p => pathname === p || (p !== '/' && pathname.startsWith(`${p}/`)));
+
+  // Prevent API routes and static assets from being processed by the logic below.
+  if (pathname.startsWith('/api/') || pathname.startsWith('/_next/') || /\.\w+$/.test(pathname)) {
+    return NextResponse.next();
+  }
+
+  // --- 4. Implement Redirect Logic ---
+
+  // A. User is fully logged in (and has passed 2FA if enabled)
+  if (isLoggedIn && isEmailVerified && is2FAPassed) {
+    // Redirect away from pages they shouldn't see when logged in.
+    if (['/', '/login', '/register', '/verify-otp', '/verify-2fa'].includes(pathname)) {
+      url.pathname = '/profile'; // Send them to the main dashboard
+      return NextResponse.redirect(url);
+    }
+    // Otherwise, allow access to all other pages.
+    return NextResponse.next();
+  }
+
+  // B. User has entered password but needs to complete 2FA
+  if (isLoggedIn && !is2FAPassed) {
+    // Allow access ONLY to the 2FA verification page.
+    if (pathname === '/verify-2fa') {
+      return NextResponse.next();
+    }
+    // For all other pages, force them to the 2FA page.
+    url.pathname = '/verify-2fa';
+    if (decodedToken?.preAuthToken) { // Pass the pre-auth token if it exists
+        url.searchParams.set('token', decodedToken.preAuthToken);
+    }
+    return NextResponse.redirect(url);
+  }
+  
+  // C. User is logged in but has not verified their email
+  if (isLoggedIn && !isEmailVerified) {
+    // Allow access ONLY to the email verification page.
+    if (pathname === '/verify-otp' || pathname === '/verify-email') {
+      return NextResponse.next();
+    }
+    // For all other pages, force them to verify their email.
+    url.pathname = '/verify-otp'; // or '/verify-email' depending on your flow
+    return NextResponse.redirect(url);
+  }
+
+  // D. User is not logged in
+  if (!isLoggedIn && !isPublicPage) {
+    // Redirect any unauthenticated access to a protected page to the login screen.
     url.pathname = '/login';
+    url.searchParams.set('redirect', pathname); // Remember where they were trying to go
     return NextResponse.redirect(url);
   }
 
-  // 🛑 Require email verification
-  if (
-    isLoggedIn &&
-    !isEmailVerified &&
-    pathname !== '/verify-otp' &&
-    !pathname.startsWith('/_next') &&
-    !pathname.startsWith('/api')
-  ) {
-    url.pathname = '/verify-otp';
-    return NextResponse.redirect(url);
-  }
+  // --- 5. Handle Subdomain Routing (if not handled by redirects) ---
 
-  // ✅ Already verified but visiting /verify-otp
-  if (isLoggedIn && isEmailVerified && pathname === '/verify-otp') {
-    url.pathname = '/profile';
-    return NextResponse.redirect(url);
-  }
-
-  // 🔁 Authenticated user visiting login/register/home
-  if (isLoggedIn && ['/login', '/register', '/'].includes(pathname)) {
-    url.pathname = '/profile';
-    return NextResponse.redirect(url);
-  }
-
-  // 🌐 Subdomain → path routing
   if (hostname.includes('.whatsyour.info') && !hostname.startsWith('www.')) {
     const subdomain = hostname.split('.')[0];
-    const isPublicAsset = pathname.startsWith('/api/')
-      || pathname.startsWith('/_next/')
-      || pathname.startsWith('/favicon')
-      || /\.\w+$/.test(pathname);
-
-    if (!isPublicAsset) {
-      url.pathname = `/${subdomain}`;
-      return NextResponse.rewrite(url);
-    }
+    url.pathname = `/${subdomain}${pathname}`;
+    return NextResponse.rewrite(url);
   }
 
-  // 🛡️ Security headers
+  // --- 6. Apply Security Headers (as a final step) ---
   const response = NextResponse.next();
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
@@ -98,6 +113,7 @@ export function middleware(request: NextRequest) {
   return response;
 }
 
+// The matcher remains the same, it's well-configured.
 export const config = {
   matcher: [
     '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|svg|gif|webp|ico|txt|xml|json)).*)',
