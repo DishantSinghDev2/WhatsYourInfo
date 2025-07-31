@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Nunito } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
+import { GoogleAnalytics } from "@next/third-parties/google"
 
 
 const inter = Nunito({ subsets: ['latin'] });
@@ -73,7 +74,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full">
-      head
       <body className={`${inter.className} min-h-full bg-gray-50`}>
         {children}
         <Toaster
@@ -81,12 +81,14 @@ export default function RootLayout({
           toastOptions={{
             duration: 4000,
             style: {
-              background: '#363636',
-              color: '#fff',
+              color: '#363636',
+              background: '#fff',
+              border: '1px solid'
             },
           }}
         />
       </body>
+      <GoogleAnalytics gaId="G-N7E30Q1QX4" />
     </html>
   );
 }
