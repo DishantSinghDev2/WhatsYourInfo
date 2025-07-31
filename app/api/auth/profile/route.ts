@@ -78,13 +78,10 @@ export async function PUT(request: NextRequest) {
     const db = client.db('whatsyourinfo');
 
     // Construct the data payload to be set in the database
-    const updatePayload: Partial<UserProfile> = {
-      firstName: validatedData.firstName,
-      lastName: validatedData.lastName,
-      bio: validatedData.bio || '',
-      spotlightButton: validatedData.spotlightButton,
-      updatedAt: new Date(),
-    };
+    const updatePayload = {
+    ...validatedData,
+    updatedAt: new Date(),
+  };
 
     // Conditionally add the spotlight button only if the user is Pro
     // This prevents a non-pro user from maliciously crafting a request

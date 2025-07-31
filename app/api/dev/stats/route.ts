@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
       apiKeys: apiKeysCount,
       oauthClients: oauthClientsCount,
       apiCalls: apiCallsCount,
-      rateLimit: '1,000/hr', // This can be static or dynamic based on user plan
+      rateLimit: user.isProUser ? '1,000/hr': '100/hr', // This can be static or dynamic based on user plan
     };
 
     return NextResponse.json(stats);

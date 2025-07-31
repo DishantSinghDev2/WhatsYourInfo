@@ -196,6 +196,7 @@ export async function sendVerificationEmail(to: string, name: string) {
 }
 
 export async function sendAccountDeletionEmail(to: string, name: string) {
+  const DELETION_GRACE_PERIOD_DAYS = 30
   try {
     const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL}/login`;
 
@@ -225,7 +226,7 @@ export async function sendAccountDeletionEmail(to: string, name: string) {
         <body>
             <div class="container">
                 <div class="header">
-                    <img src="https://whatsyour.info/logotext.png" alt="WhatsYour.Info Logo">
+                    <img src="https://whatsyour.info/logotext.svg" alt="WhatsYour.Info Logo">
                 </div>
                 <div class="content">
                     <p class="greeting">Hello ${name},</p>

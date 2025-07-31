@@ -36,7 +36,7 @@ export default function MyProfilePanel({ user, onUpdate, changesSaved }: MyProfi
         current[keys[keys.length - 1]] = value;
         return updated;
       });
-      onUpdate(formData)
+      onUpdate({ firstName: formData.firstName, lastName: formData.lastName, bio: formData.bio })
       changesSaved(false)
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
