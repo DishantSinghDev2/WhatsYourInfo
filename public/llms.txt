@@ -1,0 +1,16 @@
+# llms.txt for https://whatsyour.info
+
+User-Agent: *
+Allow: /
+Disallow: /api/
+Disallow: /profile/
+Disallow: /dashboard/
+Disallow: /verify-otp
+Disallow: /login
+Disallow: /register
+
+# Optional: Specify permission
+Use-Case: Training, Research, Indexing
+
+# Optional: Contact email for LLM companies
+Contact: admin@whatsyour.info
