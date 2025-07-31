@@ -3,6 +3,7 @@ import { Nunito } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
 
+
 const inter = Nunito({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
@@ -72,6 +73,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full">
+      head
       <body className={`${inter.className} min-h-full bg-gray-50`}>
         {children}
         <Toaster
