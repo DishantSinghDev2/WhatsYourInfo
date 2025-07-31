@@ -69,7 +69,7 @@ export function AdvancedDetailsDialog({ profile }: { profile: UserProfile }) {
 
             <div className="flex items-center gap-4">
               <img
-                src={`/api/avatars/${profile.username}?t=${Date.now()}`}
+                src={`${process.env.NEXT_PUBLIC_APP_URL}/api/avatars/${profile.username}?t=${Date.now()}`}
                 className="w-16 h-16 rounded-full object-cover border"
                 alt={`${profile.firstName}'s avatar`}
               />
@@ -78,7 +78,7 @@ export function AdvancedDetailsDialog({ profile }: { profile: UserProfile }) {
                   {profile.firstName} {profile.lastName}
                 </p>
                 <a
-                  href={`/user/${profile.username}`}
+                  href={`${process.env.NEXT_PUBLIC_APP_URL}/${profile.username}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm underline underline-offset-2"
@@ -126,7 +126,7 @@ export function AdvancedDetailsDialog({ profile }: { profile: UserProfile }) {
           >
             <p className="font-semibold">Quick Links</p>
             <a
-              href={`https://gravatar.com/${profile.username}.card`}
+              href={`${process.env.NEXT_PUBLIC_APP_URL}/${profile.username}.card`}
               className="hover:underline text-blue-400"
               target="_blank"
             >
@@ -135,20 +135,20 @@ export function AdvancedDetailsDialog({ profile }: { profile: UserProfile }) {
 
             <div className="flex flex-col gap-2 mt-3">
               <a
-                href={`/api/vcard/${profile.username}`}
+                href={`${process.env.NEXT_PUBLIC_APP_URL}/api/vcard/${profile.username}`}
                 download
                 className="text-blue-400 hover:underline"
               >
                 Download vCard
               </a>
               <a
-                href={`/qr/${profile.username}?type=logo`}
+                href={`${process.env.NEXT_PUBLIC_APP_URL}/qr/${profile.username}?type=logo`}
                 className="text-blue-400 hover:underline"
               >
                 QR - Logo
               </a>
               <a
-                href={`/qr/${profile.username}?type=avatar`}
+                href={`${process.env.NEXT_PUBLIC_APP_URL}/qr/${profile.username}?type=avatar`}
                 className="text-blue-400 hover:underline"
               >
                 QR - Avatar

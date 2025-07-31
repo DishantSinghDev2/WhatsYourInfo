@@ -19,15 +19,6 @@ function verifyToken(token: string): any {
   }
 }
 
-const publicRoutes = [
-  '/',
-  '/pricing',
-  '/docs',
-  '/blog',
-  '/contact',
-];
-
-
 
 export function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || '';
@@ -40,12 +31,12 @@ export function middleware(request: NextRequest) {
   const isLoggedIn = !!(decoded && decoded.userId);
   const isEmailVerified = decoded?.emailVerified === true;
 
-  const publicPrefixes = ['/', '/pricing', '/docs', '/blog', '/contact', 'tools', 'terms', 'privacy', 'status'];
+  const publicPrefixes = ['/', '/pricing', '/docs', '/blog', '/contact', '/tools', '/terms', '/privacy', '/status', '/help', '/login', '/register'];
   const isPublicPage = publicPrefixes.some(p => pathname === p || pathname.startsWith(`${p}/`));
 
   // 🔚 Redirect unauthenticated users away from protected routes
   if (!isLoggedIn && !isPublicPage && !pathname.startsWith('/_next') && !pathname.startsWith('/api')) {
-    url.pathname = '/';
+    url.pathname = '/login';
     return NextResponse.redirect(url);
   }
 

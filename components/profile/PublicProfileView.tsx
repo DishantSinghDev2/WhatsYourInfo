@@ -331,7 +331,7 @@ export default function PublicProfileView({
                 </Button>
                 <Button variant="ghost" size="icon" asChild>
                   <a
-                    href={`/api/vcard/${profile.username}`}
+                    href={`${process.env.NEXT_PUBLIC_APP_URL}/api/vcard/${profile.username}`}
                     download
                   >
                     <Download className="h-5 w-5" />
