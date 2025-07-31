@@ -58,7 +58,7 @@ export default function Header() {
           setUser(userData.user);
         } else if (response.status === 401) {
           setUser(null); // Explicitly set user to null on 401
-          router.push('/login')
+          router.replace('/login')
         }
       } catch {
         toast.error('Error fetching user profile.');

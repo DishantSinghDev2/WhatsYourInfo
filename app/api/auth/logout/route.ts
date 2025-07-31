@@ -7,16 +7,17 @@ export async function POST() {
       { status: 200 }
     );
 
-    // Clear the auth cookie
-    response.cookies.delete('auth-token');
+    // ✅ Correctly invalidate the cookie (important: path=/)
+    response.cookies.set('auth-token', '', {
+      httpOnly: true,
+      secure: true,
+      path: '/',
+      expires: new Date(0), // Expire instantly
+    });
 
     return response;
-
   } catch (error) {
     console.error('Logout error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

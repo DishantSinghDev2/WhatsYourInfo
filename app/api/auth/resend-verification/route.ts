@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Trigger the email sending process
-    await sendVerificationEmail({ to: user.email, name: user.firstName });
+    await sendVerificationEmail(user.email, user.firstName );
 
     return NextResponse.json({ message: 'A new verification email has been sent to your inbox.' });
 
