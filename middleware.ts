@@ -23,7 +23,6 @@ export async function middleware(request: NextRequest) {
   // --- 2. Determine Authentication State ---
   
   const decodedToken = await verifyAuthInEdge(request);
-  console.log(decodedToken)
 
   const isLoggedIn = !!decodedToken?.userId;
   const isEmailVerified = decodedToken?.emailVerified === true;
