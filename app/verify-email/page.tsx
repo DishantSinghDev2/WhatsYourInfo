@@ -24,12 +24,28 @@ function VerifyEmailContent() {
     const tokenFromUrl = searchParams.get('token');
     const errorFromUrl = searchParams.get('error');
 
+    const verifyEmailToken = async (token: string) => {
+      try {
+        const res = await fetch('/api/auth/verify-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+
+        setStatus('success');
+        setMessage('Your email has been verified successfully!');
+      } catch (error) {
+        setStatus('error');
+        setMessage(error instanceof Error ? error.message : 'Verification failed.');
+      }
+    };
+
     if (tokenFromUrl) {
-      // If a token is in the URL, verify it automatically on load
       setStatus('verifying');
       setMessage('Verifying your email address...');
-      // The GET endpoint handles the logic and redirects, so this component
-      // primarily handles errors or manual entry.
+      verifyEmailToken(tokenFromUrl);
     } else if (errorFromUrl) {
       setStatus('error');
       if (errorFromUrl === 'invalid_token') {
@@ -39,6 +55,7 @@ function VerifyEmailContent() {
       }
     }
   }, [searchParams]);
+
 
   const handleManualVerify = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +73,7 @@ function VerifyEmailContent() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      
+
       setStatus('success');
       setMessage('Your email has been verified successfully!');
     } catch (error) {
@@ -68,14 +85,14 @@ function VerifyEmailContent() {
   const handleResend = async () => {
     setIsResending(true);
     try {
-        const res = await fetch('/api/auth/resend-verification', { method: 'POST' });
-        const data = await res.json();
-        if(!res.ok) throw new Error(data.error);
-        toast.success(data.message);
-    } catch(error) {
-        toast.error(error instanceof Error ? error.message : 'Could not resend email.');
+      const res = await fetch('/api/auth/resend-verification', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      toast.success(data.message);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not resend email.');
     } finally {
-        setIsResending(false);
+      setIsResending(false);
     }
   };
 
@@ -115,7 +132,7 @@ function VerifyEmailContent() {
               <p className="text-sm text-gray-500">
                 Didn't receive an email?
                 <Button variant="link" onClick={handleResend} disabled={isResending} className="font-semibold">
-                    {isResending ? 'Sending...' : 'Resend Verification Link'}
+                  {isResending ? 'Sending...' : 'Resend Verification Link'}
                 </Button>
               </p>
             </div>
@@ -128,12 +145,12 @@ function VerifyEmailContent() {
 
 // Use Suspense to handle client-side rendering of searchParams
 export default function VerifyEmailPage() {
-    return (
-        <Suspense fallback={<div>Loading...</div>}>
-            <div className="min-h-screen bg-gray-50">
-                <Header />
-                <VerifyEmailContent />
-            </div>
-        </Suspense>
-    );
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <VerifyEmailContent />
+      </div>
+    </Suspense>
+  );
 }

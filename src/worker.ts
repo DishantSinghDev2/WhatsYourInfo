@@ -5,7 +5,7 @@
  */
 export interface Env {
   AVATAR_BUCKET: R2Bucket;
-  HEADER_BUCKET: R2Bucket;
+  HEADER_BUCKET: R2Bucket; 
   BACKGROUND_BUCKET: R2Bucket;
   GALLERY_BUCKET: R2Bucket; // New gallery bucket
 }

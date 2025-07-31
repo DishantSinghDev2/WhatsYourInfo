@@ -1,4 +1,4 @@
-// app/api/avatar/upload/route.ts
+// app/api/avatars/upload/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromToken } from '@/lib/auth';
