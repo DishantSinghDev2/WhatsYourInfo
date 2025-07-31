@@ -1,3 +1,4 @@
+// app/sitemap.xml/route.ts
 import { NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 
@@ -5,8 +6,7 @@ export async function GET() {
   try {
     const client = await clientPromise;
     const db = client.db('whatsyourinfo');
-    
-    // Get all public profiles
+
     const users = await db.collection('users').find(
       {},
       {
@@ -22,39 +22,32 @@ export async function GET() {
 
     let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- Static pages -->
-  <url>
-    <loc>${baseUrl}/</loc>
-    <lastmod>${currentDate}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>${baseUrl}/pricing</loc>
-    <lastmod>${currentDate}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>${baseUrl}/docs</loc>
-    <lastmod>${currentDate}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>${baseUrl}/blog</loc>
-    <lastmod>${currentDate}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.7</priority>
-  </url>
 `;
 
-    // Add user profiles
+    // Static pages
+    const staticRoutes = [
+      { loc: '/', changefreq: 'daily', priority: '1.0' },
+      { loc: '/pricing', changefreq: 'weekly', priority: '0.8' },
+      { loc: '/docs', changefreq: 'weekly', priority: '0.8' },
+      { loc: '/blog', changefreq: 'daily', priority: '0.7' },
+    ];
+
+    for (const route of staticRoutes) {
+      sitemap += `  <url>
+    <loc>${baseUrl}${route.loc}</loc>
+    <lastmod>${currentDate}</lastmod>
+    <changefreq>${route.changefreq}</changefreq>
+    <priority>${route.priority}</priority>
+  </url>
+`;
+    }
+
+    // Dynamic user profiles
     users.forEach((user) => {
-      const lastmod = user.updatedAt ? 
-        new Date(user.updatedAt).toISOString().split('T')[0] : 
-        currentDate;
-      
+      const lastmod = user.updatedAt
+        ? new Date(user.updatedAt).toISOString().split('T')[0]
+        : currentDate;
+
       sitemap += `  <url>
     <loc>${baseUrl}/${user.username}</loc>
     <lastmod>${lastmod}</lastmod>
@@ -64,20 +57,18 @@ export async function GET() {
 `;
     });
 
-    sitemap += `</urlset>`;
+    sitemap += '</urlset>';
 
-    const response = new NextResponse(sitemap, {
+    return new NextResponse(sitemap, {
       status: 200,
       headers: {
         'Content-Type': 'application/xml',
         'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
       },
     });
+  } catch (err) {
+    console.error('Failed to generate sitemap:', err);
 
-    return response;
-
-  } catch (error) {
-    console.error('Sitemap generation error:', error);
     return new NextResponse(
       '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>',
       {

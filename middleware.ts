@@ -55,22 +55,22 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // === 🌐 Handle subdomain → path routing ===
-  if (hostname.includes('.whatsyour.info') && !hostname.startsWith('www.')) {
-    const subdomain = hostname.split('.')[0];
+  // 🌐 Handle subdomain → path routing
+if (hostname.includes('.whatsyour.info') && !hostname.startsWith('www.')) {
+  const subdomain = hostname.split('.')[0];
 
-    if (
-      pathname.startsWith('/api/') ||
-      pathname.startsWith('/_next/') ||
-      pathname.startsWith('/favicon') ||
-      pathname.includes('.')
-    ) {
-      return NextResponse.next();
-    }
+  const isPublicAsset = pathname.startsWith('/api/')
+    || pathname.startsWith('/_next/')
+    || pathname.startsWith('/favicon')
+    || /\.\w+$/.test(pathname); // Better asset detection
 
-    url.pathname = `/${subdomain}`;
-    return NextResponse.rewrite(url);
+  if (isPublicAsset) {
+    return NextResponse.next();
   }
+
+  url.pathname = `/${subdomain}`;
+  return NextResponse.rewrite(url);
+}
 
   // === 🛡️ Security headers ===
   const response = NextResponse.next();
@@ -87,6 +87,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|svg|gif|webp|ico|txt|xml|json)).*)',
   ],
 };

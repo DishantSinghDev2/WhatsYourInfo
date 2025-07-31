@@ -76,7 +76,7 @@ export default function LoginPage() {
       if (response.ok) {
         if (data.emailVerified === false) {
           toast.error("Email not verified. Please verify your email.");
-          router.push(`/verify-otp${callbackUrl && `?callbackUrl=${callbackUrl}`}`);
+          router.push(`/verify-otp${callbackUrl !== null && `?callbackUrl=${callbackUrl}`}`);
           return;
         }
 
@@ -238,7 +238,7 @@ export default function LoginPage() {
                 </div>
 
                 <div className="mt-6 text-center">
-                  <Link href={`/register${callbackUrl && `?callbackUrl=${callbackUrl}`}`}>
+                  <Link href={`/register${callbackUrl !== null && `?callbackUrl=${callbackUrl}`}`}>
                     <Button variant="outline" className="w-full">
                       Create Account
                     </Button>

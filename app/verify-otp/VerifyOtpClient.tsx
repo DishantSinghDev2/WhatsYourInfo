@@ -105,7 +105,7 @@ export default function VerifyOtpPage() {
             const data = await response.json();
 
             if (response.ok) {
-                if (callbackUrl) {
+                if (callbackUrl !== null) {
                     router.push(callbackUrl);
                 } else {
                     router.push('/profile');

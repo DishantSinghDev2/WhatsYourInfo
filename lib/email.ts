@@ -126,13 +126,7 @@ export async function sendOtpEmail({ to, otp, name }: SendOtpEmailOptions) {
 }
 
 
-// --- NEW: Function to send a verification link ---
-interface SendVerificationEmailOptions {
-  to: string;
-  name: string;
-}
-
-export async function sendVerificationEmail({ to, name }: SendVerificationEmailOptions) {
+export async function sendVerificationEmail(to: string, name: string) {
   try {
     // 1. Generate a secure, unique verification token
     const verificationToken = crypto.randomBytes(32).toString('hex');
