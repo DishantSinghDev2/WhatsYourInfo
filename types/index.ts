@@ -13,6 +13,10 @@ export interface UserProfile {
   paypalSubscriptionId?: string;
   proStarted?: Date;
   nextDue?: Date;
+  twoFactorEnabled: boolean; // Is 2FA active for this user?
+  twoFactorSecret?: string; // Encrypted secret for authenticator apps (TOTP)
+  recoveryEmail?: string; // A separate, verified email for recovery
+  recoveryCodes?: string[]; // Array of *hashed* one-time use recovery codes
   customDomain?: string;
   emailVerified: boolean;
   settings?: {

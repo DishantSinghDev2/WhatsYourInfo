@@ -5,35 +5,37 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
-import { User as AuthUser } from '@/lib/auth';
+import { UserProfile } from '@/types'; // Import the full UserProfile type
 import { Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { SettingsNav } from '@/components/settings/SettingsNav';
 import { EmailSettingsPanel } from '@/components/settings/EmailSettingsPanel';
-import { PasswordSettingsPanel } from '@/components/settings/PasswordSettingsPanel';
-import { ConnectedAppsPanel } from '@/components/settings/ConnectedAppsPanel';
+// You would also create and import an AccountSettingsPanel for username changes etc.
+// import { AccountSettingsPanel } from '@/components/settings/AccountSettingsPanel';
 
 export default function SettingsPage() {
   const router = useRouter();
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchFullUser = async () => {
       try {
-        const res = await fetch('/api/auth/user');
+        // IMPORTANT: Fetch from the full profile endpoint to get all necessary data
+        const res = await fetch('/api/auth/profile');
         if (!res.ok) {
           if (res.status === 401) router.push('/login');
           throw new Error('Please sign in to view settings.');
         }
         const data = await res.json();
-        setUser(data.user);
+        setUser(data); // The API returns the full user object
       } catch (error) {
         toast.error(error instanceof Error ? error.message : 'Could not load user data.');
       } finally {
         setIsLoading(false);
       }
     };
-    fetchUser();
+    fetchFullUser();
   }, [router]);
 
   if (isLoading) {
@@ -55,13 +57,16 @@ export default function SettingsPage() {
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-600 mt-1">Manage your account, password, and application connections.</p>
+          <p className="text-gray-600 mt-1">Manage your account and security preferences.</p>
         </div>
 
+        <SettingsNav />
+
         <div className="space-y-10">
+          {/* This page now focuses on non-security account settings */}
+          {/* <AccountSettingsPanel user={user} /> */}
           <EmailSettingsPanel user={user} />
-          <PasswordSettingsPanel />
-          <ConnectedAppsPanel />
+          {/* Other non-sensitive settings could go here */}
         </div>
       </main>
     </div>

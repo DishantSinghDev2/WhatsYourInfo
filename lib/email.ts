@@ -262,3 +262,68 @@ export async function sendAccountDeletionEmail(to: string, name: string) {
     throw new Error('Failed to send account deletion email.');
   }
 }
+
+// --- NEW: Function to send recovery email verification link ---
+interface SendRecoveryEmailOptions {
+  to: string;   // The new recovery email address to verify
+  name: string; // The user's first name
+  token: string;
+}
+
+export async function sendRecoveryEmailVerification({ to, name, token }: SendRecoveryEmailOptions) {
+  try {
+    const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/verify-recovery-email?token=${token}`;
+
+    await transporter.sendMail({
+      from: `"WhatsYour.Info Security" <${process.env.EMAIL_FROM}>`,
+      to,
+      subject: 'Confirm Your Recovery Email for WhatsYour.Info',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Confirm Recovery Email</title>
+          <style>
+              /* Using the same well-designed styles from your other emails */
+              body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 0; background-color: #f8f9fa; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { text-align: center; padding-bottom: 20px; }
+              .header img { max-width: 150px; }
+              .content { background-color: #ffffff; padding: 40px; border-radius: 8px; border: 1px solid #e0e0e0; }
+              .greeting { font-size: 20px; font-weight: 500; color: #000000; margin-bottom: 20px; }
+              .instructions { font-size: 16px; line-height: 1.6; color: #000000; }
+              .footer { text-align: center; padding-top: 20px; font-size: 12px; color: #888888; }
+              .button { display: inline-block; padding: 12px 24px; font-size: 16px; font-weight: 500; color: #ffffff; background-color: #28a745; text-decoration: none; border-radius: 5px; }
+              .warning { background-color: #fff3cd; border-left: 4px solid #ffeeba; padding: 15px; margin: 20px 0; font-size: 14px; color: #856404; }
+          </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <img src="https://whatsyour.info/logotext.png" alt="WhatsYour.Info Logo">
+                </div>
+                <div class="content">
+                    <p class="greeting">Hello ${name},</p>
+                    <p class="instructions">
+                      A request was made to set this address as the recovery email for your WhatsYour.Info account.
+                      To confirm this change, please click the button below.
+                    </p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="${verificationUrl}" class="button" target="_blank">Confirm Recovery Email</a>
+                    </div>
+                    <p class="instructions">This confirmation link is valid for 24 hours.</p>
+                    <p class="instructions"><strong>If you did not request this change, you can safely ignore this email.</strong> Your account remains secure.</p>
+                </div>
+                <div class="footer">
+                    <p>© ${new Date().getFullYear()} WhatsYour.Info. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+      `,
+    });
+  } catch (error) {
+    console.error('Error sending recovery email verification:', error);
+    throw new Error('Failed to send recovery email.');
+  }
+}

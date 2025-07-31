@@ -69,7 +69,7 @@ export default function WebCardView({ profile }: { profile: UserProfile }) {
         <div className="w-full max-w-sm rounded-2xl bg-white/70 dark:bg-black/50 backdrop-blur-xl shadow-2xl border border-white/20 overflow-hidden text-center p-8 flex flex-col items-center">
             
             {/* Avatar */}
-            <img
+            <Image
               src={`/api/avatars/${profile.username}`}
               alt={`${profile.firstName}'s avatar`}
               width={128}

@@ -3,6 +3,9 @@ import { authenticateUser, generateToken } from '@/lib/auth';
 import { z } from 'zod';
 import clientPromise from '@/lib/mongodb'; // Import clientPromise
 import { ObjectId } from 'mongodb';
+import jwt from 'jsonwebtoken';
+import { UAParser } from 'ua-parser-js';
+import crypto from 'crypto';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -27,6 +30,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+        // --- NEW: 2FA Check ---
+    if (user.twoFactorEnabled) {
+      // User has 2FA enabled. Do NOT issue the final auth cookie.
+      // Instead, issue a short-lived "pre-auth" JWT.
+      const preAuthToken = jwt.sign(
+          { userId: user._id, type: 'pre-auth' }, 
+          process.env.JWT_SECRET!, 
+          { expiresIn: '10m' }
+      );
+      
+      // Send this temporary token to the frontend.
+      return NextResponse.json({ twoFactorRequired: true, preAuthToken });
+    }
+
+
+
     let recovered = false
 
     // --- NEW: RECOVERY LOGIC ---
@@ -42,10 +61,31 @@ export async function POST(request: NextRequest) {
       recovered = true
     }
 
+// --- Session Creation Logic ---
+const ipAddress = request.headers.get('x-forwarded-for') || request.ip;
+const userAgent = request.headers.get('user-agent');
+const parsedUA = new UAParser(userAgent).getResult();
+const device = `${parsedUA.browser.name} on ${parsedUA.os.name}`;
 
+// This session identifier will be stored in the cookie/JWT
+const sessionToken = crypto.randomBytes(32).toString('hex'); 
+const hashedSessionToken = crypto.createHash('sha256').update(sessionToken).digest('hex');
 
-    // Generate JWT token
-    const token = generateToken({ userId: user._id, emailVerified: user.emailVerified });
+const client = await clientPromise;
+const db = client.db('whatsyourinfo');
+await db.collection('sessions').insertOne({
+    userId: user._id,
+    token: hashedSessionToken,
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+    createdAt: new Date(),
+    lastUsedAt: new Date(),
+    ipAddress,
+    userAgent: device,
+    is2FAVerified: false, // This session was not verified with 2FA
+});
+
+// Issue the final JWT, now including the session token
+const token = generateToken({ userId: user._id, emailVerified: user.emailVerified, sessionId: sessionToken });
 
     // Create response with user data
     const response = NextResponse.json(
