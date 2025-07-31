@@ -84,7 +84,7 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
+    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-[51]">
       {/* Set a fixed height to prevent layout shift */}
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 lg:px-8 h-20">
         <div className="flex lg:flex-1">
@@ -227,9 +227,9 @@ export default function Header() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
-            <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
+            <div className="fixed inset-0 z-[70] bg-black/20 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
             <motion.div
-              className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10"
+              className="fixed inset-y-0 right-0 z-[70] w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-gray-900/10"
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
@@ -248,22 +248,45 @@ export default function Header() {
                   <div className="space-y-2 py-6">
                     {user ? (
                       <>
-                        <Link href="/dashboard" className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50">Dashboard</Link>
-                        <Link href="/billing" className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50">Billing</Link>
+                        <Link href="/dashboard" className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50">
+                          Dashboard
+                        </Link>
+                        <Link href="/billing" className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50">
+                          Billing
+                        </Link>
+                        {user.isProUser && (
+                          <Link href="/leads" className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50">
+                            Leads
+                          </Link>
+                        )}
+                        <Link href="/dev" className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50">
+                          Developers
+                        </Link>
+                        <Link href="/settings" className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50">
+                          Settings
+                        </Link>
                       </>
                     ) : (
-                      navigation.map((item) => (
-                        <Link key={item.name} href={item.href} className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50">
-                          {item.name}
-                        </Link>
-                      ))
+                      <>
+                        {navigation.map((item) => (
+                          <Link
+                            key={item.name}
+                            href={item.href}
+                            className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
+                          >
+                            {item.name}
+                          </Link>
+                        ))}
+                      </>
                     )}
                   </div>
                   <div className="py-6 space-y-2">
                     {user ? (
                       <>
                         <div className="px-3 py-2">
-                          <p className="text-base font-semibold text-gray-900 truncate">{user.firstName} {user.lastName}</p>
+                          <p className="text-base font-semibold text-gray-900 truncate">
+                            {user.firstName} {user.lastName}
+                          </p>
                           <p className="text-sm text-gray-500 truncate">{user.email}</p>
                         </div>
                         <Button
@@ -277,11 +300,22 @@ export default function Header() {
                       </>
                     ) : (
                       <>
-                        <Link href="/login" className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50">Sign in</Link>
-                        <Link href="/register" className="w-full block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-white bg-blue-600 hover:bg-blue-700 text-center">Get Started</Link>
+                        <Link
+                          href="/login"
+                          className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50"
+                        >
+                          Sign in
+                        </Link>
+                        <Link
+                          href="/register"
+                          className="w-full block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-white bg-blue-600 hover:bg-blue-700 text-center"
+                        >
+                          Get Started
+                        </Link>
                       </>
                     )}
                   </div>
+
                 </div>
               </div>
             </motion.div>

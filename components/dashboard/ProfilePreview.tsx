@@ -3,10 +3,18 @@
 import { useRef, useState } from 'react';
 import { UserProfile } from '@/types';
 import PublicProfileView from '@/components/profile/PublicProfileView';
-import { GripVertical } from 'lucide-react';
+import { GripVertical, X } from 'lucide-react';
 
-export default function ProfilePreview({ user }: { user: UserProfile | null }) {
-  const MIN_WIDTH = 620;
+export default function ProfilePreview({ 
+  user, 
+  isMobileView = false, 
+  onClose 
+}: { 
+  user: UserProfile | null, 
+  isMobileView?: boolean, 
+  onClose?: () => void 
+}) {
+  const MIN_WIDTH = 520;
   const MAX_WIDTH = 900;
 
   const [width, setWidth] = useState(MAX_WIDTH);
@@ -57,25 +65,39 @@ export default function ProfilePreview({ user }: { user: UserProfile | null }) {
   if (!user) return null;
 
   return (
-    <div className="h-full w-full flex justify-center items-center bg-gray-100">
+    // On mobile, the parent container controls the size.
+    <div className={`h-full w-full flex justify-center items-center`}>
       <div
         ref={previewRef}
-        className="relative h-full bg-white rounded-xl border shadow-md overflow-hidden"
-        style={{ width: `${width}px`, minWidth: MIN_WIDTH, maxWidth: MAX_WIDTH }}
+        className="relative h-full overflow-hidden"
+        // Apply resizable width only on desktop view
+        style={!isMobileView ? { width: `${width}px`, minWidth: MIN_WIDTH, maxWidth: MAX_WIDTH } : { width: '100%' }}
       >
-        {/* Slide Handle (larger hitbox, narrow visible area) */}
-        <div
-          className="absolute left-0 top-0 h-full w-10 z-20 flex items-center justify-start"
-          onMouseDown={handleMouseDown}
-        >
-          <div className="w-4 h-full bg-gray-200 cursor-col-resize flex items-center justify-center rounded-r-md shadow-sm">
-            <GripVertical className="h-4 w-4 text-gray-500 pointer-events-none" />
+        {/* --- CONDITIONAL: Show resizer only on desktop --- */}
+        {!isMobileView && (
+          <div
+            className="absolute left-0 top-0 h-full w-10 z-20 flex items-center justify-start"
+            onMouseDown={handleMouseDown}
+          >
+            <div className="w-2 h-full bg-gray-200 cursor-col-resize flex items-center justify-center ">
+              <GripVertical className="h-4 w-2 text-gray-500 pointer-events-none" />
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Profile Preview */}
+        {/* --- CONDITIONAL: Show close button only on mobile --- */}
+        {isMobileView && onClose && (
+            <button
+                onClick={onClose}
+                className="absolute top-4 right-4 z-50 p-2 rounded-full bg-black/40 text-white hover:bg-black/60 transition-colors"
+                aria-label="Close preview"
+            >
+                <X className="h-5 w-5"/>
+            </button>
+        )}
+
         <div className="h-full w-full overflow-y-auto custom-scrollbar">
-          <PublicProfileView profile={user} isPreview />
+          <PublicProfileView profile={user} />
         </div>
       </div>
     </div>

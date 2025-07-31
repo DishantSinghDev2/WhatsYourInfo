@@ -1,6 +1,7 @@
 'use client';
 import {
-  User, Palette, ImageIcon, BadgeCheck, Link as LinkIcon, Wallet, Camera, Wrench, Cog
+  User, Palette, ImageIcon, BadgeCheck, Link as LinkIcon, Wallet, Camera, Wrench, Cog,
+  Smartphone
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { UserProfile } from '@/types';
@@ -18,11 +19,31 @@ const navItems = [
   { id: 'settings', title: 'Account Settings', description: 'Manage your account data.', icon: Cog },
 ];
 
-export default function DashboardNav({ setActivePanel, user }: { setActivePanel: (id: string) => void, user: UserProfile }) {
+export default function DashboardNav({ 
+  setActivePanel, 
+  user, 
+  onShowPreview 
+}: { 
+  setActivePanel: (id: string) => void, 
+  user: UserProfile,
+  onShowPreview: () => void 
+}) {
   return (
-    <div>
+<div className="relative">
       <h1 className="text-2xl font-bold">Profile</h1>
       <p className="text-gray-500 mb-8">Select a category to edit your profile.</p>
+
+      {/* --- NEW: Mobile Preview Button --- */}
+      <div className="absolute top-0 right-0 md:hidden">
+        <button
+          onClick={onShowPreview}
+          className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+          aria-label="Show profile preview"
+        >
+          <Smartphone className="h-6 w-6 text-gray-700" />
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {navItems.map((item) => (
           <motion.div

@@ -57,6 +57,9 @@ export default function ProfilePage() {
   const [backToTool, setBackToTool] = useState<string | null>("")
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
+  // --- NEW STATE for mobile preview visibility ---
+  const [isMobilePreviewOpen, setIsMobilePreviewOpen] = useState(false);
+
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
@@ -97,51 +100,77 @@ export default function ProfilePage() {
 
 
   const ActivePanelComponent = activePanel ? panelComponents[activePanel] : null;
-
-  if (isLoading || !draftUser) return <div className="p-8 text-center text-sm text-gray-500">Loading profile...</div>;
+  
+  if (isLoading || !draftUser) {
+    return (
+      <div className="flex items-center justify-center h-screen w-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <p className="sr-only">Loading profile...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen w-screen flex flex-col bg-white text-sm">
       <Header />
-      <div className='flex flex-row overflow-hidden'>
+      <div className='flex flex-row overflow-hidden h-full'>
 
-        {/* Sidebar / Left Panel */}
-        <div className="flex-grow px-4 py-6 overflow-y-auto custom-scrollbar w-[559px]">
+        {/* --- Sidebar / Left Panel (Now full-width on mobile) --- */}
+        <div className="flex-grow w-full md:w-auto md:max-w-xl px-4 py-6 overflow-y-auto custom-scrollbar">
           <AnimatePresence mode="wait">
             {ActivePanelComponent ? (
               <motion.div
                 key={activePanel}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
                 transition={{ duration: 0.2 }}
               >
                 <button
-                  onClick={() => {
-                    if (activePanel === "tool") {
-                      setBackToTool(null)
-                    } else {
-                      handleBackToNav()
-                    }
-                  }}
+                  onClick={handleBackToNav}
                   className="mb-4 text-blue-600 hover:underline text-sm flex items-center gap-1"
                 >
                   <ChevronLeft className='bg-gray-200 rounded-full p-2 w-8 h-8 hover:bg-gray-100 transition duration-100' />
                 </button>
-                <ActivePanelComponent user={draftUser} onUpdate={handleUpdate} aTool={backToTool} changesSaved={handleChangesSaved} />
+                <ActivePanelComponent user={draftUser} onUpdate={handleUpdate} changesSaved={handleChangesSaved} />
               </motion.div>
             ) : (
               <motion.div key="nav" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <DashboardNav setActivePanel={setActivePanel} user={draftUser} />
+                {/* Pass the function to open the mobile preview */}
+                <DashboardNav 
+                  setActivePanel={setActivePanel} 
+                  user={draftUser} 
+                  onShowPreview={() => setIsMobilePreviewOpen(true)}
+                />
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        {/* Preview Panel */}
-        <div className="h-full w-full overflow-y-auto custom-scrollbar-preview p-4 bg-gray-800">
+        {/* --- Desktop Preview Panel (Hidden on mobile) --- */}
+        <div className="h-full w-full overflow-y-auto custom-scrollbar-preview bg-gray-800 hidden md:block">
           <ProfilePreview user={draftUser} />
         </div>
+        
+        {/* --- Mobile Preview Panel (Animated Overlay) --- */}
+        <AnimatePresence>
+          {isMobilePreviewOpen && (
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", stiffness: 400, damping: 40 }}
+              className="fixed  z-50 h-full w-full bg-gray-800 md:hidden"
+            >
+              <ProfilePreview 
+                user={draftUser}
+                isMobileView={true}
+                onClose={() => setIsMobilePreviewOpen(false)}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
       </div>
     </div>
   );
