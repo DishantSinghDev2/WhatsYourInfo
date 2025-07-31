@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromToken } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
-import { deleteAllUserAssets } from '@/lib/r2'; // <-- Import the new helper
+import { sendAccountDeletionEmail } from '@/lib/email'; // We will create this
 
 export async function DELETE(request: NextRequest) {
   try {
@@ -13,29 +13,28 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // --- 1. Delete all associated R2 assets FIRST ---
-    // This is a "fire-and-forget" operation. We attempt to delete the assets,
-    // but we proceed with deleting the DB record even if R2 deletion fails,
-    // to ensure the user's primary data is removed. Errors are logged.
-    await deleteAllUserAssets(user);
-    
-    // --- 2. Delete the user's database record ---
+    // --- SOFT DELETE: Mark the user for deletion instead of deleting immediately ---
+    const deletionDate = new Date();
     const client = await clientPromise;
     const db = client.db('whatsyourinfo');
-    const usersCollection = db.collection('users');
 
-    const result = await usersCollection.deleteOne({ _id: new ObjectId(user._id) });
-
-    if (result.deletedCount === 0) {
-      // This case is unlikely if getUserFromToken succeeded, but it's good practice.
-      return NextResponse.json({ error: 'User not found in database.' }, { status: 404 });
-    }
+    await db.collection('users').updateOne(
+      { _id: new ObjectId(user._id) },
+      { $set: { deactivatedAt: deletionDate, updatedAt: deletionDate } }
+    );
     
-    // The client will handle signing the user out and redirecting.
-    return NextResponse.json({ message: 'Account permanently deleted.' });
+    // Send a notification email to the user
+    // We don't await this, as the core action is complete
+    await sendAccountDeletionEmail(user.email, user.firstName);
+
+    // Invalidate the user's session by clearing the auth cookie
+    const response = NextResponse.json({ message: 'Account scheduled for permanent deletion.' });
+    response.cookies.set('auth-token', '', { maxAge: -1, path: '/' });
+    
+    return response;
 
   } catch (error) {
-    console.error("Account deletion process error:", error);
-    return NextResponse.json({ error: 'Failed to delete account due to an internal error.' }, { status: 500 });
+    console.error("Account deletion error:", error);
+    return NextResponse.json({ error: 'Failed to schedule account deletion.' }, { status: 500 });
   }
 }

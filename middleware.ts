@@ -56,21 +56,21 @@ export function middleware(request: NextRequest) {
   }
 
   // 🌐 Handle subdomain → path routing
-if (hostname.includes('.whatsyour.info') && !hostname.startsWith('www.')) {
-  const subdomain = hostname.split('.')[0];
+  if (hostname.includes('.whatsyour.info') && !hostname.startsWith('www.')) {
+    const subdomain = hostname.split('.')[0];
 
-  const isPublicAsset = pathname.startsWith('/api/')
-    || pathname.startsWith('/_next/')
-    || pathname.startsWith('/favicon')
-    || /\.\w+$/.test(pathname); // Better asset detection
+    const isPublicAsset = pathname.startsWith('/api/')
+      || pathname.startsWith('/_next/')
+      || pathname.startsWith('/favicon')
+      || /\.\w+$/.test(pathname); // Better asset detection
 
-  if (isPublicAsset) {
-    return NextResponse.next();
+    if (isPublicAsset) {
+      return NextResponse.next();
+    }
+
+    url.pathname = `/${subdomain}`;
+    return NextResponse.rewrite(url);
   }
-
-  url.pathname = `/${subdomain}`;
-  return NextResponse.rewrite(url);
-}
 
   // === 🛡️ Security headers ===
   const response = NextResponse.next();

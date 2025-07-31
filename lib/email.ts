@@ -100,7 +100,7 @@ export async function sendOtpEmail({ to, otp, name }: SendOtpEmailOptions) {
 <body>
     <div class="container">
         <div class="header">
-            <img src="https://whatsyour.info/logotext.png" alt="WhatsYour.Info Logo">
+            <img src="https://whatsyour.info/logotext.svg" alt="WhatsYour.Info Logo">
         </div>
         <div class="content">
             <p class="greeting">Hello ${name},</p>
@@ -169,7 +169,7 @@ export async function sendVerificationEmail(to: string, name: string) {
         <body>
             <div class="container">
                 <div class="header">
-                    <img src="https://whatsyour.info/logotext.png" alt="WhatsYour.Info Logo">
+                    <img src="https://whatsyour.info/logotext.svg" alt="WhatsYour.Info Logo">
                 </div>
                 <div class="content">
                     <p class="greeting">Hello ${name},</p>
@@ -192,5 +192,72 @@ export async function sendVerificationEmail(to: string, name: string) {
   } catch (error) {
     console.error('Error sending verification email:', error);
     throw new Error('Failed to send verification email.');
+  }
+}
+
+export async function sendAccountDeletionEmail(to: string, name: string) {
+  try {
+    const loginUrl = `${process.env.NEXT_PUBLIC_APP_URL}/login`;
+
+    await transporter.sendMail({
+      from: `"WhatsYour.Info" <${process.env.EMAIL_FROM}>`,
+      to,
+      subject: 'Account Deletion Initiated for WhatsYour.Info',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Account Deletion Confirmation</title>
+          <style>
+              /* Using the same well-designed styles from your other emails */
+              body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 0; background-color: #f8f9fa; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { text-align: center; padding-bottom: 20px; }
+              .header img { max-width: 150px; }
+              .content { background-color: #ffffff; padding: 40px; border-radius: 8px; border: 1px solid #e0e0e0; }
+              .greeting { font-size: 20px; font-weight: 500; color: #000000; margin-bottom: 20px; }
+              .instructions { font-size: 16px; line-height: 1.6; color: #000000; }
+              .footer { text-align: center; padding-top: 20px; font-size: 12px; color: #888888; }
+              .button { display: inline-block; padding: 12px 24px; font-size: 16px; font-weight: 500; color: #ffffff; background-color: #28a745; text-decoration: none; border-radius: 5px; }
+              .warning { background-color: #fff3cd; border-left: 4px solid #ffeeba; padding: 15px; margin: 20px 0; font-size: 14px; color: #856404; }
+          </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <img src="https://whatsyour.info/logotext.png" alt="WhatsYour.Info Logo">
+                </div>
+                <div class="content">
+                    <p class="greeting">Hello ${name},</p>
+                    <p class="instructions">
+                      This is a confirmation that you have requested the deletion of your WhatsYour.Info account.
+                      Your account is now deactivated and is scheduled for permanent deletion in <strong>${DELETION_GRACE_PERIOD_DAYS} days</strong>.
+                    </p>
+                    
+                    <h3 style="margin-top: 30px; font-weight: 500;">Changed your mind?</h3>
+                    <p class="instructions">
+                      You can easily recover your account and all your data. To cancel the deletion, simply log back in anytime within the next ${DELETION_GRACE_PERIOD_DAYS} days.
+                    </p>
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="${loginUrl}" class="button" target="_blank">Log In to Recover Account</a>
+                    </div>
+
+                    <div class="warning">
+                      <strong>If you did not request this,</strong> please log in to your account immediately and change your password to ensure it is secure.
+                    </div>
+                </div>
+                <div class="footer">
+                    <p>© ${new Date().getFullYear()} WhatsYour.Info. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+      `,
+    });
+  } catch (error) {
+    console.error('Error sending account deletion email:', error);
+    // We throw the error so the calling function knows the email failed,
+    // but the user's account is already marked for deletion.
+    throw new Error('Failed to send account deletion email.');
   }
 }

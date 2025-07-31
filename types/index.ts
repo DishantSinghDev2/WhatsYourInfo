@@ -9,6 +9,7 @@ export interface UserProfile {
   bio?: string;
   avatar?: string;
   isProUser: boolean;
+  deactivatedAt?: Date;
   paypalSubscriptionId?: string;
   proStarted?: Date;
   nextDue?: Date;

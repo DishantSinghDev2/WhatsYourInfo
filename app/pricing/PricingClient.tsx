@@ -110,13 +110,16 @@ export default function PricingPage() {
       if (res.ok && data.approvalUrl) {
         // Redirect the user to PayPal to approve the subscription
         router.push(data.approvalUrl);
-      } else {
+      } else if (res.status === 401) {
+
+        router.push('/login')
+      }
+      else {
         throw new Error(data.error || 'Failed to create PayPal subscription.');
       }
     } catch (err: Error | unknown) {
       console.error('Error initiating PayPal payment:', err);
-      setError('You are not loggedIn. Redirecting...');
-      router.push('/login')
+      setError('Error occurred during payment.');
       setIsLoading(false);
     }
   };
@@ -302,21 +305,21 @@ export default function PricingPage() {
         <Footer />
       </div>
       <Dialog open={showCancel} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent>
-        <DialogTitle>Subscription Cancelled</DialogTitle>
-        <DialogDescription>
-          {subId
-            ? `Your PayPal subscription (${subId}) was cancelled before confirmation.`
-            : `You cancelled the subscription process.`}
-        </DialogDescription>
+        <DialogContent>
+          <DialogTitle>Subscription Cancelled</DialogTitle>
+          <DialogDescription>
+            {subId
+              ? `Your PayPal subscription (${subId}) was cancelled before confirmation.`
+              : `You cancelled the subscription process.`}
+          </DialogDescription>
 
-        <DialogClose asChild>
-          <button className="mt-4 inline-flex justify-center rounded-md bg-blue-600 px-4 py-2 text-white">
-            Try Again
-          </button>
-        </DialogClose>
-      </DialogContent>
-    </Dialog>
+          <DialogClose asChild>
+            <button className="mt-4 inline-flex justify-center rounded-md bg-blue-600 px-4 py-2 text-white">
+              Try Again
+            </button>
+          </DialogClose>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

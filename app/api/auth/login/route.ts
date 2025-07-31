@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateUser, generateToken } from '@/lib/auth';
 import { z } from 'zod';
+import clientPromise from '@/lib/mongodb'; // Import clientPromise
+import { ObjectId } from 'mongodb';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -25,6 +27,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    let recovered = false
+
+    // --- NEW: RECOVERY LOGIC ---
+    if (user.deactivatedAt) {
+      // This is a recovery attempt. Reactivate the account.
+      const client = await clientPromise;
+      const db = client.db('whatsyourinfo');
+      await db.collection('users').updateOne(
+        { _id: new ObjectId(user._id) },
+        { $unset: { deactivatedAt: 1 } } // Remove the deactivation flag
+      );
+      
+      recovered = true
+    }
+
+
+
     // Generate JWT token
     const token = generateToken({ userId: user._id, emailVerified: user.emailVerified });
 
@@ -40,7 +59,8 @@ export async function POST(request: NextRequest) {
           lastName: user.lastName,
           isProUser: user.isProUser,
           emailVerified: user.emailVerified,
-        }
+        },
+        recovered
       },
       { status: 200 }
     );
