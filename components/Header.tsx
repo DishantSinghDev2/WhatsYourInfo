@@ -23,7 +23,7 @@ const navigation = [
   { name: 'Pricing', href: '/pricing' },
   { name: 'Blog', href: '/blog' },
   { name: 'Docs', href: '/docs' },
-  { name: 'Tools', href: '/tools/email-signature' },
+  { name: 'Tools', href: '/tools' },
 ];
 
 const motionProps = {
