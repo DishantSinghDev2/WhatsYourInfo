@@ -41,15 +41,50 @@ export function AdvancedDetailsDialog({ profile }: { profile: UserProfile }) {
   const accent = colors.accent || '#111827';
   const accentBtnStyle = isGradient(accent)
     ? {
-        backgroundImage: accent,
-        color: 'white',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent'
-      }
+      backgroundImage: accent,
+      color: 'white',
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent'
+    }
     : {
-        backgroundColor: accent,
-        color: tinycolor(accent).isDark() ? 'white' : 'black'
-      };
+      backgroundColor: accent,
+      color: tinycolor(accent).isDark() ? 'white' : 'black'
+    };
+
+  const formatter = new Intl.DateTimeFormat(undefined, {
+    weekday: 'long',  // e.g., "Thursday"
+    year: 'numeric',
+    month: 'long',    // e.g., "July"
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+  });
+
+  function timeAgo(date: Date): string {
+    const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
+
+    const intervals: [number, Intl.RelativeTimeFormatUnit][] = [
+      [60, 'second'],
+      [60, 'minute'],
+      [24, 'hour'],
+      [30, 'day'],
+      [12, 'month'],
+      [Number.POSITIVE_INFINITY, 'year'],
+    ];
+
+    let duration = seconds;
+    let unit: Intl.RelativeTimeFormatUnit = 'second';
+
+    for (const [divisor, nextUnit] of intervals) {
+      if (duration < divisor) break;
+      duration = Math.floor(duration / divisor);
+      unit = nextUnit;
+    }
+
+    const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
+    return rtf.format(-duration, unit);
+  }
+
 
   return (
     <Dialog>
@@ -95,17 +130,15 @@ export function AdvancedDetailsDialog({ profile }: { profile: UserProfile }) {
                 <span>Profile: <strong>Personal</strong></span>
               </p>
               <p className="flex items-center gap-2">
-                <Star className="w-4 h-4 opacity-70" />
-                Updated: {new Date(profile.updatedAt).toUTCString()}
-              </p>
+  <Star className="w-4 h-4 opacity-70" />
+  Updated: {timeAgo(new Date(profile.updatedAt))}
+</p>
+
               <p className="flex items-center gap-2">
                 <Star className="w-4 h-4 opacity-70" />
-                Created: {new Date(profile.createdAt).toUTCString()}
+                Created: {formatter.format(new Date(profile.createdAt))}
               </p>
-              <p className="flex items-center gap-2">
-                <Clock className="w-4 h-4 opacity-70" />
-                Time: {new Date().toUTCString()}
-              </p>
+
               <p className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-green-600" />
                 Verified connections: {profile.verifiedAccounts?.length || 0}
@@ -130,7 +163,7 @@ export function AdvancedDetailsDialog({ profile }: { profile: UserProfile }) {
               className="hover:underline text-blue-400"
               target="_blank"
             >
-              gravatar.com/{profile.username}.card
+              whatsyour.info/{profile.username}.card
             </a>
 
             <div className="flex flex-col gap-2 mt-3">
@@ -143,12 +176,14 @@ export function AdvancedDetailsDialog({ profile }: { profile: UserProfile }) {
               </a>
               <a
                 href={`${process.env.NEXT_PUBLIC_APP_URL}/qr/${profile.username}?type=logo`}
+                target='_blank'
                 className="text-blue-400 hover:underline"
               >
                 QR - Logo
               </a>
               <a
                 href={`${process.env.NEXT_PUBLIC_APP_URL}/qr/${profile.username}?type=avatar`}
+                target='_blank'
                 className="text-blue-400 hover:underline"
               >
                 QR - Avatar

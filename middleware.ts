@@ -7,23 +7,27 @@ function verifyToken(token: string): any {
     if (!header || !payload || !signature) return null;
 
     const decoded = JSON.parse(Buffer.from(payload, 'base64').toString());
-
-    // Check for expiration (exp is in seconds)
     if (decoded.exp && Date.now() / 1000 > decoded.exp) {
-      return null; // Token is expired
+      return null;
     }
-
     return decoded;
   } catch {
     return null;
   }
 }
 
-
 export function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || '';
   const url = request.nextUrl.clone();
   const pathname = url.pathname;
+
+  // ✅ .card username rewrite
+  const cardMatch = pathname.match(/^\/([\w-]+)\.card$/);
+  if (cardMatch) {
+    const username = cardMatch[1];
+    url.pathname = `/card/${username}`;
+    return NextResponse.rewrite(url);
+  }
 
   const token = request.cookies.get('auth-token')?.value;
   const decoded = token ? verifyToken(token) : null;
@@ -31,16 +35,19 @@ export function middleware(request: NextRequest) {
   const isLoggedIn = !!(decoded && decoded.userId);
   const isEmailVerified = decoded?.emailVerified === true;
 
-  const publicPrefixes = ['/', '/pricing', '/docs', '/blog', '/contact', '/tools', '/terms', '/privacy', '/status', '/help', '/login', '/register'];
+  const publicPrefixes = [
+    '/', '/pricing', '/docs', '/blog', '/contact', '/tools', 
+    '/terms', '/privacy', '/status', '/help', '/login', '/register'
+  ];
   const isPublicPage = publicPrefixes.some(p => pathname === p || pathname.startsWith(`${p}/`));
 
-  // 🔚 Redirect unauthenticated users away from protected routes
+  // 🔒 Redirect unauthenticated users away from protected pages
   if (!isLoggedIn && !isPublicPage && !pathname.startsWith('/_next') && !pathname.startsWith('/api')) {
     url.pathname = '/login';
     return NextResponse.redirect(url);
   }
 
-  // 🛑 If authenticated but not email verified → force verify
+  // 🛑 Require email verification
   if (
     isLoggedIn &&
     !isEmailVerified &&
@@ -52,31 +59,30 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // ✅ Already verified & visiting /verify-otp → send to /profile
+  // ✅ Already verified but visiting /verify-otp
   if (isLoggedIn && isEmailVerified && pathname === '/verify-otp') {
     url.pathname = '/profile';
     return NextResponse.redirect(url);
   }
 
-  // 🔐 Authenticated user visiting auth pages → redirect
+  // 🔁 Authenticated user visiting login/register/home
   if (isLoggedIn && ['/login', '/register', '/'].includes(pathname)) {
     url.pathname = '/profile';
     return NextResponse.redirect(url);
   }
 
-  // 🌐 Subdomain → path rewriting
+  // 🌐 Subdomain → path routing
   if (hostname.includes('.whatsyour.info') && !hostname.startsWith('www.')) {
     const subdomain = hostname.split('.')[0];
-
     const isPublicAsset = pathname.startsWith('/api/')
       || pathname.startsWith('/_next/')
       || pathname.startsWith('/favicon')
-      || /\.\w+$/.test(pathname); // Static assets
+      || /\.\w+$/.test(pathname);
 
-    if (isPublicAsset) return NextResponse.next();
-
-    url.pathname = `/${subdomain}`;
-    return NextResponse.rewrite(url);
+    if (!isPublicAsset) {
+      url.pathname = `/${subdomain}`;
+      return NextResponse.rewrite(url);
+    }
   }
 
   // 🛡️ Security headers

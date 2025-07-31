@@ -69,8 +69,8 @@ export default function WebCardView({ profile }: { profile: UserProfile }) {
         <div className="w-full max-w-sm rounded-2xl bg-white/70 dark:bg-black/50 backdrop-blur-xl shadow-2xl border border-white/20 overflow-hidden text-center p-8 flex flex-col items-center">
             
             {/* Avatar */}
-            <Image
-              src={`/api/v1/avatars/${profile.username}`}
+            <img
+              src={`/api/avatars/${profile.username}`}
               alt={`${profile.firstName}'s avatar`}
               width={128}
               height={128}
@@ -106,21 +106,21 @@ export default function WebCardView({ profile }: { profile: UserProfile }) {
             <div className="w-full space-y-3 mt-8">
                 <Button asChild className="w-full" style={accentButtonStyle}>
                     <a href={`/api/vcard/${profile.username}`} download>
-                        <Download className="h-4 w-4 mr-2"/>
+                        <Download className="h-4 w-4 mr-2 inline"/>
                         Save to Contacts
                     </a>
                 </Button>
                 <Button asChild variant="outline" className="w-full bg-white/50 dark:bg-black/20 dark:text-white dark:border-white/20">
                     <Link href={`/${profile.username}`}>
                         View Full Profile
-                        <ArrowRight className="h-4 w-4 ml-2"/>
+                        <ArrowRight className="h-4 w-4 ml-2 inline"/>
                     </Link>
                 </Button>
             </div>
         </div>
         
         {/* Footer Link to your service */}
-        <footer className="absolute bottom-4 text-center w-full">
+        <footer className="absolute bottom-2 text-center w-full">
             <Link href="/" className={`text-sm ${forceLightText ? 'text-white/70 hover:text-white' : 'text-gray-500 hover:text-gray-800'}`}>
                 Powered by <strong>WhatsYour.Info</strong>
             </Link>
