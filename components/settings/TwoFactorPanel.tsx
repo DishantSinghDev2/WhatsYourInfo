@@ -10,7 +10,7 @@ import toast from 'react-hot-toast';
 
 // Define the component's props to include the user object
 export function TwoFactorPanel({ user }: { user: UserProfile }) {
-  const [is2FAEnabled, setIs2FAEnabled] = useState(user.twoFactorEnabled);
+  const [is2FAEnabled, setIs2FAEnabled] = useState(user?.twoFactorEnabled || false);
   
   // State for the setup flow
   const [setupData, setSetupData] = useState<{ secret: string; qrCodeDataUrl: string } | null>(null);

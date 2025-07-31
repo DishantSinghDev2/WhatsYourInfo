@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { UserProfile } from '@/types';
+import { UserProfile } from '@/types'; // Use the full UserProfile type
 import { Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -23,10 +23,10 @@ export default function SecurityPage() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // This page also needs the full user profile to pass to its children
+        // Fetch the full user profile which contains the 2FA status
         const fetchFullUser = async () => {
             try {
-                const res = await fetch('/api/auth/profile');
+                const res = await fetch('/api/auth/profile'); // Use the full profile route
                 if (!res.ok) {
                     if (res.status === 401) router.push('/login');
                     throw new Error('Please sign in to view security settings.');
@@ -42,16 +42,12 @@ export default function SecurityPage() {
         fetchFullUser();
     }, [router]);
     
+    // While loading, show a full-page spinner
     if (isLoading) {
         return (
           <div className="min-h-screen bg-gray-50">
             <Header />
             <main className="max-w-4xl mx-auto px-4 py-8">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-                    <p className="text-gray-600 mt-1">Manage your account and security preferences.</p>
-                </div>
-                <SettingsNav />
                 <div className="flex items-center justify-center py-20">
                     <Loader2 className="h-16 w-16 animate-spin text-blue-600" />
                 </div>
@@ -60,15 +56,26 @@ export default function SecurityPage() {
         );
     }
 
-    if (!user) return null; // Or a login prompt component
+    // If loading is finished but the user object is still null, it means an error occurred.
+    if (!user) {
+        return (
+          <div className="min-h-screen bg-gray-50">
+            <Header />
+            <main className="max-w-4xl mx-auto px-4 py-8 text-center">
+                <p>Could not load your security settings. Please try logging in again.</p>
+            </main>
+          </div>
+        );
+    }
 
+    // When data is loaded, render the page and pass the user prop correctly
     return (
         <div className="min-h-screen bg-gray-50">
             <Header />
             <main className="max-w-4xl mx-auto px-4 py-8">
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-                    <p className="text-gray-600 mt-1">Manage your account and security preferences.</p>
+                    <h1 className="text-3xl font-bold text-gray-900">Security Settings</h1>
+                    <p className="text-gray-600 mt-1">Manage your password, two-factor authentication, active sessions, and application connections.</p>
                 </div>
                 
                 <SettingsNav />
@@ -81,11 +88,12 @@ export default function SecurityPage() {
                             <CardTitle>Two-Factor Authentication (2FA)</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <TwoFactorPanel />
+                            {/* FIX: Pass the loaded user object as a prop */}
+                            <TwoFactorPanel user={user} />
                         </CardContent>
                     </Card>
                     
-                    {/* The user prop is now correctly passed down */}
+                    {/* FIX: Pass the loaded user object as a prop */}
                     <RecoveryEmailPanel user={user} />
                     
                     <ActiveSessionsPanel />
