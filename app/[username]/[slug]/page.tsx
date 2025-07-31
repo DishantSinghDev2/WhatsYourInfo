@@ -12,7 +12,7 @@ export default async function SmartRedirectPage({
   const { username, slug } = await params
 
   // Reserved paths (like /login, /profile, etc.)
-  if (["profile", "login", "register", "api"].includes(username)) {
+  if (["profile", "login", "register", "api", "blog", "docs", "tools"].includes(username)) {
     return <p>Reserved path.</p>
   }
 

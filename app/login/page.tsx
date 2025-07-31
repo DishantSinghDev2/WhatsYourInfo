@@ -4,7 +4,7 @@ import LoginPage from './LoginClient';
 
 export default function Register() {
   return (
-    <Suspense fallback={<div className="text-center mt-10">Loading...</div>}>
+    <Suspense fallback={<div className="justify-center flex h-screen items-center">Loading...</div>}>
       <LoginPage />
     </Suspense>
   );

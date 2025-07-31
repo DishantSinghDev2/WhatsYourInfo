@@ -67,7 +67,7 @@ export default function ProfilePage() {
         setDraftUser(data);
       } catch {
         toast.error('Session expired. Please log in.');
-        router.replace('/login');
+        router.push('/login');
       } finally {
         setIsLoading(false);
       }

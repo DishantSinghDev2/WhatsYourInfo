@@ -7,11 +7,27 @@ function verifyToken(token: string): any {
     if (!header || !payload || !signature) return null;
 
     const decoded = JSON.parse(Buffer.from(payload, 'base64').toString());
+
+    // Check for expiration (exp is in seconds)
+    if (decoded.exp && Date.now() / 1000 > decoded.exp) {
+      return null; // Token is expired
+    }
+
     return decoded;
   } catch {
     return null;
   }
 }
+
+const publicRoutes = [
+  '/',
+  '/pricing',
+  '/docs',
+  '/blog',
+  '/contact',
+];
+
+
 
 export function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || '';
@@ -24,7 +40,16 @@ export function middleware(request: NextRequest) {
   const isLoggedIn = !!(decoded && decoded.userId);
   const isEmailVerified = decoded?.emailVerified === true;
 
-  // === 🛑 If authenticated but not email verified, redirect to /verify-otp ===
+  const publicPrefixes = ['/', '/pricing', '/docs', '/blog', '/contact', 'tools', 'terms', 'privacy', 'status'];
+  const isPublicPage = publicPrefixes.some(p => pathname === p || pathname.startsWith(`${p}/`));
+
+  // 🔚 Redirect unauthenticated users away from protected routes
+  if (!isLoggedIn && !isPublicPage && !pathname.startsWith('/_next') && !pathname.startsWith('/api')) {
+    url.pathname = '/';
+    return NextResponse.redirect(url);
+  }
+
+  // 🛑 If authenticated but not email verified → force verify
   if (
     isLoggedIn &&
     !isEmailVerified &&
@@ -36,43 +61,34 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // === ✅ If already verified and on /verify-otp → go to /profile ===
+  // ✅ Already verified & visiting /verify-otp → send to /profile
   if (isLoggedIn && isEmailVerified && pathname === '/verify-otp') {
     url.pathname = '/profile';
     return NextResponse.redirect(url);
   }
 
-  // === 🔐 Redirect authenticated users away from /login, /register, / ===
+  // 🔐 Authenticated user visiting auth pages → redirect
   if (isLoggedIn && ['/login', '/register', '/'].includes(pathname)) {
     url.pathname = '/profile';
     return NextResponse.redirect(url);
   }
 
-  // === 🚫 Redirect unauthenticated users away from protected routes ===
-  const protectedRoutes = ['/profile', '/dashboard', '/analytics', '/leads'];
-  if (!isLoggedIn && protectedRoutes.includes(pathname)) {
-    url.pathname = '/login';
-    return NextResponse.redirect(url);
-  }
-
-  // 🌐 Handle subdomain → path routing
+  // 🌐 Subdomain → path rewriting
   if (hostname.includes('.whatsyour.info') && !hostname.startsWith('www.')) {
     const subdomain = hostname.split('.')[0];
 
     const isPublicAsset = pathname.startsWith('/api/')
       || pathname.startsWith('/_next/')
       || pathname.startsWith('/favicon')
-      || /\.\w+$/.test(pathname); // Better asset detection
+      || /\.\w+$/.test(pathname); // Static assets
 
-    if (isPublicAsset) {
-      return NextResponse.next();
-    }
+    if (isPublicAsset) return NextResponse.next();
 
     url.pathname = `/${subdomain}`;
     return NextResponse.rewrite(url);
   }
 
-  // === 🛡️ Security headers ===
+  // 🛡️ Security headers
   const response = NextResponse.next();
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');

@@ -81,7 +81,7 @@ export default function LoginPage() {
         }
 
         toast.success('Welcome back!');
-        if (callbackUrl) {
+        if (callbackUrl !== null) {
           router.push(callbackUrl);
         } else {
           router.push('/profile');
