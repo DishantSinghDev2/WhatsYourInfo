@@ -8,7 +8,7 @@ import { verifyAuthInEdge } from './lib/edge-auth';
 export async function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || '';
   const url = request.nextUrl.clone();
-  const { pathname } = url;
+  const { pathname, searchParams } = url;
 
   // --- 1. Handle Special Rewrites First ---
 
@@ -20,83 +20,61 @@ export async function middleware(request: NextRequest) {
     return NextResponse.rewrite(url);
   }
 
-  // --- 2. Determine Authentication State ---
-
-  const decodedToken = await verifyAuthInEdge(request);
-
-  const isLoggedIn = !!decodedToken?.userId;
-  const isEmailVerified = decodedToken?.emailVerified === true;
-  // This new flag is set in the JWT only after the 2FA code is successfully verified.
-  const is2FAPassed = decodedToken?.tfa_passed === true;
-
-  // --- 3. Define Public and Protected Routes ---
-
-  // All pages are protected by default unless they are in this list.
-  const publicPages = [
-    '/', '/login', '/register', '/pricing', '/docs',
-    '/tools', '/delete', '/verify-email', '/verify-otp', '/verify-2fa',
-    '/terms', '/privacy', '/contact', '/blog', '/go', '/oauth'
-  ];
-
-  const isPublicPage = publicPages.some(p => pathname === p || (p !== '/' && pathname.startsWith(`${p}/`)));
-
   // Prevent API routes and static assets from being processed by the logic below.
   if (pathname.startsWith('/api/') || pathname.startsWith('/_next/') || /\.\w+$/.test(pathname)) {
     return NextResponse.next();
   }
+  const publicRoutes = [
+    '/', '/login', '/register', '/pricing', '/contact',
+    '/verify-email', '/verify-otp', '/verify-2fa',
+    '/terms', '/privacy', '/blog', '/docs', '/tools', '/go', '/oauth'
+  ];
 
-  // --- 4. Implement Redirect Logic ---
+  const isPublic = publicRoutes.some((route) =>
+    pathname === route || pathname.startsWith(route + '/')
+  );
 
-  // A. User is fully logged in (and has passed 2FA if enabled)
-  if (isLoggedIn && isEmailVerified && is2FAPassed) {
-    // If a callbackUrl is present, redirect to it
-    const callbackUrl = url.searchParams.get('callbackUrl');
-    if (callbackUrl) {
-      return NextResponse.redirect(new URL(callbackUrl, request.url));
-    }
+  const decodedToken = await verifyAuthInEdge(request);
+  const isLoggedIn = !!decodedToken?.userId;
+  const isEmailVerified = decodedToken?.emailVerified === true;
+  const is2FAPassed = decodedToken?.tfa_passed === true;
 
-    // Redirect away from pages they shouldn't see when logged in.
-    if (['/', '/login', '/register', '/verify-otp', '/verify-2fa'].includes(pathname)) {
-      url.pathname = '/profile'; // Send them to the main dashboard
-      return NextResponse.redirect(url);
-    }
-
-    // Otherwise, allow access to all other pages.
-    return NextResponse.next();
+  // Not logged in → redirect to /login
+  if (!isLoggedIn && !isPublic) {
+    url.pathname = '/login';
+    url.searchParams.set('callbackUrl', pathname);
+    return NextResponse.redirect(url);
   }
 
-  // B. User has entered password but needs to complete 2FA
-  if (isLoggedIn && !is2FAPassed) {
-    // Allow access ONLY to the 2FA verification page.
-    if (pathname === '/verify-2fa') {
-      return NextResponse.next();
-    }
-    // For all other pages, force them to the 2FA page.
+  // Logged in but email not verified → force verify
+  if (isLoggedIn && !isEmailVerified && pathname !== '/verify-otp') {
+    url.pathname = '/verify-otp';
+    return NextResponse.redirect(url);
+  }
+
+  // Logged in but 2FA not passed → force 2FA
+  if (isLoggedIn && !is2FAPassed && pathname !== '/verify-2fa') {
     url.pathname = '/verify-2fa';
-    if (decodedToken?.preAuthToken) { // Pass the pre-auth token if it exists
+    if (decodedToken?.preAuthToken) {
       url.searchParams.set('token', decodedToken.preAuthToken);
     }
     return NextResponse.redirect(url);
   }
 
-  // C. User is logged in but has not verified their email
-  if (isLoggedIn && !isEmailVerified) {
-    // Allow access ONLY to the email verification page.
-    if (pathname === '/verify-otp' || pathname === '/verify-email') {
-      return NextResponse.next();
+  // Logged in, verified, passed 2FA
+  if (isLoggedIn && isEmailVerified && is2FAPassed) {
+    // If user is on a public route like /login or /register, redirect to /profile
+    if (['/login', '/register', '/', '/verify-otp', '/verify-2fa'].includes(pathname)) {
+      const callback = searchParams.get('callbackUrl');
+      if (callback && callback.startsWith('/')) {
+        return NextResponse.redirect(new URL(callback, request.url));
+      }
+
+      url.pathname = callback || '/profile';
+      return NextResponse.redirect(url);
     }
-    // For all other pages, force them to verify their email.
-    url.pathname = '/verify-otp'; // or '/verify-email' depending on your flow
-    return NextResponse.redirect(url);
   }
 
-  // D. User is not logged in
-  if (!isLoggedIn && !isPublicPage) {
-    // Redirect any unauthenticated access to a protected page to the login screen.
-    url.pathname = '/login';
-    url.searchParams.set('redirect', pathname); // Remember where they were trying to go
-    return NextResponse.redirect(url);
-  }
 
   // --- 5. Handle Subdomain Routing (if not handled by redirects) ---
 

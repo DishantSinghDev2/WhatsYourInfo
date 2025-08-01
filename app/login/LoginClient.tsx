@@ -92,12 +92,6 @@ export default function LoginPage() {
           return; // Stop execution here
         }
 
-        // 2. Check if the user was trying to access a specific page
-        const redirectUrl = searchParams.get('redirect');
-        // Use router.replace to avoid adding the login page to the browser history
-        if (redirectUrl) {
-          router.replace(redirectUrl);
-        }
         if (callbackUrl !== null) {
           router.push(callbackUrl);
         } else {
