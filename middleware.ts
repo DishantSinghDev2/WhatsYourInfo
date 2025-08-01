@@ -35,6 +35,7 @@ export async function middleware(request: NextRequest) {
   );
 
   const decodedToken = await verifyAuthInEdge(request);
+  console.log(decodedToken)
   const isLoggedIn = !!decodedToken?.userId;
   const isEmailVerified = decodedToken?.emailVerified === true;
   const is2FAPassed = decodedToken?.tfa_passed === true;

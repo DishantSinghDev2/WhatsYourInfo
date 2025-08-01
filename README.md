@@ -1,6 +1,4 @@
-# WhatsYour.Info - The Modern Digital Business Card Platform
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+# WhatsYour.Info - Your Unified Digital Identity Platform
 
 WhatsYour.Info is a full-featured platform that allows professionals to create, customize, and share a dynamic digital business card. It serves as a central hub for their online presence, complete with social links, galleries, wallets, and advanced developer tools.
 
@@ -130,4 +128,4 @@ The recommended platform for deploying this Next.js application is **Vercel**.
 
 ## 📜 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache-2.0 License - see the [LICENSE](LICENSE) file for details.
