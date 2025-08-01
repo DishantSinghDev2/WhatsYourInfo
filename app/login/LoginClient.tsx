@@ -102,7 +102,7 @@ export default function LoginPage() {
       if (response.ok) {
         if (data.emailVerified === false) {
           toast.error("Email not verified. Please verify your email.");
-          router.push(`/verify-otp${callbackUrl !== null && `?callbackUrl=${callbackUrl}`}`);
+          router.push(`/verify-otp${callbackUrl !== null && `?callbackUrl=${encodeURIComponent(callbackUrl)}`}`);
           return;
         }
 
@@ -111,7 +111,7 @@ export default function LoginPage() {
         // 1. Check if 2FA is required
         if (data.twoFactorRequired) {
           // The API returned a pre-auth token. Redirect to the 2FA page.
-          router.push(`/verify-2fa?token=${data.preAuthToken}&${callbackUrl !== null && `callbackUrl=${callbackUrl}`}`);
+          router.push(`/verify-2fa?token=${data.preAuthToken}&${callbackUrl !== null && `callbackUrl=${encodeURIComponent(callbackUrl)}`}`);
           return; // Stop execution here
         }
       }
@@ -274,7 +274,7 @@ export default function LoginPage() {
                 </div>
 
                 <div className="mt-6 text-center">
-                  <Link href={`/register${callbackUrl !== null && `?callbackUrl=${callbackUrl}`}`}>
+                  <Link href={`/register${callbackUrl !== null && `?callbackUrl=${encodeURIComponent(callbackUrl)}`}`}>
                     <Button variant="outline" className="w-full">
                       Create Account
                     </Button>
