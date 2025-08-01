@@ -7,20 +7,21 @@ import { Input } from '@/components/ui/Input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Checkbox } from '@/components/ui/checkbox';
 import Header from '@/components/Header';
-import { Copy, Eye, EyeOff, Trash2, ArrowLeft, Edit, Save, X, PlusCircle, Trash, Users } from 'lucide-react';
+import { Copy, Eye, EyeOff, Trash2, ArrowLeft, Edit, Save, X, PlusCircle, Trash, Users, ShieldAlert } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 
 // --- Interfaces and Constants ---
 
-// NEW: Interface for an authorized user
+// UPDATED: User interface to allow for null values
 interface AuthorizedUser {
     _id: string;
-    name: string;
-    email: string;
-    avatar?: string;
+    name: string | null;
+    email: string | null;
+    avatar: string | null;
     authorizedAt: string;
 }
+
 
 interface OAuthClient {
     _id: string;
@@ -363,8 +364,7 @@ export default function OAuthClientDetailsPage() {
                             )}
                         </CardContent>
                     </Card>
-
-                    {/* --- NEW: Authorized Users Card --- */}
+{/* --- UPDATED: Authorized Users Card with privacy-aware rendering --- */}
                     {!isEditing && client.authorizedUsers && client.authorizedUsers.length > 0 && (
                         <Card>
                             <CardHeader>
@@ -373,22 +373,29 @@ export default function OAuthClientDetailsPage() {
                                     Authorized Users ({client.authorizedUsers.length})
                                 </CardTitle>
                                 <CardDescription>
-                                    The following users have granted this application access to their accounts.
+                                    Users who have granted this application access. Data shown is based on permissions granted.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-4">
                                     {client.authorizedUsers.map(user => (
-                                        <div key={user._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <div key={user._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
                                             <div className="flex items-center space-x-4">
                                                 <img 
                                                     src={user.avatar || 'https://avatar.vercel.sh/default'} 
-                                                    alt={user.name}
-                                                    className="w-10 h-10 rounded-full"
+                                                    alt={user.name || 'User Avatar'}
+                                                    className="w-10 h-10 rounded-full bg-gray-200"
                                                 />
                                                 <div>
-                                                    <p className="font-semibold text-gray-900">{user.name}</p>
-                                                    <p className="text-sm text-gray-500">{user.email}</p>
+                                                    <p className="font-semibold text-gray-900">{user.name || 'Name not available'}</p>
+                                                    {user.email ? (
+                                                      <p className="text-sm text-gray-500">{user.email}</p>
+                                                    ) : (
+                                                      <p className="text-xs text-amber-600 flex items-center">
+                                                          <ShieldAlert className="h-3 w-3 mr-1" />
+                                                          Email permission not granted
+                                                      </p>
+                                                    )}
                                                 </div>
                                             </div>
                                             <div className="text-right">

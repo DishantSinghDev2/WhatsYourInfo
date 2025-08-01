@@ -27,7 +27,6 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
 
-        // --- UPDATED: Logic to fetch a single client with authorized user details ---
         if (id) {
             if (!ObjectId.isValid(id)) {
                 return NextResponse.json({ error: 'Invalid client ID format' }, { status: 400 });
@@ -35,7 +34,7 @@ export async function GET(request: NextRequest) {
 
             const clientId = new ObjectId(id);
 
-            // Aggregation pipeline to fetch client and join authorized users
+            // --- UPDATED & ENHANCED AGGREGATION PIPELINE ---
             const aggregationPipeline = [
                 // Stage 1: Match the specific client and ensure the current user owns it
                 {
@@ -53,34 +52,53 @@ export async function GET(request: NextRequest) {
                         as: 'authorizations'
                     }
                 },
-                // Stage 3: Unwind the authorizations array to process each one
+                // Stage 3: Unwind authorizations to process each one individually
                 { $unwind: { path: "$authorizations", preserveNullAndEmptyArrays: true } },
                 // Stage 4: Lookup the user details for each authorization
                 {
                     $lookup: {
-                        from: 'users', // Assuming your users collection is named 'users'
+                        from: 'users',
                         localField: 'authorizations.userId',
-                        foreignField: '_id',
+                        foreignField: ''_id',
                         as: 'authorizedUserDetails'
                     }
                 },
-                // Stage 5: Group back to reconstruct the client and create an array of users
+                // Stage 5: Group back, conditionally adding user data based on granted scopes
                 {
                     $group: {
                         _id: '$_id',
                         doc: { $first: '$$ROOT' },
                         authorizedUsers: {
                             $push: {
-                                $cond: [ // Only add user if the lookup found them
-                                    { $gt: [{ $size: '$authorizedUserDetails' }, 0] },
+                                $cond: [
+                                    { $gt: [{ $size: '$authorizedUserDetails' }, 0] }, // Only add if user exists
                                     {
                                         _id: { $arrayElemAt: ['$authorizedUserDetails._id', 0] },
-                                        name: { $arrayElemAt: ['$authorizedUserDetails.name', 0] },
-                                        email: { $arrayElemAt: ['$authorizedUserDetails.email', 0] },
-                                        avatar: { $arrayElemAt: ['$authorizedUserDetails.avatar', 0] },
                                         authorizedAt: '$authorizations.createdAt',
+                                        // --- PRIVACY LOGIC: Conditionally add data based on scopes ---
+                                        name: {
+                                            $cond: {
+                                                if: { $in: ['profile:read', '$authorizations.grantedScopes'] },
+                                                then: { $arrayElemAt: ['$authorizedUserDetails.name', 0] },
+                                                else: null // Return null if scope not granted
+                                            }
+                                        },
+                                        email: {
+                                            $cond: {
+                                                if: { $in: ['email:read', '$authorizations.grantedScopes'] },
+                                                then: { $arrayElemAt: ['$authorizedUserDetails.email', 0] },
+                                                else: null // Return null if scope not granted
+                                            }
+                                        },
+                                        avatar: {
+                                            $cond: {
+                                                if: { $in: ['profile:read', '$authorizations.grantedScopes'] },
+                                                then: { $arrayElemAt: ['$authorizedUserDetails.avatar', 0] },
+                                                else: null // Return null if scope not granted
+                                            }
+                                        }
                                     },
-                                    '$$REMOVE' // Exclude if no user was found (e.g., dangling authorization)
+                                    '$$REMOVE' // Do not include in array if user lookup failed
                                 ]
                             }
                         }
@@ -89,16 +107,11 @@ export async function GET(request: NextRequest) {
                 // Stage 6: Reshape the final output
                 {
                     $replaceRoot: {
-                        newRoot: {
-                            $mergeObjects: [
-                                '$doc',
-                                { authorizedUsers: '$authorizedUsers' }
-                            ]
-                        }
+                        newRoot: { $mergeObjects: ['$doc', { authorizedUsers: '$authorizedUsers' }] }
                     }
                 },
-                // Stage 7: Remove fields we don't need in the final user object
-                 {
+                // Stage 7: Clean up temporary fields
+                {
                     $project: {
                         authorizations: 0,
                         authorizedUserDetails: 0,
@@ -118,19 +131,15 @@ export async function GET(request: NextRequest) {
                 client: { ...oauthClient, _id: oauthClient._id.toString() },
             });
         }
-        // --- End of updated logic ---
 
-        // Original logic: Fetch all clients for the user
+        // Original logic to fetch all clients remains the same
         const clients = await db.collection('oauth_clients').find(
             { userId: user._id },
             { sort: { createdAt: -1 } }
         ).toArray();
 
         return NextResponse.json({
-            clients: clients.map(c => ({
-                ...c,
-                _id: c._id.toString(),
-            }))
+            clients: clients.map(c => ({ ...c, _id: c._id.toString() }))
         });
 
     } catch (error) {
@@ -138,6 +147,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }
+
 
 
 export async function POST(request: NextRequest) {

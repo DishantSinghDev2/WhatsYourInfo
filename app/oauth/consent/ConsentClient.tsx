@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/Card';
-import { Check, ShieldQuestion, Loader2, ExternalLink, Users, Calendar, BadgeCheck } from 'lucide-react';
+import { Check, ShieldQuestion, Loader2, ExternalLink, Users, Calendar, BadgeCheck, ShieldX } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -174,7 +174,7 @@ export default function ConsentPage() {
                 {isVerified ? (
                      <div className="flex items-center"><BadgeCheck className="h-4 w-4 mr-2 text-green-600" /> Owned & operated by WhatsYour.Info</div>
                 ) : (
-                    <div className="flex items-center"><ShieldQuestion className="h-4 w-4 mr-2 text-gray-500" /> Third-party application not operated by WhatsYour.Info</div>
+                    <div className="flex items-center"><ShieldX className="h-4 w-4 mr-2 text-gray-500" /> Third-party application not operated by WhatsYour.Info</div>
                 )}
                <div className="flex items-center"><Calendar className="h-4 w-4 mr-2 text-gray-500" /> App created: {new Date(client.createdAt).toLocaleDateString()}</div>
                <div className="flex items-center"><Users className="h-4 w-4 mr-2 text-gray-500" /> Used by {client.users.toLocaleString()} {client.users === 1 ? 'user' : 'users'}</div>
