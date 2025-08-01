@@ -62,22 +62,22 @@ async function handleAuthorizationCodeGrant(body: unknown) {
 
   // 2. Validate and consume the Authorization Code
   const authCode = await db.collection('oauth_codes').findOneAndDelete({ code });
-  if (!authCode || authCode.value.expiresAt < new Date()) {
+  if (!authCode || authCode.expiresAt < new Date()) {
     return NextResponse.json({ error: 'invalid_grant', error_description: 'Authorization code is invalid or expired.' }, { status: 400 });
   }
-  if (authCode.value.clientId.toString() !== oauthClient._id.toString()) {
+  if (authCode.clientId.toString() !== oauthClient._id.toString()) {
      return NextResponse.json({ error: 'invalid_grant' }, { status: 400 });
   }
 
   // 3. Generate Tokens
-  const { accessToken, refreshToken } = await generateAndStoreTokens(db, authCode.value.userId, oauthClient._id, authCode.value.scope);
+  const { accessToken, refreshToken } = await generateAndStoreTokens(db, authCode.userId, oauthClient._id, authCode.scope);
 
   return NextResponse.json({
     access_token: accessToken,
     token_type: 'Bearer',
     expires_in: 3600,
     refresh_token: refreshToken,
-    scope: authCode.value.scope,
+    scope: authCode.scope,
   });
 }
 
