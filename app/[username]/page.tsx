@@ -1,57 +1,46 @@
-import { notFound } from "next/navigation"
-import clientPromise from "@/lib/mongodb"
-import type { Metadata } from "next"
-import PublicProfileView from "@/components/profile/PublicProfileView"
-import type { UserProfile } from "@/types"
-
-// Define the correct type for params as a Promise
-type Params = Promise<{ username: string }>
+import { notFound } from "next/navigation";
+import clientPromise from "@/lib/mongodb";
+import { headers } from "next/headers";
+import PublicProfileView from "@/components/profile/PublicProfileView";
+import type { Metadata } from "next";
+import type { UserProfile } from "@/types";
 
 async function getProfile(username: string): Promise<UserProfile | null> {
   try {
-    const client = await clientPromise
-    const db = client.db("whatsyourinfo")
+    const client = await clientPromise;
+    const db = client.db("whatsyourinfo");
     const user = await db.collection("users").findOne(
       { username },
-      {
-        projection: {
-          password: 0, // Never include password
-        },
-      },
-    )
-
-    if (!user) return null
+      { projection: { password: 0 } }
+    );
+    if (!user) return null;
 
     return {
       ...user,
       _id: user._id.toString(),
-    } as UserProfile
+    } as UserProfile;
   } catch (error) {
-    console.error("Profile fetch error:", error)
-    return null
+    console.error("Profile fetch error:", error);
+    return null;
   }
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Params
-}): Promise<Metadata> {
-  const { username } = await params
-  const profile = await getProfile(username)
+export async function generateMetadata({ params }: { params: { username: string } }): Promise<Metadata> {
+  const { username } = params;
+  const profile = await getProfile(username);
 
   if (!profile) {
     return {
       title: "Profile Not Found | What'sYour.Info",
       description: "The requested profile could not be found.",
-    }
+    };
   }
 
-  const title = `${profile.firstName} ${profile.lastName} | What'sYour.Info`
+  const title = `${profile.firstName} ${profile.lastName} | What'sYour.Info`;
   const description =
-    profile.bio || `Professional profile of ${profile.firstName} ${profile.lastName} on What'sYour.Info`
-  const canonicalUrl = `https://whatsyour.info/${profile.username}`
-  const avatar = `https://whatsyour.info/api/avatars/${profile.username}`
+    profile.bio || `Professional profile of ${profile.firstName} ${profile.lastName} on What'sYour.Info`;
+  const canonicalUrl = `https://whatsyour.info/${profile.username}`;
+  const avatar = `https://whatsyour.info/api/avatars/${profile.username}`;
 
   return {
     title,
@@ -84,18 +73,17 @@ export async function generateMetadata({
       index: true,
       follow: true,
     },
-  }
+  };
 }
 
-export default async function ProfilePage({
-  params,
-}: {
-  params: Params
-}) {
-  const { username } = await params
-  const profile = await getProfile(username)
+// ✅ Use caching inside server component
+export const revalidate = 300; // ISR-style cache for 5 minutes
 
-  if (!profile) notFound()
+export default async function ProfilePage({ params }: { params: { username: string } }) {
+  const { username } = params;
+  const profile = await getProfile(username);
 
-  return <PublicProfileView profile={profile} />
+  if (!profile) notFound();
+
+  return <PublicProfileView profile={profile} />;
 }

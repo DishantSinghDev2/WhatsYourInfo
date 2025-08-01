@@ -85,7 +85,15 @@ export async function POST(request: NextRequest) {
     });
 
     // Issue the final JWT, now including the session token
-    const token = generateToken({ userId: user._id, emailVerified: user.emailVerified, sessionId: sessionToken, tfa_passed: true });
+    const token = generateToken({
+      userId: user._id,
+      emailVerified: user.emailVerified,
+      sessionId: sessionToken,
+      tfa_enabled: user.twoFactorEnabled,
+      ...(user.twoFactorEnabled ? { tfa_passed: true } : {}),
+    });
+
+
 
     // Create response with user data
     const response = NextResponse.json(

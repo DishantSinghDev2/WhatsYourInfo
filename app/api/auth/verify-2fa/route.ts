@@ -69,8 +69,6 @@ export async function POST(request: NextRequest) {
       path: '/',
     });
 
-    // 5. Create a new entry in the `sessions` collection
-    // ... logic to create session document with ipAddress, userAgent, etc.
 
     return response;
 
