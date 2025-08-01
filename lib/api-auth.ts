@@ -41,6 +41,7 @@ export async function verifyAndAuthorizeToken(
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return null;
   }
+  console.log(authHeader)
   const token = authHeader.split(' ')[1];
   if (!token) return null;
 
