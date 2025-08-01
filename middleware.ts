@@ -19,9 +19,9 @@ export async function middleware(request: NextRequest) {
     url.pathname = `/card/${username}`;
     return NextResponse.rewrite(url);
   }
-  
+
   // --- 2. Determine Authentication State ---
-  
+
   const decodedToken = await verifyAuthInEdge(request);
 
   const isLoggedIn = !!decodedToken?.userId;
@@ -49,11 +49,18 @@ export async function middleware(request: NextRequest) {
 
   // A. User is fully logged in (and has passed 2FA if enabled)
   if (isLoggedIn && isEmailVerified && is2FAPassed) {
+    // If a callbackUrl is present, redirect to it
+    const callbackUrl = url.searchParams.get('callbackUrl');
+    if (callbackUrl) {
+      return NextResponse.redirect(new URL(callbackUrl, request.url));
+    }
+
     // Redirect away from pages they shouldn't see when logged in.
     if (['/', '/login', '/register', '/verify-otp', '/verify-2fa'].includes(pathname)) {
       url.pathname = '/profile'; // Send them to the main dashboard
       return NextResponse.redirect(url);
     }
+
     // Otherwise, allow access to all other pages.
     return NextResponse.next();
   }
@@ -67,11 +74,11 @@ export async function middleware(request: NextRequest) {
     // For all other pages, force them to the 2FA page.
     url.pathname = '/verify-2fa';
     if (decodedToken?.preAuthToken) { // Pass the pre-auth token if it exists
-        url.searchParams.set('token', decodedToken.preAuthToken);
+      url.searchParams.set('token', decodedToken.preAuthToken);
     }
     return NextResponse.redirect(url);
   }
-  
+
   // C. User is logged in but has not verified their email
   if (isLoggedIn && !isEmailVerified) {
     // Allow access ONLY to the email verification page.
