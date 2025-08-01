@@ -21,7 +21,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Prevent API routes and static assets from being processed by the logic below.
-  if (pathname.startsWith('/api/') || pathname.startsWith('/_next/') || /\.\w+$/.test(pathname)) {
+  if (pathname.startsWith('/api/') || pathname.startsWith('/_next/') || /\.\w+$/.test(pathname) || pathname.startsWith('/oauth/')) {
     return NextResponse.next();
   }
   
@@ -29,8 +29,7 @@ export async function middleware(request: NextRequest) {
   const publicRoutes = [
     '/', '/login', '/register', '/pricing', '/contact',
     '/verify-email', '/verify-otp', '/verify-2fa',
-    '/terms', '/privacy', '/blog', '/docs', '/tools', '/go', 
-    '/oauth', '/oauth/authorize' // <-- Add this route
+    '/terms', '/privacy', '/blog', '/docs', '/tools', '/go'
   ];
 
   const isPublic = publicRoutes.some((route) =>
