@@ -41,7 +41,6 @@ export default function LoginPage() {
         toast.error(error instanceof Error ? error.message : 'An error occurred.');
       } finally {
         setPageLoading(false)
-        setIsLoading(false);
       }
     };
     fetchInitialData();
