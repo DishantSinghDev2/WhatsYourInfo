@@ -32,11 +32,11 @@ export async function POST(request: NextRequest) {
     if (grantType === 'authorization_code') {
       return handleAuthorizationCodeGrant(body);
     }
-    
+
     if (grantType === 'refresh_token') {
       return handleRefreshTokenGrant(body);
     }
-    
+
     return NextResponse.json({ error: 'unsupported_grant_type' }, { status: 400 });
 
   } catch (error) {
@@ -66,7 +66,7 @@ async function handleAuthorizationCodeGrant(body: unknown) {
     return NextResponse.json({ error: 'invalid_grant', error_description: 'Authorization code is invalid or expired.' }, { status: 400 });
   }
   if (authCode.clientId.toString() !== oauthClient._id.toString()) {
-     return NextResponse.json({ error: 'invalid_grant' }, { status: 400 });
+    return NextResponse.json({ error: 'invalid_grant' }, { status: 400 });
   }
 
   // 3. Generate Tokens
@@ -88,13 +88,13 @@ async function handleRefreshTokenGrant(body: unknown) {
     return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
   }
   const { client_id, client_secret, refresh_token } = validation.data;
-  
+
   const db = (await clientPromise).db('whatsyourinfo');
 
   // 1. Authenticate the Client
   const oauthClient = await db.collection('oauth_clients').findOne({ clientId: client_id, clientSecret: client_secret });
   if (!oauthClient) return NextResponse.json({ error: 'invalid_client' }, { status: 401 });
-  
+
   // 2. Validate and consume the Refresh Token
   const oldRefreshToken = await db.collection('oauth_refresh_tokens').findOne({ token: refresh_token });
   if (!oldRefreshToken || oldRefreshToken.revokedAt || oldRefreshToken.expiresAt < new Date()) {
@@ -103,7 +103,7 @@ async function handleRefreshTokenGrant(body: unknown) {
   if (oldRefreshToken.clientId.toString() !== oauthClient._id.toString()) {
     return NextResponse.json({ error: 'invalid_grant' }, { status: 400 });
   }
-  
+
   // --- REFRESH TOKEN ROTATION ---
   // 3. Revoke the old refresh token immediately
   await db.collection('oauth_refresh_tokens').updateOne({ _id: oldRefreshToken._id }, { $set: { revokedAt: new Date() } });
@@ -122,20 +122,20 @@ async function handleRefreshTokenGrant(body: unknown) {
 
 // --- Helper to generate and store tokens ---
 async function generateAndStoreTokens(db: {
-    collection: (name: string) => {
-      insertOne: (data: unknown) => unknown
-    }
-  }, userId: ObjectId, clientId: ObjectId, scope: string) {
+  collection: (name: string) => {
+    insertOne: (data: unknown) => unknown
+  }
+}, userId: ObjectId, clientId: ObjectId, scope: string) {
   // 1. Generate Access Token (JWT)
   const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
-const accessToken = await new SignJWT({ scope })
-  .setProtectedHeader({ alg: 'HS256' })
-  .setSubject(userId.toHexString())            // Convert ObjectId to string
-  .setAudience(clientId.toHexString())         // Convert ObjectId to string
-  .setIssuedAt()
-  .setExpirationTime('1h')
-  .sign(secret);
+  const accessToken = await new SignJWT({ scope })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setSubject(userId.toHexString())            // Convert ObjectId to string
+    .setAudience(clientId.toHexString())         // Convert ObjectId to string
+    .setIssuedAt()
+    .setExpirationTime('1h')
+    .sign(secret);
 
   // 2. Generate and store Refresh Token
   const refreshToken = `wyi_refresh_${crypto.randomBytes(48).toString('hex')}`;
