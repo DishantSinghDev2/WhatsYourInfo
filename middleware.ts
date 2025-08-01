@@ -55,31 +55,31 @@ export async function middleware(request: NextRequest) {
   }
 
   // Logged in but 2FA not passed → force 2FA
-  if (isLoggedIn && !is2FAPassed && pathname !== '/verify-2fa') {
-    url.pathname = '/verify-2fa';
-    if (decodedToken?.preAuthToken) {
-      url.searchParams.set('token', decodedToken.preAuthToken);
-    }
-    const callback = searchParams.get('callbackUrl');
-    if (callback && callback.startsWith('/')) {
-      url.searchParams.set('callbackUrl', callback)
-    }
-    return NextResponse.redirect(url);
-  }
+  // if (isLoggedIn && !is2FAPassed && pathname !== '/verify-2fa') {
+  //   url.pathname = '/verify-2fa';
+  //   if (decodedToken?.preAuthToken) {
+  //     url.searchParams.set('token', decodedToken.preAuthToken);
+  //   }
+  //   const callback = searchParams.get('callbackUrl');
+  //   if (callback && callback.startsWith('/')) {
+  //     url.searchParams.set('callbackUrl', callback)
+  //   }
+  //   return NextResponse.redirect(url);
+  // }
 
   // Logged in, verified, passed 2FA
-  if (isLoggedIn && isEmailVerified && is2FAPassed) {
-    // If user is on a public route like /login or /register, redirect to /profile
-    if (['/login', '/register', '/', '/verify-otp', '/verify-2fa'].includes(pathname)) {
-      const callback = searchParams.get('callbackUrl');
-      if (callback && callback.startsWith('/')) {
-        return NextResponse.redirect(new URL(callback, request.url));
-      }
+  // if (isLoggedIn && isEmailVerified && is2FAPassed) {
+  //   // If user is on a public route like /login or /register, redirect to /profile
+  //   if (['/login', '/register', '/', '/verify-otp', '/verify-2fa'].includes(pathname)) {
+  //     const callback = searchParams.get('callbackUrl');
+  //     if (callback && callback.startsWith('/')) {
+  //       return NextResponse.redirect(new URL(callback, request.url));
+  //     }
 
-      url.pathname = callback || '/profile';
-      return NextResponse.redirect(url);
-    }
-  }
+  //     url.pathname = callback || '/profile';
+  //     return NextResponse.redirect(url);
+  //   }
+  // }
 
 
   // --- 5. Handle Subdomain Routing (if not handled by redirects) ---

@@ -111,7 +111,7 @@ export default function LoginPage() {
         // 1. Check if 2FA is required
         if (data.twoFactorRequired) {
           // The API returned a pre-auth token. Redirect to the 2FA page.
-          router.push(`/verify-2fa?token=${data.preAuthToken}&${callbackUrl !== null && `callbackUrl=${encodeURIComponent(callbackUrl)}`}`);
+          router.push(`/verify-2fa?token=${data.preAuthToken}&${(callbackUrl !== null) ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`);
           return; // Stop execution here
         }
       }
