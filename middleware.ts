@@ -61,6 +61,7 @@ export async function middleware(request: NextRequest) {
       url.searchParams.set('token', decodedToken.preAuthToken);
     }
     const callback = searchParams.get('callbackUrl');
+      console.log(callback, callback?.startsWith('/'))
     if (callback && callback.startsWith('/')) {
       url.searchParams.set('callbackUrl', callback)
     }
@@ -72,7 +73,6 @@ export async function middleware(request: NextRequest) {
     // If user is on a public route like /login or /register, redirect to /profile
     if (['/login', '/register', '/', '/verify-otp', '/verify-2fa'].includes(pathname)) {
       const callback = searchParams.get('callbackUrl');
-      console.log(callback, callback?.startsWith('/'))
       if (callback && callback.startsWith('/')) {
         return NextResponse.redirect(new URL(callback, request.url));
       }
