@@ -61,7 +61,7 @@ export async function verifyAndAuthorizeToken(
     // The subject ('sub' or 'userId') of the token is the user being acted upon.
     const userId = (payload.sub || payload.userId) as string;
     if (!userId) return null;
-    console.log(userId)
+    console.log(userId, payload)
 
     // Fetch the user's current pro status from the database for security
     const db = (await clientPromise).db('whatsyourinfo');
