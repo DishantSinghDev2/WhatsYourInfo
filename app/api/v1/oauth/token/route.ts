@@ -127,7 +127,8 @@ async function generateAndStoreTokens(db: {
     }
   }, userId: ObjectId, clientId: ObjectId, scope: string) {
   // 1. Generate Access Token (JWT)
-x
+  const accessToken = jwt.sign({ sub: userId, aud: clientId, scope }, process.env.JWT_SECRET!, { expiresIn: '1h' });
+
   // 2. Generate and store Refresh Token
   const refreshToken = `wyi_refresh_${crypto.randomBytes(48).toString('hex')}`;
   const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 90-day expiry
