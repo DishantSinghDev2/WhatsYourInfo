@@ -25,10 +25,28 @@ export default function LoginPage() {
 
   useEffect(() => {
     const message = searchParams.get('message');
-    const callback = searchParams.get('callbackUrl');
     if (message) toast.success(message);
-    if (callback) setCallbackUrl(callback);
   }, [searchParams]);
+
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        const callback = searchParams.get('callbackUrl');
+        if (callback !== null) {
+          const userResponse = await fetch('/api/auth/user');
+
+          if (userResponse.ok) {
+            router.push(callback);
+          }
+        }
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'An error occurred.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchInitialData();
+  }, [router]);
 
 
   useEffect(() => {
@@ -90,12 +108,6 @@ export default function LoginPage() {
           // The API returned a pre-auth token. Redirect to the 2FA page.
           router.push(`/verify-2fa?token=${data.preAuthToken}`);
           return; // Stop execution here
-        }
-
-        if (callbackUrl !== null) {
-          router.push(callbackUrl);
-        } else {
-          router.push('/profile');
         }
       }
       else {
