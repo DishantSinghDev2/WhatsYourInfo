@@ -24,10 +24,13 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith('/api/') || pathname.startsWith('/_next/') || /\.\w+$/.test(pathname)) {
     return NextResponse.next();
   }
+  
+  // --- FIX: Explicitly add /oauth/authorize to the public routes ---
   const publicRoutes = [
     '/', '/login', '/register', '/pricing', '/contact',
     '/verify-email', '/verify-otp', '/verify-2fa',
-    '/terms', '/privacy', '/blog', '/docs', '/tools', '/go', '/oauth'
+    '/terms', '/privacy', '/blog', '/docs', '/tools', '/go', 
+    '/oauth', '/oauth/authorize' // <-- Add this route
   ];
 
   const isPublic = publicRoutes.some((route) =>

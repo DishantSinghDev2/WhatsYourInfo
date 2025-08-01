@@ -3,8 +3,14 @@
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Ghost } from 'lucide-react';
+type Params = Promise<{ username: string }>
 
-export default function UserNotFound({ username }: { username: string }) {
+export default async function UserNotFound({
+  params,
+}: {
+  params: Params
+}) {
+  const { username } = await params
   const router = useRouter();
 
   const handleCreate = () => {
