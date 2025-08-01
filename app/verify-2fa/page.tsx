@@ -41,6 +41,7 @@ function Verify2FAContent() {
       }
 
       // Check if the original login attempt had a redirect URL
+      console.log('search params from 2fa verify page.tsx', searchParams.get('callbackUrl'))
       const redirectUrl = searchParams.get('redirect') || searchParams.get('callbackUrl') || '/profile';
       // Use router.replace() to navigate, which won't add this page to the browser history
       router.replace(redirectUrl);
