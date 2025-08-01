@@ -3,12 +3,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { clientId: string } }
-) {
+// GET: Fetches public details for a single OAuth client
+export async function GET(request: NextRequest, { params }: { params: { clientId: string } }) {
   try {
     const { clientId } = params;
+
     if (!clientId) {
       return NextResponse.json({ error: 'Client ID is required' }, { status: 400 });
     }
@@ -18,18 +17,31 @@ export async function GET(
 
     const oauthClient = await db.collection('oauth_clients').findOne(
       { clientId },
-      // IMPORTANT: Only project fields that are safe to be public
-      { projection: { name: 1, appLogo: 1, homepageUrl: 1, description: 1 } }
+      // Projection: Ensure sensitive data like clientSecret is NEVER exposed
+      {
+        projection: {
+          clientSecret: 0,
+          userId: 0,
+          isInternal: 0,
+          isActive: 0
+        }
+      }
     );
 
     if (!oauthClient) {
-      return NextResponse.json({ error: 'OAuth client not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Application not found' }, { status: 404 });
     }
 
-    return NextResponse.json(oauthClient);
+    // Convert ObjectId to string for JSON serialization
+    const clientData = {
+        ...oauthClient,
+        _id: oauthClient._id.toString(),
+    };
+
+    return NextResponse.json(clientData);
 
   } catch (error) {
-    console.error('Public OAuth client fetch error:', error);
+    console.error('Failed to fetch OAuth client:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

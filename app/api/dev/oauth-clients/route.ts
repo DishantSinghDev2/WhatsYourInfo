@@ -27,26 +27,98 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
 
-        // --- NEW: Fetch a single client if an ID is provided ---
+        // --- UPDATED: Logic to fetch a single client with authorized user details ---
         if (id) {
             if (!ObjectId.isValid(id)) {
                 return NextResponse.json({ error: 'Invalid client ID format' }, { status: 400 });
             }
 
-            const oauthClient = await db.collection('oauth_clients').findOne({
-                _id: new ObjectId(id),
-                userId: user._id, // Ensure the user owns this client
-            });
+            const clientId = new ObjectId(id);
 
-            if (!oauthClient) {
+            // Aggregation pipeline to fetch client and join authorized users
+            const aggregationPipeline = [
+                // Stage 1: Match the specific client and ensure the current user owns it
+                {
+                    $match: {
+                        _id: clientId,
+                        userId: user._id,
+                    }
+                },
+                // Stage 2: Lookup authorizations for this client
+                {
+                    $lookup: {
+                        from: 'oauth_authorizations',
+                        localField: '_id',
+                        foreignField: 'clientId',
+                        as: 'authorizations'
+                    }
+                },
+                // Stage 3: Unwind the authorizations array to process each one
+                { $unwind: { path: "$authorizations", preserveNullAndEmptyArrays: true } },
+                // Stage 4: Lookup the user details for each authorization
+                {
+                    $lookup: {
+                        from: 'users', // Assuming your users collection is named 'users'
+                        localField: 'authorizations.userId',
+                        foreignField: '_id',
+                        as: 'authorizedUserDetails'
+                    }
+                },
+                // Stage 5: Group back to reconstruct the client and create an array of users
+                {
+                    $group: {
+                        _id: '$_id',
+                        doc: { $first: '$$ROOT' },
+                        authorizedUsers: {
+                            $push: {
+                                $cond: [ // Only add user if the lookup found them
+                                    { $gt: [{ $size: '$authorizedUserDetails' }, 0] },
+                                    {
+                                        _id: { $arrayElemAt: ['$authorizedUserDetails._id', 0] },
+                                        name: { $arrayElemAt: ['$authorizedUserDetails.name', 0] },
+                                        email: { $arrayElemAt: ['$authorizedUserDetails.email', 0] },
+                                        avatar: { $arrayElemAt: ['$authorizedUserDetails.avatar', 0] },
+                                        authorizedAt: '$authorizations.createdAt',
+                                    },
+                                    '$$REMOVE' // Exclude if no user was found (e.g., dangling authorization)
+                                ]
+                            }
+                        }
+                    }
+                },
+                // Stage 6: Reshape the final output
+                {
+                    $replaceRoot: {
+                        newRoot: {
+                            $mergeObjects: [
+                                '$doc',
+                                { authorizedUsers: '$authorizedUsers' }
+                            ]
+                        }
+                    }
+                },
+                // Stage 7: Remove fields we don't need in the final user object
+                 {
+                    $project: {
+                        authorizations: 0,
+                        authorizedUserDetails: 0,
+                    }
+                }
+            ];
+
+            const results = await db.collection('oauth_clients').aggregate(aggregationPipeline).toArray();
+
+            if (results.length === 0) {
                 return NextResponse.json({ error: 'OAuth client not found' }, { status: 404 });
             }
+            
+            const oauthClient = results[0];
 
             return NextResponse.json({
                 client: { ...oauthClient, _id: oauthClient._id.toString() },
             });
         }
-        // --- End of new logic ---
+        // --- End of updated logic ---
 
         // Original logic: Fetch all clients for the user
         const clients = await db.collection('oauth_clients').find(
@@ -76,7 +148,12 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const validatedData = createClientSchema.parse(body);
+        // Assuming you might add these to your form later
+        const fullSchema = createClientSchema.extend({
+            isInternal: z.boolean().optional(),
+            opByWYI: z.boolean().optional(),
+        });
+        const validatedData = fullSchema.parse(body);
 
         const clientId = `wyi_client_${crypto.randomBytes(16).toString('hex')}`;
         const clientSecret = `wyi_secret_${crypto.randomBytes(32).toString('hex')}`;
@@ -94,13 +171,15 @@ export async function POST(request: NextRequest) {
             clientSecret,
             redirectUris: validatedData.redirectUris,
             grantedScopes: validatedData.grantedScopes || [],
-            isInternal: false,
+            // --- NEW & UPDATED FIELDS ---
+            isInternal: validatedData.isInternal || false, // Default to false
+            opByWYI: validatedData.opByWYI || false,       // Default to false
+            users: 0,                                      // Initialize user count at 0
             isActive: true,
             createdAt: new Date(),
         };
 
         const result = await db.collection('oauth_clients').insertOne(clientData);
-
 
         return NextResponse.json({
             message: 'OAuth client created successfully',

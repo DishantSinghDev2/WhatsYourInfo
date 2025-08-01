@@ -1,6 +1,6 @@
 // app/register/page.tsx
 import { Suspense } from 'react';
-import ConsentPage from './ConcentClient';
+import ConsentPage from './ConsentClient';
 
 export default function Register() {
   return (
