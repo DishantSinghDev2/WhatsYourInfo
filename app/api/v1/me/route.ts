@@ -1,44 +1,42 @@
 import { z } from 'zod';
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyApiToken } from '@/lib/api-auth';
+import { verifyAndAuthorizeToken } from '@/lib/api-auth';
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 
 /**
  * --- GET /api/v1/me ---
  * Fetches the complete but sanitized profile for the authenticated user.
+ * Requires the 'profile:read' scope.
  */
 export async function GET(request: NextRequest) {
-  const tokenPayload = verifyApiToken(request);
-  if (!tokenPayload) {
-    return NextResponse.json({ error: 'Invalid or expired Bearer token.' }, { status: 401 });
+  // 1. Authenticate and Authorize: Check for a valid token with the 'profile:read' permission.
+  const auth = await verifyAndAuthorizeToken(request, ['profile:read']);
+  if (!auth) {
+    return NextResponse.json({ error: 'Unauthorized. Invalid token or missing required scope (profile:read).' }, { status: 401 });
   }
 
   const client = await clientPromise;
   const db = client.db('whatsyourinfo');
 
-  // Use a projection to explicitly "allow" fields, which is safer.
-  // This ensures new sensitive fields are not exposed by accident.
-  const publicProjection = {
-    password: 0,
-    emailVerificationToken: 0,
-    emailVerificationExpires: 0,
-    paypalSubscriptionId: 0,
-    // Any other internal or sensitive fields should be excluded here.
-  };
-
   const userProfile = await db.collection('users').findOne(
-    { _id: new ObjectId(tokenPayload.userId) },
-    { projection: publicProjection }
+    { _id: new ObjectId(auth.userId) },
+    {
+      projection: { password: 0, emailVerificationToken: 0, paypalSubscriptionId: 0, recoveryCodes: 0, twoFactorSecret: 0 }
+    }
   );
 
   if (!userProfile) {
     return NextResponse.json({ error: 'User not found.' }, { status: 404 });
   }
+  
+  // Conditionally return email only if the token has the correct scope
+  if (!auth.scopes.has('email:read')) {
+      delete userProfile.email;
+  }
 
   return NextResponse.json(userProfile);
 }
-
 
 // --- Zod Schema for validating all updatable profile fields ---
 const updateProfileSchema = z.object({
@@ -94,39 +92,34 @@ const updateProfileSchema = z.object({
 /**
  * --- PUT /api/v1/me ---
  * Updates the profile of the authenticated user.
+ * Requires the 'profile:write' scope.
  */
 export async function PUT(request: NextRequest) {
-  const tokenPayload = verifyApiToken(request);
-  if (!tokenPayload) {
-    return NextResponse.json({ error: 'Invalid or expired Bearer token.' }, { status: 401 });
+  // 1. Authenticate and Authorize: Check for a valid token with the 'profile:write' permission.
+  const auth = await verifyAndAuthorizeToken(request, ['profile:write']);
+  if (!auth) {
+    return NextResponse.json({ error: 'Unauthorized. Invalid token or missing required scope (profile:write).' }, { status: 401 });
   }
 
   try {
     const body = await request.json();
     const validatedData = updateProfileSchema.parse(body);
     
-    // --- Construct the update payload securely ---
-    const updatePayload: Record<string, unknown> = { ...validatedData };
+    const updatePayload: Record<string, any> = { ...validatedData };
     
-    // Pro-level feature check: Spotlight Button
-    // If the user is NOT pro, remove the spotlightButton from the payload
-    // to prevent them from setting it via a crafted API call.
-    if (!tokenPayload.user.isProUser && 'spotlightButton' in updatePayload) {
+    // Pro-level feature check (using the live pro status from the auth function)
+    if (!auth.isProUser && 'spotlightButton' in updatePayload) {
       delete updatePayload.spotlightButton;
     }
 
     const client = await clientPromise;
     const db = client.db('whatsyourinfo');
 
-    const result = await db.collection('users').updateOne(
-      { _id: new ObjectId(tokenPayload.user._id) },
+    await db.collection('users').updateOne(
+      { _id: new ObjectId(auth.userId) },
       { $set: { ...updatePayload, updatedAt: new Date() } }
     );
     
-    if (result.modifiedCount === 0) {
-      return NextResponse.json({ message: 'No changes were made or data was the same.' });
-    }
-
     return NextResponse.json({ message: 'Profile updated successfully.' });
 
   } catch (error) {

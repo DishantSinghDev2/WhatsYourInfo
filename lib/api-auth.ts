@@ -4,32 +4,84 @@ import { NextRequest } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { logApiCall } from '@/lib/logging';
-import jwt from 'jsonwebtoken';
+import { jwtVerify } from 'jose'; // Use JOSE for secure verification
+
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
+
 
 // --- Rate Limit Configuration ---
 const FREE_TIER = { hourly: 100, daily: 1000 };
 const PRO_TIER = { hourly: 1000, daily: 10000 };
 
 
-// Unchanged. This is for JWTs, which are checked *after* the initial login.
+// --- NEW: A unified, secure token verification function ---
 
-export function verifyApiToken(request: NextRequest): { userId: string; [key: string]: unknown } | null {
+/**
+ * Represents the successfully authenticated identity from a JWT.
+ * It can be either the developer themselves or a third-party user.
+ */
+export interface AuthenticatedIdentity {
+  userId: string;       // The ID of the user whose data is being accessed
+  isProUser: boolean;   // The plan status of that user
+  tokenType: 'api' | 'oauth'; // The type of token used for auth
+  scopes: Set<string>;  // The permissions granted by the token
+}
+
+/**
+ * Verifies a Bearer token (API or OAuth), checks its scopes, and returns the authenticated identity.
+ * @param request The incoming NextRequest.
+ * @param requiredScopes The permissions needed for this specific endpoint.
+ * @returns The authenticated identity if valid and has required scopes, otherwise null.
+ */
+export async function verifyAndAuthorizeToken(
+  request: NextRequest,
+  requiredScopes: string[]
+): Promise<AuthenticatedIdentity | null> {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return null;
   }
   const token = authHeader.split(' ')[1];
-
   if (!token) return null;
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
-    return decoded as { userId: string; [key: string]: unknown };
-  } catch {
-    // Token is invalid or expired
+    const { payload } = await jwtVerify(token, JWT_SECRET);
+
+    const grantedScopes = new Set((payload.scope as string || '').split(' '));
+    
+    // Check if all required scopes are present in the token
+    for (const requiredScope of requiredScopes) {
+      if (!grantedScopes.has(requiredScope)) {
+        return null; // Authorization failed: missing required permission
+      }
+    }
+    
+    // The subject ('sub' or 'userId') of the token is the user being acted upon.
+    const userId = (payload.sub || payload.userId) as string;
+    if (!userId) return null;
+
+    // Fetch the user's current pro status from the database for security
+    const db = (await clientPromise).db('whatsyourinfo');
+    const user = await db.collection('users').findOne({ _id: new ObjectId(userId) }, { projection: { isProUser: 1 } });
+    if (!user) return null; // The user the token refers to no longer exists
+
+    return {
+      userId,
+      isProUser: user.isProUser,
+      // `aud` (audience) is set on OAuth tokens, `api_access` is set on developer tokens.
+      tokenType: payload.aud ? 'oauth' : 'api',
+      scopes: grantedScopes,
+    };
+
+  } catch (error) {
+    // Token is expired, malformed, or has an invalid signature
     return null;
   }
 }
+
+
+
+
 export interface AuthenticatedApiRequest {
   user: {
     _id: ObjectId;
