@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -20,6 +20,12 @@ function Verify2FAContent() {
 
   // The temporary pre-auth token is passed from the login page
   const preAuthToken = searchParams.get('token');
+  const [callbackUrl, setCallbackUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const callback = searchParams.get('callbackUrl');
+    if (callback) setCallbackUrl(callback);
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,17 +41,14 @@ function Verify2FAContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code, preAuthToken })
       });
-      
+
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || "Verification failed.");
       }
 
-      // --- CRITICAL: Handle the redirect on the client-side ---
-      toast.success("Verification successful! Redirecting...");
-      
       // Check if the original login attempt had a redirect URL
-      const redirectUrl = searchParams.get('redirect') || '/profile';
+      const redirectUrl = searchParams.get('redirect') || callbackUrl || '/profile';
       // Use router.replace() to navigate, which won't add this page to the browser history
       router.replace(redirectUrl);
 
@@ -53,7 +56,6 @@ function Verify2FAContent() {
       toast.error(error instanceof Error ? error.message : "Invalid or expired code.");
       setIsLoading(false);
     }
-    // Note: We don't set isLoading to false on success because the page will be unmounted.
   };
 
   return (
@@ -95,7 +97,7 @@ export default function Verify2FAPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <Suspense fallback={<div className="flex items-center justify-center pt-20"><Loader2 className="h-12 w-12 animate-spin"/></div>}>
+      <Suspense fallback={<div className="flex items-center justify-center pt-20"><Loader2 className="h-12 w-12 animate-spin" /></div>}>
         <Verify2FAContent />
       </Suspense>
     </div>

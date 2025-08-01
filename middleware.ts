@@ -24,7 +24,7 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith('/api/') || pathname.startsWith('/_next/') || /\.\w+$/.test(pathname) || pathname.startsWith('/oauth/')) {
     return NextResponse.next();
   }
-  
+
   // --- FIX: Explicitly add /oauth/authorize to the public routes ---
   const publicRoutes = [
     '/', '/login', '/register', '/pricing', '/contact',
@@ -60,6 +60,10 @@ export async function middleware(request: NextRequest) {
     url.pathname = '/verify-2fa';
     if (decodedToken?.preAuthToken) {
       url.searchParams.set('token', decodedToken.preAuthToken);
+    }
+    const callback = searchParams.get('callbackUrl');
+    if (callback && callback.startsWith('/')) {
+      url.searchParams.set('callbackUrl', callback)
     }
     return NextResponse.redirect(url);
   }
