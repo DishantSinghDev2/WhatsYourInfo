@@ -27,6 +27,7 @@ export default function LoginPage() {
   useEffect(() => {
     const callback = searchParams.get('callbackUrl');
     setCallbackUrl(callback);
+    console.log(callback)
 
     // If there's no callbackUrl, no need to block UI — show login form immediately
     if (!callback) return;
@@ -37,7 +38,8 @@ export default function LoginPage() {
         const res = await fetch('/api/oauth/user');
         if (res.ok) {
           const user = await res.json();
-          if (user?._id) {
+          console.log(user._id)
+          if (user._id) {
             router.push(callback); // already logged in, redirect immediately
           } else {
             setPageLoading(false); // not logged in, show login
