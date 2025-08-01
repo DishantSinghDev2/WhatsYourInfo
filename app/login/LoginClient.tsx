@@ -37,7 +37,7 @@ export default function LoginPage() {
         const res = await fetch('/api/oauth/user');
         if (res.ok) {
           const user = await res.json();
-          if (user?.email) {
+          if (user?._id) {
             router.push(callback); // already logged in, redirect immediately
           } else {
             setPageLoading(false); // not logged in, show login
