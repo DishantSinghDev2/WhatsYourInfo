@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { z } from 'zod';
-import jwt from 'jsonwebtoken';
+import { SignJWT } from 'jose';
 import { ObjectId } from 'mongodb';
 import crypto from 'crypto';
 
@@ -127,7 +127,15 @@ async function generateAndStoreTokens(db: {
     }
   }, userId: ObjectId, clientId: ObjectId, scope: string) {
   // 1. Generate Access Token (JWT)
-  const accessToken = jwt.sign({ sub: userId, aud: clientId, scope }, process.env.JWT_SECRET!, { expiresIn: '1h' });
+  const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
+
+const accessToken = await new SignJWT({ scope: 'read:profile' })
+  .setProtectedHeader({ alg: 'HS256' })
+  .setSubject(userId.toHexString())            // Convert ObjectId to string
+  .setAudience(clientId.toHexString())         // Convert ObjectId to string
+  .setIssuedAt()
+  .setExpirationTime('1h')
+  .sign(secret);
 
   // 2. Generate and store Refresh Token
   const refreshToken = `wyi_refresh_${crypto.randomBytes(48).toString('hex')}`;

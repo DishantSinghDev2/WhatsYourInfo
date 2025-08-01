@@ -46,17 +46,19 @@ export async function verifyAndAuthorizeToken(
   if (!token) return null;
 
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, JWT_SECRET, {
+      algorithms: ['HS256'],
+    });
 
     const grantedScopes = new Set((payload.scope as string || '').split(' '));
-    
+
     // Check if all required scopes are present in the token
     for (const requiredScope of requiredScopes) {
       if (!grantedScopes.has(requiredScope)) {
         return null; // Authorization failed: missing required permission
       }
     }
-    
+
     // The subject ('sub' or 'userId') of the token is the user being acted upon.
     const userId = (payload.sub || payload.userId) as string;
     if (!userId) return null;
@@ -94,7 +96,7 @@ export interface AuthenticatedApiRequest {
   };
 }
 
-export type AuthResult = 
+export type AuthResult =
   | { status: 'success'; data: AuthenticatedApiRequest }
   | { status: 'failure'; reason: 'INVALID_KEY' | 'RATE_LIMIT_EXCEEDED'; message: string; limit?: number; remaining?: number; reset?: Date };
 
@@ -122,7 +124,7 @@ export async function authenticateApiKey(request: NextRequest): Promise<AuthResu
   if (!apiKeyData) {
     return { status: 'failure', reason: 'INVALID_KEY', message: 'Invalid or inactive API Key.' };
   }
-  
+
   const userData = await db.collection('users').findOne(
     { _id: new ObjectId(apiKeyData.userId) },
     { projection: { _id: 1, isProUser: 1 } }
@@ -139,14 +141,14 @@ export async function authenticateApiKey(request: NextRequest): Promise<AuthResu
 
   // Perform both counts concurrently
   const [hourlyCount, dailyCount] = await Promise.all([
-      db.collection('api_calls').countDocuments({
-        keyId: apiKeyData._id,
-        timestamp: { $gte: oneHourAgo }
-      }),
-      db.collection('api_calls').countDocuments({
-        keyId: apiKeyData._id,
-        timestamp: { $gte: oneDayAgo }
-      })
+    db.collection('api_calls').countDocuments({
+      keyId: apiKeyData._id,
+      timestamp: { $gte: oneHourAgo }
+    }),
+    db.collection('api_calls').countDocuments({
+      keyId: apiKeyData._id,
+      timestamp: { $gte: oneDayAgo }
+    })
   ]);
 
   // Check daily limit first
@@ -161,7 +163,7 @@ export async function authenticateApiKey(request: NextRequest): Promise<AuthResu
       reset: nextDay
     };
   }
-  
+
   // Then check hourly limit
   if (hourlyCount >= planLimits.hourly) {
     const nextHour = new Date(oneHourAgo.getTime() + 60 * 60 * 1000);
