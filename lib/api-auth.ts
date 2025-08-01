@@ -64,6 +64,7 @@ export async function verifyAndAuthorizeToken(
     const userId = (payload.sub || payload.userId) as string;
     if (!userId) return null;
 
+    console.log(userId)
     // Fetch the user's current pro status from the database for security
     const db = (await clientPromise).db('whatsyourinfo');
     const user = await db.collection('users').findOne({ _id: new ObjectId(userId) }, { projection: { isProUser: 1 } });
