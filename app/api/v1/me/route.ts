@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
   }
   
   // Conditionally return email only if the token has the correct scope
-  if (!auth.scopes.has('email:read')) {
+  if (!auth.scopes.includes('email:read')) {
       delete userProfile.email;
   }
 
