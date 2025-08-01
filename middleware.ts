@@ -103,6 +103,8 @@ export async function middleware(request: NextRequest) {
 // The matcher remains the same, it's well-configured.
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|svg|gif|webp|ico|txt|xml|json)).*)',
+    // Add "oauth" to the negative lookahead
+    '/((?!api|oauth|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|svg|gif|webp|ico|txt|xml|json)).*)',
   ],
+
 };
