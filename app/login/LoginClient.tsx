@@ -44,7 +44,7 @@ export default function LoginPage() {
       }
     };
     fetchInitialData();
-  }, [router]);
+  }, [searchParams]);
 
 
   useEffect(() => {
