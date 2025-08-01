@@ -53,6 +53,7 @@ export async function verifyAndAuthorizeToken(
 
     // Check if all required scopes are present in the token
     for (const requiredScope of requiredScopes) {
+      console.log(requiredScopes, grantedScopes, grantedScopes.has(requiredScope))
       if (!grantedScopes.has(requiredScope)) {
         return null; // Authorization failed: missing required permission
       }
