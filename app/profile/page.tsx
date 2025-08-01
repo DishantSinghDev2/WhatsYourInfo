@@ -105,7 +105,6 @@ export default function ProfilePage() {
     return (
       <div className="flex items-center justify-center h-screen w-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <p className="sr-only">Loading profile...</p>
       </div>
     );
   }
@@ -116,7 +115,7 @@ export default function ProfilePage() {
       <div className='flex flex-row overflow-hidden h-full'>
 
         {/* --- Sidebar / Left Panel (Now full-width on mobile) --- */}
-        <div className="flex-grow w-full md:w-auto md:max-w-xl px-4 py-6 overflow-y-auto custom-scrollbar">
+        <div className="flex-grow px-4 py-6 overflow-y-auto custom-scrollbar w-[559px]">
           <AnimatePresence mode="wait">
             {ActivePanelComponent ? (
               <motion.div
