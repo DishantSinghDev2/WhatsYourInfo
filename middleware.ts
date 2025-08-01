@@ -25,11 +25,29 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
   
+  // --- FIX: Explicitly add /oauth/authorize to the public routes ---
+  const publicRoutes = [
+    '/', '/login', '/register', '/pricing', '/contact',
+    '/verify-email', '/verify-otp', '/verify-2fa',
+    '/terms', '/privacy', '/blog', '/docs', '/tools', '/go'
+  ];
+
+  const isPublic = publicRoutes.some((route) =>
+    pathname === route || pathname.startsWith(route + '/')
+  );
+
   const decodedToken = await verifyAuthInEdge(request);
   console.log(decodedToken)
   const isLoggedIn = !!decodedToken?.userId;
   const isEmailVerified = decodedToken?.emailVerified === true;
   const is2FAPassed = decodedToken?.tfa_passed === true;
+
+  // Not logged in → redirect to /login
+  if (!isLoggedIn && !isPublic) {
+    url.pathname = '/login';
+    url.searchParams.set('callbackUrl', pathname);
+    return NextResponse.redirect(url);
+  }
 
   // Logged in but email not verified → force verify
   if (isLoggedIn && !isEmailVerified && pathname !== '/verify-otp') {

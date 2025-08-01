@@ -22,17 +22,15 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [callbackUrl, setCallbackUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    const message = searchParams.get('message');
-    if (message) toast.success(message);
-  }, [searchParams]);
+  const [pageLoading, setPageLoading] = useState(false)
 
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
         const callback = searchParams.get('callbackUrl');
+        setCallbackUrl(callback)
         if (callback !== null) {
+          setPageLoading(true)
           const userResponse = await fetch('/api/auth/user');
 
           if (userResponse.ok) {
@@ -42,6 +40,7 @@ export default function LoginPage() {
       } catch (error) {
         toast.error(error instanceof Error ? error.message : 'An error occurred.');
       } finally {
+        setPageLoading(false)
         setIsLoading(false);
       }
     };
@@ -136,6 +135,14 @@ export default function LoginPage() {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
+
+  if (pageLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen w-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

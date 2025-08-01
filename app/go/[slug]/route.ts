@@ -17,8 +17,8 @@ export async function GET(
       { $inc: { clickCount: 1 } } // Atomically increment the click count
     );
     
-    if (link?.value) {
-      return NextResponse.redirect(new URL(link.value.destinationUrl));
+    if (link?.userId) {
+      return NextResponse.redirect(new URL(link.destinationUrl));
     } else {
       return NextResponse.redirect(new URL('/404', request.url));
     }
