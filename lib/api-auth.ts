@@ -51,12 +51,12 @@ export async function verifyAndAuthorizeToken(
     });
     console.log(payload)
 
-    const grantedScopes = new Set((payload.scope as string || '').split(' '));
+    const grantedScopes = payload.scope as string[] || [''];
 
     // Check if all required scopes are present in the token
     for (const requiredScope of requiredScopes) {
-      console.log(requiredScopes, grantedScopes, grantedScopes.has(requiredScope))
-      if (!grantedScopes.has(requiredScope)) {
+      console.log(requiredScopes, grantedScopes, grantedScopes.includes(requiredScope))
+      if (!grantedScopes.includes(requiredScope)) {
         return null; // Authorization failed: missing required permission
       }
     }
