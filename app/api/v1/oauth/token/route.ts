@@ -129,7 +129,7 @@ async function generateAndStoreTokens(db: {
   // 1. Generate Access Token (JWT)
   const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
-const accessToken = await new SignJWT({ scope: 'read:profile' })
+const accessToken = await new SignJWT({ scope })
   .setProtectedHeader({ alg: 'HS256' })
   .setSubject(userId.toHexString())            // Convert ObjectId to string
   .setAudience(clientId.toHexString())         // Convert ObjectId to string

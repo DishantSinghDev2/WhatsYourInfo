@@ -50,11 +50,9 @@ export async function verifyAndAuthorizeToken(
     });
 
     const grantedScopes = new Set((payload.scope as string || '').split(' '));
-    console.log(grantedScopes, requiredScopes)
 
     // Check if all required scopes are present in the token
     for (const requiredScope of requiredScopes) {
-      console.log(grantedScopes.has(requiredScope))
       if (!grantedScopes.has(requiredScope)) {
         return null; // Authorization failed: missing required permission
       }
@@ -64,7 +62,6 @@ export async function verifyAndAuthorizeToken(
     const userId = (payload.sub || payload.userId) as string;
     if (!userId) return null;
 
-    console.log(userId)
     // Fetch the user's current pro status from the database for security
     const db = (await clientPromise).db('whatsyourinfo');
     const user = await db.collection('users').findOne({ _id: new ObjectId(userId) }, { projection: { isProUser: 1 } });
