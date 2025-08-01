@@ -43,11 +43,13 @@ export async function verifyAndAuthorizeToken(
   }
   const token = authHeader.split(' ')[1];
   if (!token) return null;
+  console.log(token)
 
   try {
     const { payload } = await jwtVerify(token, JWT_SECRET, {
       algorithms: ['HS256'],
     });
+    console.log(payload)
 
     const grantedScopes = new Set((payload.scope as string || '').split(' '));
 
