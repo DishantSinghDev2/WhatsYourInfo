@@ -25,25 +25,33 @@ export default function LoginPage() {
   const [pageLoading, setPageLoading] = useState(false)
 
   useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        const callback = searchParams.get('callbackUrl');
-        setCallbackUrl(callback)
-        if (callback !== null) {
-          setPageLoading(true)
-          const userResponse = await fetch('/api/auth/user');
+    const callback = searchParams.get('callbackUrl');
+    setCallbackUrl(callback);
 
-          if (userResponse.ok) {
-            router.push(callback);
+    // If there's no callbackUrl, no need to block UI — show login form immediately
+    if (!callback) return;
+
+    const fetchAuthStatus = async () => {
+      setPageLoading(true);
+      try {
+        const res = await fetch('/api/oauth/user');
+        if (res.ok) {
+          const user = await res.json();
+          if (user?.email) {
+            router.push(callback); // already logged in, redirect immediately
+          } else {
+            setPageLoading(false); // not logged in, show login
           }
+        } else {
+          setPageLoading(false); // not logged in or error, show login
         }
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : 'An error occurred.');
-      } finally {
-        setPageLoading(false)
+      } catch (err) {
+        toast.error('Auth check failed.');
+        setPageLoading(false);
       }
     };
-    fetchInitialData();
+
+    fetchAuthStatus();
   }, [searchParams]);
 
 
