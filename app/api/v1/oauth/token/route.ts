@@ -127,7 +127,7 @@ async function generateAndStoreTokens(db: {
   }
 }, userId: ObjectId, clientId: ObjectId, scope: string) {
   // 1. Generate Access Token (JWT)
-  const secret = new TextEncoder().encode(process.env.!);
+  const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
   const accessToken = await new SignJWT({ scope })
     .setProtectedHeader({ alg: 'HS256' })

@@ -24,7 +24,7 @@ export interface AuthenticatedIdentity {
   userId: string;       // The ID of the user whose data is being accessed
   isProUser: boolean;   // The plan status of that user
   tokenType: 'api' | 'oauth'; // The type of token used for auth
-  scopes: Set<string>;  // The permissions granted by the token
+  scopes: string[];  // The permissions granted by the token
 }
 
 /**
