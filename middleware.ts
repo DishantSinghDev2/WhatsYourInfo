@@ -72,6 +72,7 @@ export async function middleware(request: NextRequest) {
     // If user is on a public route like /login or /register, redirect to /profile
     if (['/login', '/register', '/', '/verify-otp', '/verify-2fa'].includes(pathname)) {
       const callback = searchParams.get('callbackUrl');
+      console.log(callback, callback?.startsWith('/'))
       if (callback && callback.startsWith('/')) {
         return NextResponse.redirect(new URL(callback, request.url));
       }
