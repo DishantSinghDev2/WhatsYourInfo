@@ -96,9 +96,6 @@ export default function LoginPage() {
           return;
         }
 
-
-        // --- CRITICAL: Handle the redirect logic on the client-side ---
-
         toast.success('Login successful!');
 
         // 1. Check if 2FA is required

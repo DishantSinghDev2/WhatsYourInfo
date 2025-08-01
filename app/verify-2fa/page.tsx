@@ -20,13 +20,6 @@ function Verify2FAContent() {
 
   // The temporary pre-auth token is passed from the login page
   const preAuthToken = searchParams.get('token');
-  const [callbackUrl, setCallbackUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    const callback = searchParams.get('callbackUrl');
-    if (callback) setCallbackUrl(callback);
-  }, [searchParams]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!preAuthToken) {
@@ -48,7 +41,7 @@ function Verify2FAContent() {
       }
 
       // Check if the original login attempt had a redirect URL
-      const redirectUrl = searchParams.get('redirect') || callbackUrl || '/profile';
+      const redirectUrl = searchParams.get('redirect') || searchParams.get('callbackUrl') || '/profile';
       // Use router.replace() to navigate, which won't add this page to the browser history
       router.replace(redirectUrl);
 
