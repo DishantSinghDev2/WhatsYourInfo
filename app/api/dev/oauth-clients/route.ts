@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
                     $lookup: {
                         from: 'users',
                         localField: 'authorizations.userId',
-                        foreignField: ''_id',
+                        foreignField: '_id',
                         as: 'authorizedUserDetails'
                     }
                 },
