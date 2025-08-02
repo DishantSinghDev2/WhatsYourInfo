@@ -18,6 +18,11 @@ import LeadCaptureForm from '../LeadCaptureForm';
 import VerifiedAccountsSection from './VerifiedAccountsSection';
 import { useEffect, useState } from 'react';
 import GalleryModal from '../ui/GalleryModal';
+import { SiWhatsapp, SiFacebook } from 'react-icons/si';
+import { motion } from 'framer-motion';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+
+
 
 // This part of the file remains unchanged...
 const iconMap: { [key: string]: React.ElementType } = {
@@ -128,6 +133,46 @@ export default function PublicProfileView({ profile }: { profile: UserProfile; }
 
   const sectionOrder = profile.design?.sections || DEFAULT_SECTIONS;
   const visibility = profile.design?.visibility || DEFAULT_VISIBILITY;
+
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    try {
+      const a = document.createElement('a');
+      a.href = `${process.env.NEXT_PUBLIC_APP_URL}/api/vcard/${profile.username}`;
+      a.download = '';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } finally {
+      setTimeout(() => setIsDownloading(false), 1200); // simulate download completion
+    }
+  };
+
+  const shareOptions = [
+    {
+      label: 'WhatsApp',
+      icon: <SiWhatsapp className="w-4 h-4 text-green-600" />,
+      url: `https://wa.me/?text=Check%20out%20my%20profile:%20${window.location.href}`,
+    },
+    {
+      label: 'X',
+      icon: <SiX className="w-4 h-4 text-blue-400" />,
+      url: `https://twitter.com/intent/tweet?url=${window.location.href}&text=Check%20my%20profile`,
+    },
+    {
+      label: 'LinkedIn',
+      icon: <SiLinkedin className="w-4 h-4 text-blue-700" />,
+      url: `https://www.linkedin.com/sharing/share-offsite/?url=${window.location.href}`,
+    },
+    {
+      label: 'Facebook',
+      icon: <SiFacebook className="w-4 h-4 text-blue-600" />,
+      url: `https://www.facebook.com/sharer/sharer.php?u=${window.location.href}`,
+    },
+  ];
 
   const sectionComponents: { [key: string]: React.ReactNode | null } = {
     Introduction: (
@@ -327,28 +372,69 @@ export default function PublicProfileView({ profile }: { profile: UserProfile; }
                   </p>
                 </div>
               </div>
-              <div className="absolute top-24 right-0 sm:relative sm:top-0 sm:right-0 flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() =>
-                    navigator.share?.({
-                      title: 'Check my profile',
-                      url: window.location.href,
-                    })
-                  }
-                >
-                  <Share2 className="h-5 w-5" />
-                </Button>
-                <Button variant="ghost" size="icon" asChild>
-                  <a
-                    href={`${process.env.NEXT_PUBLIC_APP_URL}/api/vcard/${profile.username}`}
-                    download
-                  >
-                    <Download className="h-5 w-5" />
-                  </a>
-                </Button>
-              </div>
+              <motion.div
+      className="absolute top-24 right-0 sm:relative sm:top-0 sm:right-0 flex gap-2"
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+    >
+      {/* Share Dropdown */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon">
+            <Share2 className="w-5 h-5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent sideOffset={8} align="end">
+          {shareOptions.map(({ label, icon, url }) => (
+            <DropdownMenuItem
+              key={label}
+              className="flex items-center gap-2"
+              onClick={() => window.open(url, '_blank')}
+            >
+              {icon}
+              <span>{label}</span>
+            </DropdownMenuItem>
+          ))}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={() => {
+              if (navigator.share) {
+                navigator.share({
+                  title: 'Check my profile',
+                  url: window.location.href,
+                });
+              }
+            }}
+          >
+            <Share2 className="w-4 h-4" />
+            Native Share
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Download Button with animation */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={handleDownload}
+        disabled={isDownloading}
+      >
+        {isDownloading ? (
+          <motion.div
+            className="animate-spin"
+            key="loader"
+            initial={{ rotate: 0 }}
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+          >
+            <Loader2 className="h-5 w-5" />
+          </motion.div>
+        ) : (
+          <Download className="h-5 w-5" key="download" />
+        )}
+      </Button>
+    </motion.div>
             </div>
 
             {/* VERIFIED ICONS */}

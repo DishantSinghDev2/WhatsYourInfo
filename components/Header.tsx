@@ -84,7 +84,7 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-[51]">
+    <header className="bg-white shadow-sm max-h-screen border-b border-gray-200 sticky top-0 z-[51]">
       {/* Set a fixed height to prevent layout shift */}
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 lg:px-8 h-20">
         <div className="flex lg:flex-1">
