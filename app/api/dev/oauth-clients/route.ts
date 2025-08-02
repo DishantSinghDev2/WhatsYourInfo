@@ -79,21 +79,21 @@ export async function GET(request: NextRequest) {
                                         username: {
                                             $cond: {
                                                 if: { $in: ['profile:read', '$authorizations.grantedScopes'] },
-                                                then: { $arrayElemAt: ['$authorizedUserDetails.name', 0] },
+                                                then: { $arrayElemAt: ['$authorizedUserDetails.username', 0] },
                                                 else: null // Return null if scope not granted
                                             }
                                         },
                                         firstName: {
                                             $cond: {
                                                 if: { $in: ['profile:read', '$authorizations.grantedScopes'] },
-                                                then: { $arrayElemAt: ['$authorizedUserDetails.name', 0] },
+                                                then: { $arrayElemAt: ['$authorizedUserDetails.firstName', 0] },
                                                 else: null // Return null if scope not granted
                                             }
                                         },
                                         lastName: {
                                             $cond: {
                                                 if: { $in: ['profile:read', '$authorizations.grantedScopes'] },
-                                                then: { $arrayElemAt: ['$authorizedUserDetails.name', 0] },
+                                                then: { $arrayElemAt: ['$authorizedUserDetails.lastName', 0] },
                                                 else: null // Return null if scope not granted
                                             }
                                         },
