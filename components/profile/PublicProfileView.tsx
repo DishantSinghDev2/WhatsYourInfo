@@ -6,7 +6,8 @@ import {
   SiX, SiLinkedin, SiGithub, SiPaypal, SiBitcoin, SiEthereum, SiMoneygram,
 } from 'react-icons/si';
 import {
-  Globe, Share2, Download, Link as LinkIcon, Mail, Lock
+  Globe, Share2, Download, Link as LinkIcon, Mail, Lock,
+  Loader2
 } from 'lucide-react';
 import VerifiedTick from './VerifiedTick'; // Ensure this path is correct
 import { AdvancedDetailsDialog } from './AdvancedDetailsDialog'; // Ensure this path is correct
@@ -15,7 +16,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import LeadCaptureForm from '../LeadCaptureForm';
 import VerifiedAccountsSection from './VerifiedAccountsSection';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import GalleryModal from '../ui/GalleryModal';
 
 // This part of the file remains unchanged...
@@ -40,16 +41,75 @@ const DEFAULT_VISIBILITY = DEFAULT_SECTIONS.reduce(
 );
 
 export default function PublicProfileView({ profile }: { profile: UserProfile; }) {
-  // --- NEW: Handle Private Profiles ---
+
+
+  // --- START: NEW AND IDEAL WAY TO HANDLE PRIVATE PROFILES ---
+
+  // State to track if the current viewer is the owner of the private profile
+  const [isOwner, setIsOwner] = useState(false);
+  // State to track if we are currently checking the auth status
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Only run this check if the profile is actually private
+    if (profile.profileVisibility === 'private') {
+      const checkOwnership = async () => {
+        setIsLoading(true);
+        try {
+          const res = await fetch('/api/oauth/user'); // Fetches the currently logged-in user
+          if (res.ok) {
+            const loggedInUser = await res.json();
+            // Check if the logged-in user's ID matches the profile's ID
+            if (loggedInUser._id === profile._id) {
+              setIsOwner(true); // Viewer is the owner
+            } else {
+              setIsOwner(false); // Viewer is not the owner
+            }
+          } else {
+            // Not logged in or error, so they are definitely not the owner
+            setIsOwner(false);
+          }
+        } catch (error) {
+          console.error("Failed to fetch auth status:", error);
+          setIsOwner(false); // Assume not owner on any error
+        } finally {
+          setIsLoading(false); // Done loading, regardless of outcome
+        }
+      };
+
+      checkOwnership();
+    } else {
+      // If the profile is public, there's no need to load or check anything
+      setIsLoading(false);
+    }
+    // This effect should re-run if the profile object itself changes
+  }, [profile]);
+
+  // If the profile is private, we must check the state before rendering anything else
   if (profile.profileVisibility === 'private') {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 text-center p-4">
-        <Lock className="h-12 w-12 text-gray-400 mb-4" />
-        <h1 className="text-2xl font-bold text-gray-800">This Profile is Private</h1>
-        <p className="text-gray-600 mt-2">The user has chosen to keep their profile information private.</p>
-      </div>
-    );
+    // 1. Show a loading state while we check
+    if (isLoading) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+          <Loader2 className="h-12 w-12 text-gray-400 animate-spin" />
+          <p className="mt-4 text-gray-600">Checking permissions...</p>
+        </div>
+      );
+    }
+
+    // 2. If loading is done and the user is NOT the owner, show the private message
+    if (!isOwner) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 text-center p-4">
+          <Lock className="h-12 w-12 text-gray-400 mb-4" />
+          <h1 className="text-2xl font-bold text-gray-800">This Profile is Private</h1>
+          <p className="text-gray-600 mt-2">The user has chosen to keep their profile information private.</p>
+        </div>
+      );
+    }
+    // 3. If loading is done AND the user IS the owner, the code will continue and render the full profile below.
   }
+  // --- END OF NEW LOGIC ---
 
   // All existing setup logic is preserved
   const background = profile.design?.customColors?.background || '#ffffff';
