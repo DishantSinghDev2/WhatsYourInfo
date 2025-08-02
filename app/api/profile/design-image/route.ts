@@ -22,7 +22,7 @@ async function uploadToCloudflareR2(file: File, key: string, type: 'header' | 'b
       throw new Error('Failed to upload file to storage bucket.');
     }
   
-    const publicUrl = `${process.env.R2_PUBLIC_DOMAIN}/${key}`;
+    const publicUrl = `${process.env.R2_PUBLIC_URL}/${key}`;
     return publicUrl;
 }
 
