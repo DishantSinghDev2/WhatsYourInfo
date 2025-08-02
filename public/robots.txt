@@ -1,7 +1,7 @@
 User-agent: *
 Disallow: /api/
 Disallow: /dashboard/
-Disallow: /profile/edit
+Disallow: /profile
 Disallow: /verify-otp
 Disallow: /login
 Disallow: /register

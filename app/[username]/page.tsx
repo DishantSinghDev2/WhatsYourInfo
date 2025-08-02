@@ -55,7 +55,7 @@ export async function generateMetadata({ params }: { params: { username: string 
       url: canonicalUrl,
       images: [
         {
-          url: avatar,
+          url: `https://whatsyour.info/api/avatars/${profile.username}`,
           width: 400,
           height: 400,
           alt: `${profile.firstName} ${profile.lastName}`,
@@ -67,11 +67,11 @@ export async function generateMetadata({ params }: { params: { username: string 
       card: "summary",
       title,
       description,
-      images: [avatar],
+      images: [`https://whatsyour.info/api/avatars/${profile.username}`],
     },
     robots: {
-      index: true,
-      follow: true,
+      index: profile.isProUser ? true : false,
+      follow: profile.isProUser ? true : false,
     },
   };
 }

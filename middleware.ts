@@ -33,6 +33,13 @@ export async function middleware(request: NextRequest) {
   const isPublicRoute = publicRoutes.some(route =>
     pathname === route || pathname.startsWith(`${route}/`)
   );
+  // --- 3.1: Allow public user profile paths like /dishant ---
+  const isRootLevelUsername = /^\/[\w-]+$/.test(pathname) && !isPublicRoute;
+
+  if (isRootLevelUsername) {
+    return NextResponse.next(); // Allow access to public profiles without auth
+  }
+
 
   // --- 4. Auth Verification ---
   const decodedToken = await verifyAuthInEdge(request);
