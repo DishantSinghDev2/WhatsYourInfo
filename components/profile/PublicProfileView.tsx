@@ -111,6 +111,8 @@ export default function PublicProfileView({ profile }: { profile: UserProfile; }
   }
   // --- END OF NEW LOGIC ---
 
+  console.log(profile)
+
   // All existing setup logic is preserved
   const background = profile.design?.customColors?.background || '#ffffff';
   const accent = profile.design?.customColors?.accent || '#111827';
