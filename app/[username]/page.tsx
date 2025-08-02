@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: { params: { username: string 
   }
 
 
-  const title = `${profile.firstName} ${profile.lastName} | WhatsYour.Info`;
+  const title = `${profile.firstName} ${profile.lastName} ${profile.designation && profile.type === 'official' ? `| ${profile.designation}` : ''} ${profile.type === 'business' ? '| Business Profile' : ''} | WhatsYour.Info`;
   const description =
     profile.bio || `Professional profile of ${profile.firstName} ${profile.lastName} on WhatsYour.Info`;
   const canonicalUrl = `https://whatsyour.info/${profile.username}`;
