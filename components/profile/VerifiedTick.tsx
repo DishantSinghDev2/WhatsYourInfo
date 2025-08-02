@@ -31,7 +31,7 @@ export default function VerifiedTick({ profile }: { profile: UserProfile | undef
         : '/badges/business-free.webp';
 
     tooltipText = isOfficial
-      ? 'This is an officially verified business on WhatsYour.Info.'
+      ? 'This is an officially verified business which is operated by WhatsYour.Info itself.'
       : isProUser
         ? 'This is a business profile with a Pro plan.'
         : 'This is a business profile on a Free plan.';

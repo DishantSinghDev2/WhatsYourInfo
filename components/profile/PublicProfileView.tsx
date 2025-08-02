@@ -319,7 +319,7 @@ export default function PublicProfileView({ profile }: { profile: UserProfile; }
 
   const displayHandle = (profile.type === 'official' && profile.designation)
     ? profile.designation
-    : `@${profile.username}`;
+    : profile.type === 'business' && profile.username === 'dishis' ? 'Parent Company' : `@${profile.username}`;
 
   return (
     <>
