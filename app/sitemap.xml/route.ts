@@ -8,7 +8,7 @@ export async function GET() {
     const db = client.db('whatsyourinfo');
 
     const users = await db.collection('users').find(
-      {},
+      {isProUser: true},
       {
         projection: {
           username: 1,
