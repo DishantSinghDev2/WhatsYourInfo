@@ -60,7 +60,7 @@ export default function VerifiedTick({ profile }: { profile: UserProfile | undef
             alt="User badge"
             width={20}
             height={20}
-            className="inline-block h-5 w-5 rounded-full object-contain"
+            className="inline-block h-5 w-5 cursor-pointer"
           />
         </TooltipTrigger>
         <TooltipContent side="top">
