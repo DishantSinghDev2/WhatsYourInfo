@@ -16,7 +16,9 @@ import { motion } from 'framer-motion';
 // UPDATED: User interface to allow for null values
 interface AuthorizedUser {
     _id: string;
-    name: string | null;
+    username: string | null;
+    firstName: string | null;
+    lastName: string | null;
     email: string | null;
     avatar: string | null;
     authorizedAt: string;
@@ -382,12 +384,12 @@ export default function OAuthClientDetailsPage() {
                                         <div key={user._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
                                             <div className="flex items-center space-x-4">
                                                 <img 
-                                                    src={user.avatar || 'https://avatar.vercel.sh/default'} 
-                                                    alt={user.name || 'User Avatar'}
+                                                    src={'https://whatsyourinfo-media-worker.dishis.workers.dev' + user.avatar || 'https://avatar.vercel.sh/default'} 
+                                                    alt={user.username || 'User Avatar'}
                                                     className="w-10 h-10 rounded-full bg-gray-200"
                                                 />
                                                 <div>
-                                                    <p className="font-semibold text-gray-900">{user.name || 'Name not available'}</p>
+                                                    <p className="font-semibold text-gray-900">{user.username || 'Name not available'}</p>
                                                     {user.email ? (
                                                       <p className="text-sm text-gray-500">{user.email}</p>
                                                     ) : (

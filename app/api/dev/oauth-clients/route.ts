@@ -76,7 +76,21 @@ export async function GET(request: NextRequest) {
                                         _id: { $arrayElemAt: ['$authorizedUserDetails._id', 0] },
                                         authorizedAt: '$authorizations.createdAt',
                                         // --- PRIVACY LOGIC: Conditionally add data based on scopes ---
-                                        name: {
+                                        username: {
+                                            $cond: {
+                                                if: { $in: ['profile:read', '$authorizations.grantedScopes'] },
+                                                then: { $arrayElemAt: ['$authorizedUserDetails.name', 0] },
+                                                else: null // Return null if scope not granted
+                                            }
+                                        },
+                                        firstName: {
+                                            $cond: {
+                                                if: { $in: ['profile:read', '$authorizations.grantedScopes'] },
+                                                then: { $arrayElemAt: ['$authorizedUserDetails.name', 0] },
+                                                else: null // Return null if scope not granted
+                                            }
+                                        },
+                                        lastName: {
                                             $cond: {
                                                 if: { $in: ['profile:read', '$authorizations.grantedScopes'] },
                                                 then: { $arrayElemAt: ['$authorizedUserDetails.name', 0] },

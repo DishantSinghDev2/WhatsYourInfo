@@ -93,8 +93,6 @@ export async function POST(request: NextRequest) {
       ...(user.twoFactorEnabled ? { tfa_passed: true } : {}),
     });
 
-
-
     // Create response with user data
     const response = NextResponse.json(
       {
