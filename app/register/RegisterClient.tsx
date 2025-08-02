@@ -271,22 +271,22 @@ export default function RegisterPage() {
                 </div>
 
                 {/* --- START: Profile Visibility Section --- */}
-                <div>
+                <div className='flex flex-row items-center justify-between'>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Profile Visibility
                   </label>
 
-                  <div className="flex w-fit items-center space-x-1 rounded-full bg-gray-100 p-1">
+                  <div className="flex w-fit items-center space-x-1 rounded-md bg-gray-100 p-1">
                     <button
                       type="button"
                       onClick={() => handleVisibilityChange('public')}
-                      className={`relative rounded-full px-5 py-1.5 text-sm font-medium transition-colors
+                      className={`relative rounded-md px-1 py-0.5 text-xs font-medium transition-colors
         ${formData.profileVisibility === 'public' ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
                     >
                       {formData.profileVisibility === 'public' && (
                         <motion.div
                           layoutId="visibility-pill"
-                          className="absolute inset-0 z-0 rounded-full bg-white shadow"
+                          className="absolute inset-0 z-0 rounded-md bg-white"
                           transition={{ type: 'spring', stiffness: 400, damping: 35 }}
                         />
                       )}
@@ -295,13 +295,13 @@ export default function RegisterPage() {
                     <button
                       type="button"
                       onClick={() => handleVisibilityChange('private')}
-                      className={`relative rounded-full px-5 py-1.5 text-sm font-medium transition-colors
+                      className={`relative rounded-md px-1 py-0.5 text-xs font-medium transition-colors
         ${formData.profileVisibility === 'private' ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
                     >
                       {formData.profileVisibility === 'private' && (
                         <motion.div
                           layoutId="visibility-pill"
-                          className="absolute inset-0 z-0 rounded-full bg-white shadow"
+                          className="absolute inset-0 z-0 rounded-md bg-white shadow"
                           transition={{ type: 'spring', stiffness: 400, damping: 35 }}
                         />
                       )}
