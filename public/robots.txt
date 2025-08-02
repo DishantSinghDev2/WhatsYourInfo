@@ -9,5 +9,6 @@ Disallow: /verify-email
 Disallow: /verify-2fa
 
 Allow: /
+Allow: /api/avatars/
 
 Sitemap: https://whatsyour.info/sitemap.xml
