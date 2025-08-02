@@ -34,7 +34,7 @@ function CustomConfirmationDialog({
       <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4" onMouseDown={(e) => e.stopPropagation()}>
         <h2 className="text-lg font-bold text-gray-900">Are you absolutely sure?</h2>
         <p className="mt-2 text-sm text-gray-600">
-          This action cannot be undone. This will permanently delete your account and all of your data from our servers.
+          This action can be undone by logging again. This will permanently delete your account and all of your data from our servers after the grace period of 30 days. If you want immediate deletion, please contact us at <a href='mailto:data@whatsyour.info' className='text-blue-600 hover:underline'>data@whatsyour.info</a>
         </p>
         <div className="mt-6 flex justify-end space-x-3">
           <button
@@ -144,7 +144,7 @@ export default function AccountSettingsPanel({ user, onUpdate }: AccountSettings
       <div className="border border-red-500/50 rounded-lg p-5">
         <h3 className="font-semibold text-red-600">Danger Zone</h3>
         <div className="mt-4 md:flex md:items-center md:justify-between">
-          <p className="text-sm text-gray-600">Permanently delete your entire account.<br />This action is final and cannot be undone.</p>
+          <p className="text-sm text-gray-600">Permanently delete your entire account.<br />This action is not final and can be undone within 30 days.</p>
           <button
             onClick={() => setIsDeleteDialogOpen(true)}
             className="mt-3 md:mt-0 w-full md:w-auto px-5 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
