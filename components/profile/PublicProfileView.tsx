@@ -324,7 +324,7 @@ export default function PublicProfileView({ profile }: { profile: UserProfile; }
   return (
     <>
       <div
-        className={`min-h-screen pb-5 transition-colors duration-500 ${forceLightText ? 'text-white' : 'text-black'}`}
+        className={`min-h-screen pb-0 transition-colors duration-500 ${forceLightText ? 'text-white' : 'text-black'}`}
         style={containerStyle}
       >
         {/* HEADER (Unchanged) */}
@@ -373,68 +373,71 @@ export default function PublicProfileView({ profile }: { profile: UserProfile; }
                 </div>
               </div>
               <motion.div
-      className="absolute top-24 right-0 sm:relative sm:top-0 sm:right-0 flex gap-2"
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: 'easeOut' }}
-    >
-      {/* Share Dropdown */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon">
-            <Share2 className="w-5 h-5" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent sideOffset={8} align="end">
-          {shareOptions.map(({ label, icon, url }) => (
-            <DropdownMenuItem
-              key={label}
-              className="flex items-center gap-2"
-              onClick={() => window.open(url, '_blank')}
-            >
-              {icon}
-              <span>{label}</span>
-            </DropdownMenuItem>
-          ))}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={() => {
-              if (navigator.share) {
-                navigator.share({
-                  title: 'Check my profile',
-                  url: window.location.href,
-                });
-              }
-            }}
-          >
-            <Share2 className="w-4 h-4" />
-            Native Share
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+                className="absolute top-24 right-0 sm:relative sm:top-0 sm:right-0 flex gap-2"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+              >
+                {/* Share Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <Share2 className="w-5 h-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent sideOffset={8} align="end">
+                    {shareOptions.map(({ label, icon, url }) => (
+                      <DropdownMenuItem
+                        key={label}
+                        className="flex items-center gap-2 cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors"
+                        onClick={() => window.open(url, '_blank')}
+                      >
+                        {icon}
+                        <span>{label}</span>
+                      </DropdownMenuItem>
 
-      {/* Download Button with animation */}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={handleDownload}
-        disabled={isDownloading}
-      >
-        {isDownloading ? (
-          <motion.div
-            className="animate-spin"
-            key="loader"
-            initial={{ rotate: 0 }}
-            animate={{ rotate: 360 }}
-            transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-          >
-            <Loader2 className="h-5 w-5" />
-          </motion.div>
-        ) : (
-          <Download className="h-5 w-5" key="download" />
-        )}
-      </Button>
-    </motion.div>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="flex items-center gap-2 cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors"
+                      onClick={() => {
+                        if (navigator.share) {
+                          navigator.share({
+                            title: 'Check my profile',
+                            url: window.location.href,
+                          });
+                        }
+                      }}
+                    >
+                      <Share2 className="w-4 h-4" />
+                      Native Share
+                    </DropdownMenuItem>
+
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Download Button with animation */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleDownload}
+                  disabled={isDownloading}
+                >
+                  {isDownloading ? (
+                    <motion.div
+                      className="animate-spin"
+                      key="loader"
+                      initial={{ rotate: 0 }}
+                      animate={{ rotate: 360 }}
+                      transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                    >
+                      <Loader2 className="h-5 w-5" />
+                    </motion.div>
+                  ) : (
+                    <Download className="h-5 w-5" key="download" />
+                  )}
+                </Button>
+              </motion.div>
             </div>
 
             {/* VERIFIED ICONS */}
