@@ -33,8 +33,13 @@ export async function generateMetadata({ params }: { params: { username: string 
     return {
       title: "Profile Not Found | What'sYour.Info",
       description: "The requested profile could not be found.",
+      robots: {
+        index: false,
+        follow: false,
+      },
     };
   }
+
 
   const title = `${profile.firstName} ${profile.lastName} | What'sYour.Info`;
   const description =
@@ -55,23 +60,23 @@ export async function generateMetadata({ params }: { params: { username: string 
       url: canonicalUrl,
       images: [
         {
-          url: `https://whatsyour.info/api/avatars/${profile.username}`,
+          url: avatar,
           width: 400,
           height: 400,
           alt: `${profile.firstName} ${profile.lastName}`,
         },
       ],
-      siteName: "What'sYour.Info",
+      siteName: "WhatsYour.Info",
     },
     twitter: {
       card: "summary",
       title,
       description,
-      images: [`https://whatsyour.info/api/avatars/${profile.username}`],
+      images: [avatar],
     },
     robots: {
-      index: profile.isProUser ? true : false,
-      follow: profile.isProUser ? true : false,
+      index: profile.isProUser,
+      follow: profile.isProUser,
     },
   };
 }
@@ -94,16 +99,16 @@ export default async function ProfilePage({ params }: { params: { username: stri
           "@type": "Person",
           "name": `${profile.firstName} ${profile.lastName}`,
           "url": `https://whatsyour.info/${profile.username}`,
-          "sameAs": profile.verifiedAccounts.some(a => a.profileUrl) || [],
+          "sameAs": profile.verifiedAccounts.map(account => account.profileUrl) || [],
           "description": profile.bio,
           "image": `https://whatsyour.info/api/avatars/${profile.username}`
         }
       })}
     </script>
 
-<body>
-  
-    <PublicProfileView profile={profile} />;
-</body>
+    <body>
+
+      <PublicProfileView profile={profile} />;
+    </body>
   </>
 }
