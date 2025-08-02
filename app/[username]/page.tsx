@@ -121,7 +121,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
       })}
     </script>
 
-    <body>
+    <body className="m-0 p-0">
       <PublicProfileView profile={profile} />;
     </body>
   </>

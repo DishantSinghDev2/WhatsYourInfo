@@ -147,6 +147,7 @@ export default function RegisterPage() {
         },
         body: JSON.stringify({
           firstName: formData.firstName,
+          profileVisibility: formData.profileVisibility,
           lastName: formData.lastName,
           username: formData.username,
           email: formData.email,
@@ -180,8 +181,8 @@ export default function RegisterPage() {
   };
 
   const handleVisibilityChange = (visibility: 'public' | 'private') => {
-         setFormData(prev => ({ ...prev, profileVisibility: visibility }));
-       };
+    setFormData(prev => ({ ...prev, profileVisibility: visibility }));
+  };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -309,11 +310,11 @@ export default function RegisterPage() {
                     </button>
                   </div>
                 </div>
-                  <p className="mt-2 text-xs text-gray-500">
-                    {formData.profileVisibility === 'public'
-                      ? 'Your profile will be visible to everyone.'
-                      : 'Your profile will only be visible to you.'}
-                  </p>
+                <p className="mt-2 text-xs text-gray-500">
+                  {formData.profileVisibility === 'public'
+                    ? 'Your profile will be visible to everyone.'
+                    : 'Your profile will only be visible to you.'}
+                </p>
                 {/* --- END: Profile Visibility Section --- */}
 
                 {/* Email (Unchanged) */}
