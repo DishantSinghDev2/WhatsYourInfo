@@ -16,7 +16,7 @@ const tools = [
   { id: 'ai-builder', title: 'AI Profile Builder', icon: SiRobotframework },
   { id: 'card', title: 'Digital Card', icon: SiCarrd },
   { id: 'signature', title: 'Email Signature', icon: SiMaildotru },
-  { id: 'messages', title: 'Private Messages', icon: SiImessage },
+  { id: 'messages', title: 'Private Email', icon: SiImessage },
   { id: 'redirects', title: 'Smart Redirects', icon: SiMinutemailer, pro: true },
 ];
 

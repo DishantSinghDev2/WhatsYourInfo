@@ -2,10 +2,15 @@
 
 export interface UserProfile {
   _id: string;
+  type: 'personal' | 'business' | 'official'
+  isOfficial?: boolean;
+  designation?: string;
+  profileVisibility: 'public' | 'private';
   email: string;
   username: string;
   firstName: string;
   lastName: string;
+  businessName?: string;
   bio?: string;
   avatar?: string;
   isProUser: boolean;

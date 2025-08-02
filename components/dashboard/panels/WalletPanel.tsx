@@ -139,7 +139,7 @@ export default function WalletPanel({ user, onUpdate, changesSaved }: WalletPane
       <div className="space-y-4">
         <div className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
           <label htmlFor="show-wallet" className="font-medium text-gray-700">Show on public profile</label>
-          <Switch id="show-wallet" checked={showOnPublic} onCheckedChange={handleTogglePublic} />
+          <Switch id="show-wallet" checked={showOnPublic} onCheckedChange={handleTogglePublic} className='bg-gray-200' />
         </div>
 
         {/* Current Wallets */}

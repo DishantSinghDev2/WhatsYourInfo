@@ -3,22 +3,13 @@
 import { UserProfile } from '@/types';
 import { Button } from '@/components/ui/Button';
 import {
-  SiX,
-  SiLinkedin,
-  SiGithub,
-  SiPaypal,
-  SiBitcoin,
-  SiEthereum,
-  SiMoneygram,
+  SiX, SiLinkedin, SiGithub, SiPaypal, SiBitcoin, SiEthereum, SiMoneygram,
 } from 'react-icons/si';
 import {
-  Globe,
-  Share2,
-  Download,
-  Link as LinkIcon,
+  Globe, Share2, Download, Link as LinkIcon, Mail, Lock
 } from 'lucide-react';
-import VerifiedTick from './VerifiedTick';
-import { AdvancedDetailsDialog } from './AdvancedDetailsDialog';
+import VerifiedTick from './VerifiedTick'; // Ensure this path is correct
+import { AdvancedDetailsDialog } from './AdvancedDetailsDialog'; // Ensure this path is correct
 import tinycolor from 'tinycolor2';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -27,6 +18,7 @@ import VerifiedAccountsSection from './VerifiedAccountsSection';
 import { useState } from 'react';
 import GalleryModal from '../ui/GalleryModal';
 
+// This part of the file remains unchanged...
 const iconMap: { [key: string]: React.ElementType } = {
   twitter: SiX,
   linkedin: SiLinkedin,
@@ -35,82 +27,46 @@ const iconMap: { [key: string]: React.ElementType } = {
   'paypal.me': SiPaypal,
   'bitcoin (btc)': SiBitcoin,
 };
-
 const walletIconMap: Record<string, React.ElementType> = {
-  bitcoin: SiBitcoin,
-  btc: SiBitcoin,
-  'paypal.me': SiPaypal,
-  ethereum: SiEthereum,
-  eth: SiEthereum,
-  bank: SiMoneygram,
+  bitcoin: SiBitcoin, btc: SiBitcoin, 'paypal.me': SiPaypal, ethereum: SiEthereum, eth: SiEthereum, bank: SiMoneygram,
 };
-
-function isGradient(value: string) {
-  return value?.startsWith('linear-gradient');
-}
-
-function isDarkColor(color: string) {
-  try {
-    return tinycolor(color).isDark();
-  } catch {
-    return false;
-  }
-}
-
+function isGradient(value: string) { return value?.startsWith('linear-gradient'); }
+function isDarkColor(color: string) { try { return tinycolor(color).isDark(); } catch { return false; } }
 const DEFAULT_SECTIONS = [
-  'Introduction',
-  'Links',
-  'Wallet',
-  'Gallery',
-  'VerifiedAccounts',
-  'Interests',
-  'LeadCapture',
+  'Introduction', 'Links', 'Wallet', 'Gallery', 'VerifiedAccounts', 'Interests', 'LeadCapture',
 ];
 const DEFAULT_VISIBILITY = DEFAULT_SECTIONS.reduce(
-  (acc, sec) => ({ ...acc, [sec]: true }),
-  {}
+  (acc, sec) => ({ ...acc, [sec]: true }), {}
 );
 
-export default function PublicProfileView({
-  profile,
-  // isPreview = false,
-}: {
-  profile: UserProfile;
-  // isPreview?: boolean;
-}) {
-  const background =
-    profile.design?.customColors?.background || '#ffffff';
+export default function PublicProfileView({ profile }: { profile: UserProfile; }) {
+  // --- NEW: Handle Private Profiles ---
+  if (profile.profileVisibility === 'private') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 text-center p-4">
+        <Lock className="h-12 w-12 text-gray-400 mb-4" />
+        <h1 className="text-2xl font-bold text-gray-800">This Profile is Private</h1>
+        <p className="text-gray-600 mt-2">The user has chosen to keep their profile information private.</p>
+      </div>
+    );
+  }
+
+  // All existing setup logic is preserved
+  const background = profile.design?.customColors?.background || '#ffffff';
   const accent = profile.design?.customColors?.accent || '#111827';
   const backgroundImage = profile.design?.backgroundImage || '';
   const backgroundBlur = profile.design?.backgroundBlur || 0;
-  const backgroundOpacity =
-    (profile.design?.backgroundOpacity ?? 100) / 100;
-
-  const containerStyle = isGradient(background)
-    ? { backgroundImage: background }
-    : { backgroundColor: background };
-  const textStyle = isGradient(accent)
-    ? {
-      backgroundImage: accent,
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
-    }
-    : { color: accent };
-  const forceLightText = isDarkColor(
-    isGradient(background) ? '#000000' : background
-  );
-  const accentButtonStyle = {
-    backgroundColor: accent,
-    color: isDarkColor(accent) ? '#fff' : '#000',
-  };
+  const backgroundOpacity = (profile.design?.backgroundOpacity ?? 100) / 100;
+  const containerStyle = isGradient(background) ? { backgroundImage: background } : { backgroundColor: background };
+  const textStyle = isGradient(accent) ? { backgroundImage: accent, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' } : { color: accent };
+  const forceLightText = isDarkColor(isGradient(background) ? '#000000' : background);
+  const accentButtonStyle = { backgroundColor: accent, color: isDarkColor(accent) ? '#fff' : '#000' };
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
-
   const sectionOrder = profile.design?.sections || DEFAULT_SECTIONS;
-  const visibility =
-    profile.design?.visibility || DEFAULT_VISIBILITY;
+  const visibility = profile.design?.visibility || DEFAULT_VISIBILITY;
 
   const sectionComponents: { [key: string]: React.ReactNode | null } = {
     Introduction: (
@@ -248,41 +204,35 @@ export default function PublicProfileView({
     ) : null,
   };
 
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    e.currentTarget.src = '/default-avatar.png'; // or any default image path
-  };
-  
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => { e.currentTarget.src = '/default-avatar.png'; };
+
+  // --- NEW: Dynamic Name and Handle Logic ---
+  const displayName = profile.type === 'business' && profile.businessName
+    ? profile.businessName
+    : `${profile.firstName} ${profile.lastName}`;
+
+  const displayHandle = (profile.type === 'official' && profile.designation)
+    ? profile.designation
+    : `@${profile.username}`;
 
   return (
     <>
       <div
-        className={`min-h-screen pb-5 transition-colors duration-500 ${forceLightText ? 'text-white' : 'text-black'
-          }`}
+        className={`min-h-screen pb-5 transition-colors duration-500 ${forceLightText ? 'text-white' : 'text-black'}`}
         style={containerStyle}
       >
-        {/* HEADER */}
+        {/* HEADER (Unchanged) */}
         <div
           className="h-48 bg-gray-200"
-          style={{
-            backgroundImage: `url(${profile.design?.headerImage || (profile.isProUser ? '/pro-header.png' : '/header.png')})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
+          style={{ backgroundImage: `url(${profile.design?.headerImage || (profile.isProUser ? '/pro-header.png' : '/header.png')})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
         />
 
-        {/* MAIN WRAPPER */}
         <div className="relative z-0">
-          {/* BG IMAGE OVERLAY (Underneath everything but header) */}
+          {/* BG IMAGE OVERLAY (Unchanged) */}
           {backgroundImage && profile.isProUser && (
             <div
               className="absolute inset-0 top-20 z-[-1] pointer-events-none"
-              style={{
-                backgroundImage: `url(${backgroundImage})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                filter: `blur(${backgroundBlur}px)`,
-                opacity: backgroundOpacity,
-              }}
+              style={{ backgroundImage: `url(${backgroundImage})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: `blur(${backgroundBlur}px)`, opacity: backgroundOpacity }}
             />
           )}
 
@@ -296,23 +246,23 @@ export default function PublicProfileView({
                   height={144}
                   className="w-36 h-36 rounded-md border-4 object-cover bg-white"
                   style={{ borderColor: background }}
-                  alt={`${profile.firstName}'s avatar`}
+                  alt={`${displayName}'s avatar`}
                   onError={handleImageError}
                 />
                 <div className="pb-2 sm:pb-0">
                   <h1
-                    className="text-2xl sm:text-3xl font-bold flex flex-row items-center gap-1 sm:gap-2"
+                    className="text-2xl sm:text-3xl font-bold flex flex-row items-center gap-2"
                     style={textStyle}
                   >
-                    <span>
-                      {profile.firstName} {profile.lastName}
-                    </span>
-                    {profile.emailVerified && (
-                      <VerifiedTick isPro={profile.isProUser} />
-                    )}
+                    {/* --- UPDATED: Use dynamic display name --- */}
+                    <span>{displayName}</span>
+
+                    {/* --- UPDATED: Pass full profile to tick component --- */}
+                    <VerifiedTick profile={profile} />
                   </h1>
+                  {/* --- UPDATED: Use dynamic display handle --- */}
                   <p className="text-base sm:text-lg opacity-70">
-                    @{profile.username}
+                    {displayHandle}
                   </p>
                 </div>
               </div>
@@ -341,7 +291,7 @@ export default function PublicProfileView({
             </div>
 
             {/* VERIFIED ICONS */}
-            {profile.verifiedAccounts?.length > 0 && (
+            {(profile.verifiedAccounts?.length > 0 || profile.settings?.privateMessagesEnabled) && (
               <div className="flex flex-wrap gap-3 mt-4 justify-center sm:justify-start">
                 {profile.verifiedAccounts.map((acc) => {
                   const Icon = iconMap[acc.provider.toLowerCase()];
@@ -357,6 +307,14 @@ export default function PublicProfileView({
                     </a>
                   ) : null;
                 })}
+                {profile.settings?.privateMessagesEnabled && <a
+                  href={'mailto:' + profile.email}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 p-2 hover:bg-black/10 rounded-full transition-colors"
+                >
+                  <Mail className="h-5 w-5" />
+                </a>}
               </div>
             )}
 
@@ -406,6 +364,7 @@ export default function PublicProfileView({
           </div>
         </div>
       </div>
+      {/* Modal (Unchanged) */}
       {modalOpen && (
         <GalleryModal
           images={profile.gallery}
@@ -413,8 +372,6 @@ export default function PublicProfileView({
           onClose={() => setModalOpen(false)}
         />
       )}
-
     </>
-
   );
 }

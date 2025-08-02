@@ -58,24 +58,30 @@ function CustomConfirmationDialog({
     </div>
   );
 }
-
 export interface AccountSettingsPanelProps {
-user: UserProfile, 
-onUpdate: (data: Partial<UserProfile>) => void;
+  user: UserProfile;
+  onUpdate: (data: Partial<UserProfile>) => void;
 }
 
 export default function AccountSettingsPanel({ user, onUpdate }: AccountSettingsPanelProps) {
   const [username, setUsername] = useState(user.username);
-  const [isSaving, setIsSaving] = useState(false);
+  // NEW: State for profile visibility
+  const [visibility, setVisibility] = useState<UserProfile['profileVisibility']>(user.profileVisibility || 'public');
+  const [isSavingUsername, setIsSavingUsername] = useState(false);
+  const [isSavingVisibility, setIsSavingVisibility] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const router = useRouter();
+  
+  // When user prop changes, sync the local state
+  useEffect(() => {
+    setUsername(user.username);
+    setVisibility(user.profileVisibility || 'public');
+  }, [user]);
 
   const handleUsernameChange = async () => {
-    if (username.trim() === user.username) {
-      return;
-    }
-    setIsSaving(true);
+    if (username.trim() === user.username) return;
+    setIsSavingUsername(true);
     const toastId = toast.loading('Saving username...');
     try {
       const response = await fetch('/api/profile/username', {
@@ -83,18 +89,48 @@ export default function AccountSettingsPanel({ user, onUpdate }: AccountSettings
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: username.trim() }),
       });
-
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
-
       toast.success('Username updated successfully!', { id: toastId });
-      onUpdate({ username: username.trim() })
+      onUpdate({ username: username.trim() });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Could not save username.', { id: toastId });
+      setUsername(user.username); // Revert on error
     } finally {
-      setIsSaving(false);
+      setIsSavingUsername(false);
     }
   };
+
+  // NEW: Handler for visibility change
+  const handleVisibilityChange = async (newVisibility: UserProfile['profileVisibility']) => {
+    if (newVisibility === visibility) return;
+
+    setVisibility(newVisibility); // Optimistic UI update
+    setIsSavingVisibility(true);
+    const toastId = toast.loading('Updating visibility...');
+
+    try {
+        const response = await fetch('/api/profile/settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ profileVisibility: newVisibility }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to update visibility');
+        }
+
+        toast.success('Profile visibility updated!', { id: toastId });
+        onUpdate({ profileVisibility: newVisibility }); // Notify parent of success
+    } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Could not update visibility.', { id: toastId });
+        setVisibility(user.profileVisibility || 'public'); // Revert on error
+    } finally {
+      setIsSavingVisibility(false);
+    }
+  };
+
 
   const handleDeleteAccount = async () => {
     setIsDeleting(true);
@@ -132,13 +168,54 @@ export default function AccountSettingsPanel({ user, onUpdate }: AccountSettings
           />
           <button
             onClick={handleUsernameChange}
-            disabled={isSaving || username.trim() === user.username}
+            disabled={isSavingUsername || username.trim() === user.username}
             className="w-full sm:w-auto px-5 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors"
           >
-            {isSaving ? 'Saving...' : 'Save'}
+            {isSavingUsername ? 'Saving...' : 'Save'}
           </button>
         </div>
       </div>
+
+
+      {/* --- NEW: Profile Visibility Section --- */}
+      <div className="border border-gray-200 rounded-lg p-5">
+        <h3 className="font-semibold text-gray-800">Profile Visibility</h3>
+        <p className="text-sm text-gray-500 mt-1">Control who can see your profile page on the web.</p>
+        <div className="mt-4 flex flex-col sm:flex-row gap-4">
+          <label className={`flex items-center p-3 border rounded-md cursor-pointer w-full transition-all ${visibility === 'public' ? 'bg-blue-50 border-blue-500' : 'bg-gray-50 hover:bg-gray-100'}`}>
+            <input
+              type="radio"
+              name="visibility"
+              value="public"
+              checked={visibility === 'public'}
+              onChange={() => handleVisibilityChange('public')}
+              disabled={isSavingVisibility}
+              className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+            />
+            <span className="ml-3 text-sm font-medium text-gray-900">
+              Public
+              <p className="text-xs font-normal text-gray-500">Visible to everyone, including search engines.</p>
+            </span>
+          </label>
+          <label className={`flex items-center p-3 border rounded-md cursor-pointer w-full transition-all ${visibility === 'private' ? 'bg-blue-50 border-blue-500' : 'bg-gray-50 hover:bg-gray-100'}`}>
+            <input
+              type="radio"
+              name="visibility"
+              value="private"
+              checked={visibility === 'private'}
+              onChange={() => handleVisibilityChange('private')}
+              disabled={isSavingVisibility}
+              className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+            />
+            <span className="ml-3 text-sm font-medium text-gray-900">
+              Private
+              <p className="text-xs font-normal text-gray-500">Only you can view your profile page.</p>
+            </span>
+          </label>
+        </div>
+        {isSavingVisibility && <p className="text-xs text-gray-500 mt-2">Updating...</p>}
+      </div>
+
 
       {/* Custom Danger Zone Section */}
       <div className="border border-red-500/50 rounded-lg p-5">

@@ -74,8 +74,8 @@ export default function Header() {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
       toast.success('Logged out successfully!');
-      setUser(null);
       router.refresh()
+      setUser(null);
     } catch {
       toast.error('Logout failed.');
     } finally {

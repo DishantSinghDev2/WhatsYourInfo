@@ -49,12 +49,11 @@ export default function PrivateMessages({
     <div className="space-y-5">
       <div className="flex items-center gap-3">
         <MailCheck className="w-6 h-6 text-green-600" />
-        <h2 className="text-lg font-semibold">Private Messages</h2>
+        <h2 className="text-lg font-semibold">Private Email</h2>
       </div>
 
       <p className="text-sm text-gray-600 leading-relaxed">
-        When enabled, a <strong>"Contact"</strong> button will appear on your profile. Messages will be
-        securely forwarded to your registered email: <code>{user.email}</code>
+        When enabled, a <strong>Mail Icon</strong> button will appear on your profile. Which will show users, your registered email: <code>{user.email}</code>
       </p>
 
       <div className="flex items-center justify-between px-4 py-3 border rounded-md bg-muted">
@@ -64,6 +63,7 @@ export default function PrivateMessages({
             checked={isEnabled}
             onCheckedChange={handleToggle}
             disabled={isSaving}
+            className='bg-gray-200'
           />
           <Label htmlFor="private-messages" className="text-sm">
             {isEnabled ? 'Enabled' : 'Disabled'}

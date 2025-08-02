@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import clientPromise from "@/lib/mongodb";
-import { headers } from "next/headers";
 import PublicProfileView from "@/components/profile/PublicProfileView";
 import type { Metadata } from "next";
 import type { UserProfile } from "@/types";
@@ -31,7 +30,7 @@ export async function generateMetadata({ params }: { params: { username: string 
 
   if (!profile) {
     return {
-      title: "Profile Not Found | What'sYour.Info",
+      title: "Profile Not Found | WhatsYour.Info",
       description: "The requested profile could not be found.",
       robots: {
         index: false,
@@ -41,9 +40,9 @@ export async function generateMetadata({ params }: { params: { username: string 
   }
 
 
-  const title = `${profile.firstName} ${profile.lastName} | What'sYour.Info`;
+  const title = `${profile.firstName} ${profile.lastName} | WhatsYour.Info`;
   const description =
-    profile.bio || `Professional profile of ${profile.firstName} ${profile.lastName} on What'sYour.Info`;
+    profile.bio || `Professional profile of ${profile.firstName} ${profile.lastName} on WhatsYour.Info`;
   const canonicalUrl = `https://whatsyour.info/${profile.username}`;
   const avatar = `https://whatsyour.info/api/avatars/${profile.username}`;
 
@@ -75,8 +74,8 @@ export async function generateMetadata({ params }: { params: { username: string 
       images: [avatar],
     },
     robots: {
-      index: profile.isProUser,
-      follow: profile.isProUser,
+      index: profile.isProUser && profile.profileVisibility === 'public',
+      follow: profile.isProUser && profile.profileVisibility === 'public',
     },
   };
 }
@@ -94,20 +93,37 @@ export default async function ProfilePage({ params }: { params: { username: stri
     <script type="application/ld+json">
       {JSON.stringify({
         "@context": "https://schema.org",
-        "@type": "ProfilePage",
-        "mainEntity": {
-          "@type": "Person",
-          "name": `${profile.firstName} ${profile.lastName}`,
-          "url": `https://whatsyour.info/${profile.username}`,
-          "sameAs": profile.verifiedAccounts.map(account => account.profileUrl) || [],
-          "description": profile.bio,
-          "image": `https://whatsyour.info/api/avatars/${profile.username}`
-        }
+        "@type":
+          profile.type === "business"
+            ? "Organization"
+            : "Person",
+        "name":
+          profile.type === "business"
+            ? profile.businessName || `${profile.firstName} ${profile.lastName}`
+            : `${profile.firstName} ${profile.lastName}`,
+        "url": `https://whatsyour.info/${profile.username}`,
+        "description": profile.bio?.replace(/\s+/g, ' ').trim().slice(0, 160) || undefined,
+        "image": `https://whatsyour.info/api/avatars/${profile.username}`,
+        ...(profile.verifiedAccounts?.length > 0 && {
+          sameAs: profile.verifiedAccounts.map((account) => account.profileUrl),
+        }),
+        ...(profile.isOfficial &&
+          profile.type !== "business" && {
+          jobTitle: profile.designation || undefined,
+        }),
+        ...(profile.firstName && profile.lastName &&
+          (profile.type === "business" || profile.type === "official") && {
+          founder: {
+            "@type": "Person",
+            "name": `${profile.firstName} ${profile.lastName}`,
+          },
+        }),
       })}
     </script>
 
-    <body>
 
+
+    <body>
       <PublicProfileView profile={profile} />;
     </body>
   </>

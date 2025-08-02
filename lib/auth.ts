@@ -54,6 +54,8 @@ export async function getUserFromToken(request: NextRequest): Promise<User | nul
 }
 
 export async function createUser(userData: {
+  type: string;
+  profileVisibility: string;
   email: string;
   password: string;
   username: string;

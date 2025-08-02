@@ -6,6 +6,7 @@ import { z } from 'zod';
 
 const registerSchema = z.object({
   email: z.string().email('Invalid email address'),
+  profileVisibility: z.enum(['public', 'private']),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   username: z.string().min(3, 'Username must be at least 3 characters').max(30, 'Username must be less than 30 characters'),
   firstName: z.string().min(1, 'First name is required'),
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     // Validate input
     const validatedData = registerSchema.parse(body);
-    const { email, password, username, firstName, lastName } = validatedData;
+    const { email, password, username, firstName, lastName, profileVisibility } = validatedData;
 
     // Additional validation
     if (!isValidEmail(email)) {
@@ -53,6 +54,8 @@ export async function POST(request: NextRequest) {
 
     // Create user
     const user = await createUser({
+      type: 'personal',
+      profileVisibility,
       email,
       password,
       username,

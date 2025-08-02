@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { UserProfile } from '@/types';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,35 +12,43 @@ import { motion } from 'framer-motion';
 export interface MyProfilePanelProps {
   user: UserProfile;
   onUpdate: (data: Partial<UserProfile>) => void;
-  changesSaved: (a: boolean) => void
+  changesSaved: (a: boolean) => void;
 }
 
 export default function MyProfilePanel({ user, onUpdate, changesSaved }: MyProfilePanelProps) {
   const [formData, setFormData] = useState<Partial<UserProfile>>({
     firstName: user.firstName || '',
     lastName: user.lastName || '',
-    bio: user.bio || ''
+    bio: user.bio || '',
+    // NEW: Add businessName to the form state
+    businessName: user.businessName || '',
   });
 
   const [isSaving, setIsSaving] = useState(false);
+  
+  // When the user prop changes (e.g., after an external update), sync the form
+  useEffect(() => {
+    setFormData({
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      bio: user.bio || '',
+      businessName: user.businessName || '',
+    });
+  }, [user]);
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    const keys = name.split('.');
+    
+    // Create the new state object first
+    const updatedFormData = { ...formData, [name]: value };
 
-    if (keys.length > 1) {
-      setFormData((prev) => {
-        const updated = { ...prev };
-        let current: Partial<UserProfile> = updated;
-        for (let i = 0; i < keys.length - 1; i++) current = current[keys[i]];
-        current[keys[keys.length - 1]] = value;
-        return updated;
-      });
-      onUpdate({ firstName: formData.firstName, lastName: formData.lastName, bio: formData.bio })
-      changesSaved(false)
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+    // Update local state
+    setFormData(updatedFormData);
+    
+    // Immediately notify the parent component of the changes
+    onUpdate(updatedFormData);
+    changesSaved(false); // Mark that there are unsaved changes
   };
 
   const handleSave = async () => {
@@ -53,16 +61,21 @@ export default function MyProfilePanel({ user, onUpdate, changesSaved }: MyProfi
         body: JSON.stringify(formData),
       });
 
-      if (!res.ok) throw new Error('Failed to save profile');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to save profile');
+      }
+
       toast.success('Profile updated!', { id: toastId });
-      changesSaved(true)
-    } catch {
-      toast.error('Could not save profile.', { id: toastId });
+      changesSaved(true); // Mark changes as saved
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not save profile.', { id: toastId });
     } finally {
       setIsSaving(false);
     }
   };
 
+  const isBusiness = user.type === 'business';
 
   return (
     <div className="space-y-10 text-sm">
@@ -75,20 +88,44 @@ export default function MyProfilePanel({ user, onUpdate, changesSaved }: MyProfi
         <p className="text-gray-500">Public details that appear on your profile page.</p>
       </motion.div>
 
-      {/* Name Section */}
-      <motion.div
-        className="space-y-3 border p-4 rounded-md bg-white"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <label className="font-medium text-gray-700">Name</label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Input name="firstName" value={formData.firstName} onChange={handleChange} placeholder="First Name" />
-          <Input name="lastName" value={formData.lastName} onChange={handleChange} placeholder="Last Name" />
-        </div>
-      </motion.div>
+      {/* --- UPDATED: Conditional Fields for Business/Personal --- */}
+      {isBusiness ? (
+        <>
+          <motion.div
+            className="space-y-3 border p-4 rounded-md bg-white"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <label className="font-medium text-gray-700">Business Name</label>
+            <Input name="businessName" value={formData.businessName} onChange={handleChange} placeholder="Your Company LLC" />
+          </motion.div>
+          <motion.div
+            className="space-y-3 border p-4 rounded-md bg-white"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <label className="font-medium text-gray-700">Founder's Name</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Input name="firstName" value={formData.firstName} onChange={handleChange} placeholder="First Name" />
+              <Input name="lastName" value={formData.lastName} onChange={handleChange} placeholder="Last Name" />
+            </div>
+          </motion.div>
+        </>
+      ) : (
+        <motion.div
+          className="space-y-3 border p-4 rounded-md bg-white"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <label className="font-medium text-gray-700">Name</label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input name="firstName" value={formData.firstName} onChange={handleChange} placeholder="First Name" />
+            <Input name="lastName" value={formData.lastName} onChange={handleChange} placeholder="Last Name" />
+          </div>
+        </motion.div>
+      )}
 
-      {/* Bio Section */}
+      {/* Bio Section (Unchanged) */}
       <motion.div
         className="space-y-3 border p-4 rounded-md bg-white"
         initial={{ opacity: 0, y: 10 }}
@@ -100,13 +137,13 @@ export default function MyProfilePanel({ user, onUpdate, changesSaved }: MyProfi
         <Textarea
           name="bio"
           rows={5}
-          placeholder="e.g. Frontend dev, gamer, curious about AI..."
+          placeholder="e.g. We build innovative solutions for the modern web."
           value={formData.bio}
           onChange={handleChange}
         />
       </motion.div>
 
-      {/* Save Button */}
+      {/* Save Button (Unchanged) */}
       <div className="flex justify-end pt-4">
         <Button onClick={handleSave} disabled={isSaving}>
           <Save className="h-4 w-4 mr-2" />

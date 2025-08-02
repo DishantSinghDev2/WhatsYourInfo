@@ -164,7 +164,7 @@ export default function PricingPage() {
               <Switch
                 id="billing-cycle"
                 checked={isYearly}
-                onCheckedChange={setIsYearly} />
+                onCheckedChange={setIsYearly} className='bg-gray-200' />
               <Label htmlFor="billing-cycle" className={isYearly ? 'text-blue-600' : 'text-gray-500'}>
                 Yearly <span className="text-green-600 font-medium">(Save 2 months)</span>
               </Label>
