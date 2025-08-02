@@ -11,6 +11,7 @@ import { Eye, EyeOff, CheckCircle, XCircle, X, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { isValidEmail, isValidUsername } from '@/lib/utils';
 import Image from 'next/image';
+import { motion } from 'framer-motion';
 
 // Debounce hook to prevent API calls on every keystroke
 function useDebounce(value: string, delay: number) {
@@ -28,11 +29,12 @@ function useDebounce(value: string, delay: number) {
 
 export default function RegisterPage() {
   const router = useRouter();
-    const searchParams = useSearchParams();
+  const searchParams = useSearchParams();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     username: '',
+    profileVisibility: 'public',
     email: '',
     password: '',
     confirmPassword: '',
@@ -87,11 +89,11 @@ export default function RegisterPage() {
         }
         // Clear manual validation error if API check is successful
         if (errors.username) {
-            setErrors(prev => {
-                const newErrors = { ...prev };
-                delete newErrors.username;
-                return newErrors;
-            });
+          setErrors(prev => {
+            const newErrors = { ...prev };
+            delete newErrors.username;
+            return newErrors;
+          });
         }
       } catch {
         setUsernameStatus('idle'); // Reset on API error
@@ -111,7 +113,7 @@ export default function RegisterPage() {
     if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
     if (!formData.username.trim()) newErrors.username = 'Username is required';
     else if (!isValidUsername(formData.username)) newErrors.username = 'Username can only contain letters, numbers, hyphens, and underscores';
-    
+
     // Add check for the live username status
     if (usernameStatus === 'taken') newErrors.username = 'This username is already taken.';
 
@@ -127,7 +129,7 @@ export default function RegisterPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -177,6 +179,10 @@ export default function RegisterPage() {
     }
   };
 
+  const handleVisibilityChange = (visibility: 'public' | 'private') => {
+         setFormData(prev => ({ ...prev, profileVisibility: visibility }));
+       };
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
@@ -189,7 +195,7 @@ export default function RegisterPage() {
     // Reset username status on manual change
     if (field === 'username') setUsernameStatus('idle');
   };
-  
+
   // Function to handle clicking a username suggestion
   const handleSuggestionClick = (suggestion: string) => {
     setFormData(prev => ({ ...prev, username: suggestion }));
@@ -252,17 +258,63 @@ export default function RegisterPage() {
                   {/* Suggestions Box */}
                   {usernameStatus === 'taken' && usernameSuggestions.length > 0 && (
                     <div className="mt-2 text-sm">
-                        <span className="text-gray-600">Maybe try one of these:</span>
-                        <div className="flex flex-wrap gap-2 mt-1">
-                            {usernameSuggestions.map(s => (
-                                <button type="button" key={s} onClick={() => handleSuggestionClick(s)} className="px-2.5 py-1 text-xs bg-gray-100 border border-gray-300 rounded-full hover:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors">
-                                    {s}
-                                </button>
-                            ))}
-                        </div>
+                      <span className="text-gray-600">Maybe try one of these:</span>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {usernameSuggestions.map(s => (
+                          <button type="button" key={s} onClick={() => handleSuggestionClick(s)} className="px-2.5 py-1 text-xs bg-gray-100 border border-gray-300 rounded-full hover:bg-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors">
+                            {s}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
+
+                {/* --- START: Profile Visibility Section --- */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Profile Visibility
+                  </label>
+
+                  <div className="flex w-fit items-center space-x-1 rounded-full bg-gray-100 p-1">
+                    <button
+                      type="button"
+                      onClick={() => handleVisibilityChange('public')}
+                      className={`relative rounded-full px-5 py-1.5 text-sm font-medium transition-colors
+        ${formData.profileVisibility === 'public' ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                      {formData.profileVisibility === 'public' && (
+                        <motion.div
+                          layoutId="visibility-pill"
+                          className="absolute inset-0 z-0 rounded-full bg-white shadow"
+                          transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+                        />
+                      )}
+                      <span className="relative z-10">Public</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleVisibilityChange('private')}
+                      className={`relative rounded-full px-5 py-1.5 text-sm font-medium transition-colors
+        ${formData.profileVisibility === 'private' ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                      {formData.profileVisibility === 'private' && (
+                        <motion.div
+                          layoutId="visibility-pill"
+                          className="absolute inset-0 z-0 rounded-full bg-white shadow"
+                          transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+                        />
+                      )}
+                      <span className="relative z-10">Private</span>
+                    </button>
+                  </div>
+                  <p className="mt-2 text-xs text-gray-500">
+                    {formData.profileVisibility === 'public'
+                      ? 'Your profile will be visible to everyone.'
+                      : 'Your profile will only be visible to you.'}
+                  </p>
+                </div>
+                {/* --- END: Profile Visibility Section --- */}
 
                 {/* Email (Unchanged) */}
                 <div>
@@ -270,7 +322,7 @@ export default function RegisterPage() {
                   <Input id="email" type="email" value={formData.email} onChange={(e) => handleInputChange('email', e.target.value)} className={errors.email ? 'border-red-500' : ''} placeholder="john@example.com" />
                   {errors.email && <p className="mt-1 text-sm text-red-600 flex items-center"><X className="h-4 w-4 mr-1" />{errors.email}</p>}
                 </div>
-                
+
                 {/* Password & Confirm Password (Unchanged) */}
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>

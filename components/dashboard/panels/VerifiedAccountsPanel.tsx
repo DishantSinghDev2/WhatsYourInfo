@@ -7,7 +7,7 @@ import VerifiedTick from '@/components/profile/VerifiedTick';
 import { signIn } from 'next-auth/react';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
-import { Trash2 } from 'lucide-react';
+import { BadgeCheck, Trash2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 const services = [
@@ -16,7 +16,7 @@ const services = [
   { id: 'linkedin', name: 'LinkedIn', icon: SiLinkedin },
 ];
 
-export interface VerifiedAccountsPanelProps{
+export interface VerifiedAccountsPanelProps {
   user: UserProfile;
   onUpdate: (data: Partial<UserProfile>) => void;
 }
@@ -24,7 +24,7 @@ export interface VerifiedAccountsPanelProps{
 export default function VerifiedAccountsPanel({
   user,
   onUpdate
-}: VerifiedAccountsPanelProps ) {
+}: VerifiedAccountsPanelProps) {
   const router = useRouter();
 
   const connectedAccounts = user.verifiedAccounts || [];
@@ -84,7 +84,9 @@ export default function VerifiedAccountsPanel({
                 <div className="flex items-center gap-2">
                   <Icon className="h-4 w-4" />
                   <span className="font-medium">{service.name}</span>
-                  <VerifiedTick isPro={user.isProUser} />
+                  <BadgeCheck
+                    className={`h-5 w-5 text-yellow`}
+                  />
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => handleDisconnect(service.id)}>
                   <Trash2 className="h-4 w-4 text-red-500" />
