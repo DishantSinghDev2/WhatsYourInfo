@@ -27,7 +27,7 @@ export async function middleware(request: NextRequest) {
   const publicRoutes = [
     '/', '/login', '/register', '/pricing', '/contact',
     '/verify-email', '/verify-otp', '/verify-2fa',
-    '/terms', '/privacy', '/blog', '/docs', '/tools', '/go', '/deleted'
+    '/terms', '/privacy', '/blog', '/docs', '/tools', '/go', '/deleted', '/qr'
   ];
 
   const isPublicRoute = publicRoutes.some(route =>

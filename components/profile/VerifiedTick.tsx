@@ -13,7 +13,7 @@ export default function VerifiedTick({ profile }: { profile: UserProfile | undef
   let tooltipText = '';
 
   // -- Official account (internal team/staff) --
-  if (type === 'official' || isOfficial) {
+  if (type === 'official' && isOfficial) {
     badgeSrc = isProUser
       ? '/badges/official-pro.webp'
       : '/badges/official-free.webp';
