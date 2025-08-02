@@ -114,6 +114,9 @@ export default function LoginPage() {
           router.push(`/verify-2fa?token=${data.preAuthToken}&${(callbackUrl !== null) ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`);
           return; // Stop execution here
         }
+        else {
+          router.push('/profile')
+        }
       }
       else {
         toast.error(data.error || 'Login failed');

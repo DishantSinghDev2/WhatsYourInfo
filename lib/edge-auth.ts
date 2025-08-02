@@ -25,7 +25,9 @@ export async function verifyAuthInEdge(request: NextRequest): Promise<any | null
   }
 
   try {
-    const { payload } = await jwtVerify(token, secretKey);
+    const { payload } = await jwtVerify(token, secretKey, {
+      algorithms: ['HS256']
+    });
     return payload;
   } catch (error) {
     // This is expected for invalid/expired tokens, so we don't need to log it every time.
