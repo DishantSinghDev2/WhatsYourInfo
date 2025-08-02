@@ -2,6 +2,7 @@ import { UserProfile } from '@/types';
 import VerifiedTick from './VerifiedTick';
 import { SiGithub, SiX, SiInstagram, SiLinkedin, SiTiktok, SiLinktree } from 'react-icons/si';
 import tinycolor from 'tinycolor2';
+import { BadgeCheck } from 'lucide-react';
 
 interface Props {
   verifiedAccounts?: UserProfile['verifiedAccounts'];
@@ -34,7 +35,9 @@ export default function VerifiedAccountsSection({ verifiedAccounts, design, isPr
     >
       <div className="flex items-center justify-between mb-3">
         <h3 className={`text-base font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>Verified Accounts</h3>
-        <VerifiedTick isPro={isPro} />
+        <BadgeCheck
+          className={`h-5 w-5 ${isPro ? 'text-yellow-500' : 'text-blue-500'}`}
+        />
       </div>
 
       <ul className="space-y-2">

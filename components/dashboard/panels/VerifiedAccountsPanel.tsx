@@ -85,7 +85,7 @@ export default function VerifiedAccountsPanel({
                   <Icon className="h-4 w-4" />
                   <span className="font-medium">{service.name}</span>
                   <BadgeCheck
-                    className={`h-5 w-5 text-yellow`}
+                    className={`h-5 w-5 ${user.isProUser ? 'text-yellow-500' : 'text-blue-500'}`}
                   />
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => handleDisconnect(service.id)}>
