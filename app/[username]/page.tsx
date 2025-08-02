@@ -3,6 +3,7 @@ import clientPromise from "@/lib/mongodb";
 import PublicProfileView from "@/components/profile/PublicProfileView";
 import type { Metadata } from "next";
 import type { UserProfile } from "@/types";
+import StructuredData from "./StructuredData";
 
 async function getProfile(username: string): Promise<UserProfile | null> {
   try {
@@ -90,39 +91,8 @@ export default async function ProfilePage({ params }: { params: { username: stri
   if (!profile) notFound();
 
   return <>
-  <head>
-
-      <script type="application/ld+json">
-        {JSON.stringify({
-          "@context": "https://schema.org",
-          "@type":
-            profile.type === "business"
-              ? "Organization"
-              : "Person",
-          "name":
-            profile.type === "business"
-              ? profile.businessName || `${profile.firstName} ${profile.lastName}`
-              : `${profile.firstName} ${profile.lastName}`,
-          "url": `https://whatsyour.info/${profile.username}`,
-          "description": profile.bio?.replace(/\s+/g, ' ').trim().slice(0, 160) || undefined,
-          "image": `https://whatsyour.info/api/avatars/${profile.username}`,
-          ...(profile.verifiedAccounts?.length > 0 && {
-            sameAs: profile.verifiedAccounts.map((account) => account.profileUrl),
-          }),
-          ...(profile.isOfficial &&
-            profile.type !== "business" && {
-            jobTitle: profile.designation || undefined,
-          }),
-          ...(profile.firstName && profile.lastName &&
-            (profile.type === "business" || profile.type === "official") && {
-            founder: {
-              "@type": "Person",
-              "name": `${profile.firstName} ${profile.lastName}`,
-            },
-          }),
-        })}
-      </script>
-  </head>
+  
+      <StructuredData profile={profile} />
 
     <body className="m-0 p-0">
       <PublicProfileView profile={profile} />;
