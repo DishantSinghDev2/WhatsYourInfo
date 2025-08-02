@@ -90,12 +90,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // --- 9. Subdomain Routing ---
-  if (hostname.includes('.whatsyour.info') && !hostname.startsWith('www.')) {
-    const subdomain = hostname.split('.')[0];
-    url.pathname = `/${subdomain}${pathname}`;
+  if (hostname.endsWith('.whatsyour.info') && !hostname.startsWith('www.')) {
+    const subdomain = hostname.split('.')[0]; // extract `username` from `username.whatsyour.info`
+    
+    // Rewriting to: /[username]/[original pathname]
+    const newPath = `/${subdomain}${url.pathname}`;
+    url.pathname = newPath;
+
     return NextResponse.rewrite(url);
   }
+
 
   // --- 10. Security Headers ---
   const response = NextResponse.next();
