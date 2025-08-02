@@ -308,12 +308,12 @@ export default function RegisterPage() {
                       <span className="relative z-10">Private</span>
                     </button>
                   </div>
+                </div>
                   <p className="mt-2 text-xs text-gray-500">
                     {formData.profileVisibility === 'public'
                       ? 'Your profile will be visible to everyone.'
                       : 'Your profile will only be visible to you.'}
                   </p>
-                </div>
                 {/* --- END: Profile Visibility Section --- */}
 
                 {/* Email (Unchanged) */}
