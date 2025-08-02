@@ -88,6 +88,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
   const profile = await getProfile(username);
 
   if (!profile) notFound();
+  console.log(profile)
 
   return <>
     <script type="application/ld+json">
@@ -120,8 +121,6 @@ export default async function ProfilePage({ params }: { params: { username: stri
         }),
       })}
     </script>
-
-
 
     <body>
       <PublicProfileView profile={profile} />;
