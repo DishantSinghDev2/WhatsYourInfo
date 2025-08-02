@@ -1,5 +1,3 @@
-# robots.txt for https://whatsyour.info
-
 User-agent: *
 Disallow: /api/
 Disallow: /dashboard/
@@ -7,8 +5,9 @@ Disallow: /profile/edit
 Disallow: /verify-otp
 Disallow: /login
 Disallow: /register
+Disallow: /verify-email
+Disallow: /verify-2fa
 
 Allow: /
 
-# Sitemap location
 Sitemap: https://whatsyour.info/sitemap.xml

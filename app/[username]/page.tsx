@@ -85,5 +85,25 @@ export default async function ProfilePage({ params }: { params: { username: stri
 
   if (!profile) notFound();
 
-  return <PublicProfileView profile={profile} />;
+  return <>
+    <script type="application/ld+json">
+      {JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "ProfilePage",
+        "mainEntity": {
+          "@type": "Person",
+          "name": `${profile.firstName} ${profile.lastName}`,
+          "url": `https://whatsyour.info/${profile.username}`,
+          "sameAs": profile.verifiedAccounts.some(a => a.profileUrl) || [],
+          "description": profile.bio,
+          "image": `https://whatsyour.info/api/avatars/${profile.username}`
+        }
+      })}
+    </script>
+
+<body>
+  
+    <PublicProfileView profile={profile} />;
+</body>
+  </>
 }
