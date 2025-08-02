@@ -1,52 +1,72 @@
 'use client';
 
 import { UserProfile } from '@/types';
-import { BadgeCheck, Building2 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import Image from 'next/image';
 
 export default function VerifiedTick({ profile }: { profile: UserProfile | undefined }) {
-  
-  // Guard clause to prevent crashes if profile is undefined
-  if (!profile) {
-    return null;
-  }
+  if (!profile) return null;
 
   const { type, isProUser, isOfficial, emailVerified } = profile;
 
-  // --- THIS IS THE SECTION WITH THE CHANGE ---
+  let badgeSrc = '';
+  let tooltipText = '';
+
+  // -- Official account (internal team/staff) --
   if (type === 'official' || isOfficial) {
-    // Determine the solid fill color based on Pro status
-    const officialFillColor = isProUser ? '#FBBF24' : '#3B82F6';
-
-    return (
-      <div title="Official Account">
-        <BadgeCheck
-          // Set the outline (stroke) of the icon to be transparent
-          className="h-5 w-5 text-transparent"
-          // Fill the entire shape with the desired color
-          fill={officialFillColor}
-        />
-      </div>
-    );
+    badgeSrc = isProUser
+      ? '/badges/official-pro.webp'
+      : '/badges/official-free.webp';
+    tooltipText = isProUser
+      ? 'This profile belongs to a Pro member of the WhatsYour.Info official team.'
+      : 'This profile belongs to an official WhatsYour.Info team member.';
   }
 
-  // Business accounts logic remains the same
-  if (type === 'business') {
-    return (
-      <div title="Business Account">
-        <Building2 className="h-5 w-5 text-gray-700" />
-      </div>
-    );
+  // -- Business account (free/pro/official) --
+  else if (type === 'business') {
+    badgeSrc = isOfficial
+      ? '/badges/business-off.webp'
+      : isProUser
+        ? '/badges/business-pro.webp'
+        : '/badges/business-free.webp';
+
+    tooltipText = isOfficial
+      ? 'This is an officially verified business on WhatsYour.Info.'
+      : isProUser
+        ? 'This is a business profile with a Pro plan.'
+        : 'This is a business profile on a Free plan.';
   }
 
-  // Standard email verification logic remains the same
-  if (emailVerified) {
-    const color = isProUser ? 'text-yellow-500' : 'text-blue-500';
-    return (
-      <div title="Verified Email">
-        <BadgeCheck className={`h-5 w-5 ${color}`} />
-      </div>
-    );
+  // -- Personal users (email verified) --
+  else if (emailVerified) {
+    badgeSrc = isProUser
+      ? '/badges/personal-pro.webp'
+      : '/badges/personal-free.webp';
+
+    tooltipText = isProUser
+      ? 'This is a personal profile with a Pro subscription.'
+      : 'This is a verified personal profile on a Free plan.';
+  } else {
+    return null;
   }
 
-  return null;
+  // -- Render badge --
+  return (
+    <TooltipProvider delayDuration={100}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Image
+            src={badgeSrc}
+            alt="User badge"
+            width={20}
+            height={20}
+            className="inline-block h-5 w-5 rounded-full object-contain"
+          />
+        </TooltipTrigger>
+        <TooltipContent side="top">
+          <p className="text-sm">{tooltipText}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
