@@ -41,35 +41,25 @@ export function CustomColorMenu({ design, setDesign }: { design: UserProfile['de
 
   return (
     <div ref={customMenuRef} className="w-full mt-4">
-        <button
-          onClick={() => {
-            if (!isSelected) {
-              setDesign((prev: UserProfile['design']) => ({
-                ...prev,
-                theme: 'custom',
-                customColors,
-              }));
-            }
-          }}
-          className={`relative border rounded-md p-1 w-full group transition-all duration-300 h-[110px] ${
-            isSelected ? 'border-black shadow-md bg-gray-50' : 'border-gray-200'
-          }`}
-        >
-          <div className="relative h-6 w-6 mx-auto mt-1 flex justify-center">
-            {[customColors.surface, customColors.background, customColors.accent].map((c, i) => (
-              <span
-                key={i}
-                className="absolute w-6 h-6 border border-gray-400 rounded-full transition-all duration-300 group-hover:scale-110"
-                style={{
-                  background: c,
-                  transform: `translateX(${i * 8}px)`,
-                  zIndex: 10 + i,
-                }}
-              />
-            ))}
-          </div>
-          <span className="block text-xs mt-6 font-medium">Custom</span>
-        </button>
+      <button
+        onClick={() => {
+          if (!isSelected) {
+            setDesign((prev: UserProfile['design']) => ({
+              ...prev,
+              theme: 'custom',
+              customColors,
+            }));
+          }
+        }}
+        className={`relative border rounded-md p-3 text-left group transition-all duration-300 h-[90px] ${isSelected ? 'border-blue-500 shadow-md ring-2 ring-blue-500' : 'border-gray-200 hover:border-gray-400'}`}
+      >
+        <div className="relative h-6 w-6 mx-auto mt-1 flex justify-center">
+          <span className="absolute w-6 h-6 border border-gray-400 rounded-full transition-all duration-300 group-hover:translate-x-[-10px] group-hover:scale-110 z-10" style={{ background: customColors.surface }} />
+          <span className="absolute w-6 h-6 border border-gray-400 rounded-full translate-x-[6px] transition-all duration-300 group-hover:translate-x-[0px] group-hover:scale-110 z-20" style={{ background: customColors.background }} />
+          <span className="absolute w-6 h-6 border border-gray-400 rounded-full translate-x-[12px] transition-all duration-300 group-hover:translate-x-[10px] group-hover:scale-110 z-30" style={{ background: customColors.accent }} />
+        </div>
+        <span className="block text-xs mt-6 font-medium">Custom</span>
+      </button>
 
       <AnimatePresence>
         {isSelected && (
@@ -86,9 +76,8 @@ export function CustomColorMenu({ design, setDesign }: { design: UserProfile['de
               {['background', 'surface', 'accent'].map((key) => (
                 <div key={key}>
                   <button
-                    className={`w-full text-xs border rounded p-2 flex flex-row gap-2 items-center hover:bg-gray-100 transition ${
-                      openKey === key ? 'border-black' : 'border-gray-300'
-                    }`}
+                    className={`w-full text-xs border rounded p-2 flex flex-row gap-2 items-center hover:bg-gray-100 transition ${openKey === key ? 'border-black' : 'border-gray-300'
+                      }`}
                     onClick={() => setOpenKey(openKey === key ? null : key)}
                   >
                     <span
@@ -107,44 +96,44 @@ export function CustomColorMenu({ design, setDesign }: { design: UserProfile['de
                         className="overflow-hidden"
                       >
                         <div className="pt-2">
-                            <Tabs defaultValue={defaultTab} className="w-full mt-2">
-                                <TabsList className="grid grid-cols-2 mb-2">
-                                <TabsTrigger value="solid">Solid</TabsTrigger>
-                                <TabsTrigger value="gradient">Gradient</TabsTrigger>
-                                </TabsList>
+                          <Tabs defaultValue={defaultTab} className="w-full mt-2">
+                            <TabsList className="grid grid-cols-2 mb-2">
+                              <TabsTrigger value="solid">Solid</TabsTrigger>
+                              <TabsTrigger value="gradient">Gradient</TabsTrigger>
+                            </TabsList>
 
-                                <TabsContent value="solid">
-                                <Input
-                                    type="color"
-                                    className="w-full h-10"
-                                    value={customColors[openKey]}
-                                    onChange={(e) =>
-                                    setDesign((prev: UserProfile['design']) => ({
-                                        ...prev,
-                                        customColors: {
-                                        ...prev.customColors,
-                                        [openKey]: e.target.value,
-                                        },
-                                    }))
-                                    }
-                                />
-                                </TabsContent>
+                            <TabsContent value="solid">
+                              <Input
+                                type="color"
+                                className="w-full h-10"
+                                value={customColors[openKey]}
+                                onChange={(e) =>
+                                  setDesign((prev: UserProfile['design']) => ({
+                                    ...prev,
+                                    customColors: {
+                                      ...prev.customColors,
+                                      [openKey]: e.target.value,
+                                    },
+                                  }))
+                                }
+                              />
+                            </TabsContent>
 
-                                <TabsContent value="gradient">
-                                <GradientEditor
-                                    value={customColors[openKey]}
-                                    onChange={(val) =>
-                                    setDesign((prev: UserProfile['design']) => ({
-                                        ...prev,
-                                        customColors: {
-                                        ...prev.customColors,
-                                        [openKey]: val,
-                                        },
-                                    }))
-                                    }
-                                />
-                                </TabsContent>
-                            </Tabs>
+                            <TabsContent value="gradient">
+                              <GradientEditor
+                                value={customColors[openKey]}
+                                onChange={(val) =>
+                                  setDesign((prev: UserProfile['design']) => ({
+                                    ...prev,
+                                    customColors: {
+                                      ...prev.customColors,
+                                      [openKey]: val,
+                                    },
+                                  }))
+                                }
+                              />
+                            </TabsContent>
+                          </Tabs>
                         </div>
                       </motion.div>
                     )}

@@ -3,11 +3,13 @@
 import { UserProfile } from '@/types';
 import { Button } from '@/components/ui/Button';
 import {
-  SiX, SiLinkedin, SiGithub, SiPaypal, SiBitcoin, SiEthereum, SiMoneygram,
+  SiX, SiLinkedin, SiGithub, SiPaypal, SiBitcoin, SiEthereum,
 } from 'react-icons/si';
 import {
   Globe, Share2, Download, Link as LinkIcon, Mail, Lock,
-  Loader2
+  Loader2,
+  Landmark,
+  WalletIcon
 } from 'lucide-react';
 import VerifiedTick from './VerifiedTick'; // Ensure this path is correct
 import { AdvancedDetailsDialog } from './AdvancedDetailsDialog'; // Ensure this path is correct
@@ -19,6 +21,10 @@ import VerifiedAccountsSection from './VerifiedAccountsSection';
 import { useEffect, useState } from 'react';
 import GalleryModal from '../ui/GalleryModal';
 import { SiWhatsapp, SiFacebook } from 'react-icons/si';
+import {
+  SiVenmo, SiPatreon,
+  SiDogecoin, SiBuymeacoffee, SiKofi, SiCashapp, SiSolana, SiRipple, SiCardano
+} from 'react-icons/si';
 import { motion } from 'framer-motion';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 
@@ -34,7 +40,21 @@ const iconMap: { [key: string]: React.ElementType } = {
   'bitcoin (btc)': SiBitcoin,
 };
 const walletIconMap: Record<string, React.ElementType> = {
-  bitcoin: SiBitcoin, btc: SiBitcoin, 'paypal.me': SiPaypal, ethereum: SiEthereum, eth: SiEthereum, bank: SiMoneygram,
+  'PayPal.me': SiPaypal,
+  'Venmo': SiVenmo,
+  'Cash App': SiCashapp,
+  'Patreon': SiPatreon,
+  'BuyMeACoffee': SiBuymeacoffee,
+  'Ko-fi': SiKofi,
+  'Bitcoin (BTC)': SiBitcoin,
+  'Ethereum (ETH)': SiEthereum,
+  'Solana (SOL)': SiSolana,
+  'Cardano (ADA)': SiCardano,
+  'Ripple (XRP)': SiRipple,
+  'Dogecoin (DOGE)': SiDogecoin,
+  'Custom Payment': Landmark, // Generic icon for custom payments
+  'Custom Currency': WalletIcon, // Generic icon for custom currencies
+
 };
 function isGradient(value: string) { return value?.startsWith('linear-gradient'); }
 function isDarkColor(color: string) { try { return tinycolor(color).isDark(); } catch { return false; } }
@@ -227,7 +247,7 @@ export default function PublicProfileView({ profile }: { profile: UserProfile; }
           <div className="space-y-3 text-sm">
             {profile.wallet.map((w) => {
               const WalletIcon =
-                walletIconMap[w.paymentType.toLowerCase()] || Globe;
+                walletIconMap[w.paymentType] || Globe;
               return (
                 <div
                   key={w.id}
