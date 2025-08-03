@@ -53,10 +53,10 @@ export function CustomColorMenu({ design, setDesign }: { design: UserProfile['de
         }}
         className={`relative border rounded-md p-3 w-full text-left group transition-all duration-300 h-[90px] ${isSelected ? 'border-blue-500 shadow-md ring-2 ring-blue-500' : 'border-gray-200 hover:border-gray-400'}`}
       >
-        <div className="relative h-6 w-6 mx-auto mt-1 flex justify-center">
-          <span className="absolute w-6 h-6 border border-gray-400 rounded-full transition-all duration-300 group-hover:translate-x-[-10px] group-hover:scale-110 z-10" style={{ background: customColors.surface }} />
-          <span className="absolute w-6 h-6 border border-gray-400 rounded-full translate-x-[6px] transition-all duration-300 group-hover:translate-x-[0px] group-hover:scale-110 z-20" style={{ background: customColors.background }} />
-          <span className="absolute w-6 h-6 border border-gray-400 rounded-full translate-x-[12px] transition-all duration-300 group-hover:translate-x-[10px] group-hover:scale-110 z-30" style={{ background: customColors.accent }} />
+        <div className="relative w-8 h-8 mx-auto mt-1 flex justify-center">
+          <span className="absolute w-8 h-8 border border-gray-400 rounded-full translate-x-[-2px] transition-all duration-300 group-hover:translate-x-[-12px] group-hover:scale-110 z-10" style={{ background: customColors.surface }} />
+          <span className="absolute w-8 h-8 border border-gray-400 rounded-full translate-x-[4px] transition-all duration-300 group-hover:translate-x-[-2px] group-hover:scale-110 z-20" style={{ background: customColors.background }} />
+          <span className="absolute w-8 h-8 border border-gray-400 rounded-full translate-x-[10px] transition-all duration-300 group-hover:translate-x-[8px] group-hover:scale-110 z-30" style={{ background: customColors.accent }} />
         </div>
         <span className="block text-xs mt-6 font-medium text-center">Custom</span>
       </button>
