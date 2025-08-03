@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
+import redis from '@/lib/redis';
 
 export async function GET(
   request: NextRequest,
@@ -11,6 +12,19 @@ export async function GET(
     const size = Math.max(16, Math.min(512, parseInt(url.searchParams.get('size') || '200')));
     const bgColor = url.searchParams.get('backgroundColor') || '3B82F6';
     const textColor = url.searchParams.get('color') || 'ffffff';
+
+    const cacheKey = `avatar:${username}:${size}:${bgColor}:${textColor}`;
+
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      return new NextResponse(Buffer.from(cached, 'base64'), {
+        headers: {
+          'Content-Type': 'image/png', // Assume it's PNG unless proven otherwise
+          'Cache-Control': 'public, max-age=86400',
+        },
+      });
+    }
+
 
     const client = await clientPromise;
     const db = client.db('whatsyourinfo');
@@ -36,6 +50,8 @@ export async function GET(
 
       const contentType = res.headers.get('Content-Type') ?? 'image/png';
       const buffer = await res.arrayBuffer();
+      await redis.set(cacheKey, Buffer.from(buffer).toString('base64'), { EX: 86400 }); // 24hr TTL
+
 
       return new NextResponse(buffer, {
         headers: {
@@ -54,6 +70,9 @@ export async function GET(
       const contentType = r2Res.headers.get('Content-Type') ?? 'image/png';
       const buffer = await r2Res.arrayBuffer();
 
+      await redis.set(cacheKey, Buffer.from(buffer).toString('base64'), { EX: 86400 }); // 24hr TTL
+
+
       return new NextResponse(buffer, {
         headers: {
           'Content-Type': contentType,
@@ -63,12 +82,17 @@ export async function GET(
     }
 
     // === Fallback to SVG if unknown format ===
-    return new NextResponse(renderSharpSVG(username, size, bgColor, textColor), {
+    const svg = renderSharpSVG(username, size, bgColor, textColor);
+
+    await redis.set(cacheKey, Buffer.from(svg).toString('base64'), { EX: 86400 });
+
+    return new NextResponse(svg, {
       headers: {
         'Content-Type': 'image/svg+xml',
         'Cache-Control': 'public, max-age=86400',
       },
     });
+
 
   } catch (error) {
     console.error('Avatar fetch error:', error);
