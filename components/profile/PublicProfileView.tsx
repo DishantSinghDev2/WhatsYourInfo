@@ -254,11 +254,11 @@ export default function PublicProfileView({ profile }: { profile: UserProfile; }
                   className="flex items-center gap-2"
                 >
                   <WalletIcon className="h-4 w-4 mt-1 opacity-70" />
-                  <div>
+                  <div className=''>
                     <p className="font-semibold">{w.paymentType}</p>
-                    <p className="opacity-80 break-all">
+                    <a href={w.address} target="_blank" className="text-sm opacity-80 break-all text-blue-500 hover:underline transition duration-100">
                       {w.address}
-                    </p>
+                    </a>
                   </div>
                 </div>
               );

@@ -8,7 +8,7 @@ import { Check, HelpCircle, Loader2, X } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Switch } from '@/components/ui/switch'; // Assuming you have a Switch component from shadcn/ui
+import Switch from '@/components/ui/switch'; // Assuming you have a Switch component from shadcn/ui
 import { Label } from '@/components/ui/label';   // Assuming you have a Label component
 import { Dialog, DialogContent, DialogClose, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
@@ -164,7 +164,7 @@ export default function PricingPage() {
               <Switch
                 id="billing-cycle"
                 checked={isYearly}
-                onCheckedChange={setIsYearly}/>
+                onChange={setIsYearly}/>
               <Label htmlFor="billing-cycle" className={isYearly ? 'text-blue-600' : 'text-gray-500'}>
                 Yearly <span className="text-green-600 font-medium">(Save 2 months)</span>
               </Label>

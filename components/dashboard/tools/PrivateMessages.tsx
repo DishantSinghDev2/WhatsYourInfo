@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Switch } from '@/components/ui/switch';
+import Switch from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { MailCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -61,9 +61,7 @@ export default function PrivateMessages({
           <Switch
             id="private-messages"
             checked={isEnabled}
-            onCheckedChange={handleToggle}
-            disabled={isSaving}
-            className='bg-gray-200'
+            onChange={handleToggle}
           />
           <Label htmlFor="private-messages" className="text-sm">
             {isEnabled ? 'Enabled' : 'Disabled'}
