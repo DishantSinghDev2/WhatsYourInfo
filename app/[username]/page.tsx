@@ -12,7 +12,6 @@ async function getProfile(username: string): Promise<UserProfile | null> {
 
   try {
     // Try Redis cache first
-    const cacheKey = `user:profile:${username}`;
     const cached = await cacheGet<UserProfile>(cacheKey);
     if (cached) return cached;
 
