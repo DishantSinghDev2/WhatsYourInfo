@@ -6,10 +6,8 @@ export default function ProfileLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html>
-        <Suspense>
-            {children}
-        </Suspense>
-    </html>
+    <Suspense>
+      {children}
+    </Suspense>
   );
 }
