@@ -94,7 +94,7 @@ export default function HomePage() {
               Create your professional profile, manage your digital identity, and provide SSO authentication 
               for developers. All in one powerful platform trusted by thousands worldwide.
             </p>
-            <div className="mt-10 flex flex-row sm:flex-col items-center justify-center gap-3 sm:gap-6">
+            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6">
               <Link href="/register">
                 <Button size="lg" className="px-8 py-3 text-base">
                   Get Started Free
@@ -107,7 +107,7 @@ export default function HomePage() {
                 </Button>
               </Link>
             </div>
-            <div className="mt-12 flex sm:flex-nowrap flex-wrap items-center justify-center space-4 sm:space-8 text-sm text-gray-500">
+            <div className="mt-12 flex sm:flex-nowrap flex-wrap items-center justify-center space-x-4 sm:space-x-8 text-sm text-gray-500">
               <div className="flex items-center">
                 <CheckCircle className="h-4 w-4 text-green-500 mr-2" />
                 Free Forever Plan
@@ -249,7 +249,7 @@ export default function HomePage() {
             <p className="mt-4 text-lg text-blue-100">
               Join thousands of professionals and developers who trust What'sYour.Info
             </p>
-            <div className="mt-8 flex flex-row sm:flex-col items-center justify-center gap-3 sm:gap-6">
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6">
               <Link href="/register">
                 <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 px-8 py-3 text-base">
                   Start Building Today
@@ -257,7 +257,7 @@ export default function HomePage() {
                 </Button>
               </Link>
               <Link href="/pricing">
-                <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-blue-600 px-8 py-3 text-base">
+                <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-blue-600 bg-blue-600 px-8 py-3 text-base">
                   View Pricing
                 </Button>
               </Link>
