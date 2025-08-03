@@ -327,3 +327,66 @@ export async function sendRecoveryEmailVerification({ to, name, token }: SendRec
     throw new Error('Failed to send recovery email.');
   }
 }
+
+
+// --- NEW: Function to send contact us details to our email ---
+interface SendContactUsEmailOptions {
+  to: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+}
+
+export async function sendContactUsEmail({ to, name, email, subject, message }: SendContactUsEmailOptions) {
+  try {
+    await transporter.sendMail({
+      from: `"WhatsYour.Info" <${process.env.EMAIL_FROM}>`,
+      to,
+      subject: `Contact Us - ${subject}`,
+      html: `
+         <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Contact Us Details</title>
+          <style>
+              /* Using the same well-designed styles from your other emails */
+              body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 0; background-color: #f8f9fa; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { text-align: center; padding-bottom: 20px; }
+              .header img { max-width: 150px; }
+              .content { background-color: #ffffff; padding: 40px; border-radius: 8px; border: 1px solid #e0e0e0; }
+              .greeting { font-size: 20px; font-weight: 500; color: #000000; margin-bottom: 20px; }
+              .instructions { font-size: 16px; line-height: 1.6; color: #000000; }
+              .footer { text-align: center; padding-top: 20px; font-size: 12px; color: #888888; }
+              .button { display: inline-block; padding: 12px 24px; font-size: 16px; font-weight: 500; color: #ffffff; background-color: #28a745; text-decoration: none; border-radius: 5px; }
+              .warning { background-color: #fff3cd; border-left: 4px solid #ffeeba; padding: 15px; margin: 20px 0; font-size: 14px; color: #856404; }
+          </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <img src="https://whatsyour.info/logotext.png" alt="WhatsYour.Info Logo">
+                </div>
+                <div class="content">
+                    <p class="greeting">${name} has filled the contact us form on WhatsYour.Info contact page.</p>
+                    <p class="instructions"><strong>Name:</strong> ${name}</p>
+                    <p class="instructions"><strong>Email:</strong> ${email}</p>
+                    <p class="instructions"><strong>Subject:</strong> ${subject}</p>
+                    <p class="instructions"><strong>Message:</strong> ${message}</p>
+                    
+                    
+                </div>
+                <div class="footer">
+                    <p>© ${new Date().getFullYear()} WhatsYour.Info. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+      `,
+    });
+  } catch (error) {
+    console.error('Error sending contact us email:', error);
+    throw new Error('Failed to send contact us email.');
+  }
+}

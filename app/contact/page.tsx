@@ -36,26 +36,16 @@ const contactMethods = [
     icon: Phone,
     title: 'Phone Support',
     description: 'Speak directly with our team',
-    contact: '+1 (555) 123-4567',
+    contact: '+91 8368989758',
     availability: 'Pro users only, Mon-Fri 9 AM - 5 PM EST',
   },
 ];
 
 const offices = [
   {
-    city: 'San Francisco',
-    address: '123 Tech Street, Suite 100\nSan Francisco, CA 94105',
-    timezone: 'PST (UTC-8)',
-  },
-  {
-    city: 'New York',
-    address: '456 Innovation Ave, Floor 15\nNew York, NY 10001',
-    timezone: 'EST (UTC-5)',
-  },
-  {
-    city: 'London',
-    address: '789 Digital Lane, Office 200\nLondon, UK EC1A 1BB',
-    timezone: 'GMT (UTC+0)',
+    city: 'Haryana, India',
+    address: 'Parnala Extended Industrial Area, Bahadurgarh, HR 124507',
+    timezone: 'IST (UTC+5)',
   },
 ];
 

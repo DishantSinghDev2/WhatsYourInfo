@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { z } from 'zod';
+import { sendContactUsEmail } from '@/lib/email';
 
 const contactSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -29,8 +30,13 @@ export async function POST(request: NextRequest) {
 
     const result = await db.collection('contact_messages').insertOne(contactMessage);
 
-    // TODO: Send email notification to support team
-    // This would integrate with your email service (SendGrid, etc.)
+    await sendContactUsEmail({
+      to: process.env.EMAIL_TO,
+      name: validatedData.name,
+      email: validatedData.email,
+      subject: validatedData.subject,
+      message: validatedData.message,
+    })
 
     return NextResponse.json({
       message: 'Contact message sent successfully',
