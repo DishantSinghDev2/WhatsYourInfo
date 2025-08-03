@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import clientPromise from "@/lib/mongodb"
+import redis from "@/lib/redis";
 
 type Params = Promise<{ username: string; slug: string }>
 
@@ -14,28 +15,36 @@ export default async function SmartRedirectPage({
     return <p>Reserved path.</p>
   }
 
-  let user = null
+  const cacheKey = `smartredirect:${username}`;
+let userData = null;
 
-  try {
-    const client = await clientPromise
-    const db = client.db("whatsyourinfo")
-    user = await db.collection("users").findOne({ username })
+try {
+  const cached = await redis.get(cacheKey);
+  if (cached) {
+    userData = JSON.parse(cached);
+  } else {
+    const client = await clientPromise;
+    const db = client.db("whatsyourinfo");
+    const user = await db.collection("users").findOne(
+      { username },
+      { projection: { isProUser: 1, redirects: 1 } }
+    );
 
-    if (user?.isProUser && Array.isArray(user.redirects)) {
-      const matched = user.redirects.find((r: { slug: string }) => r.slug === slug)
-      if (matched) {
-        // ⚠️ This throws NEXT_REDIRECT — don’t catch it!
-        redirect(matched.url)
-      }
+    if (user) {
+      userData = {
+        isProUser: !!user.isProUser,
+        redirects: Array.isArray(user.redirects) ? user.redirects : [],
+      };
+      // Cache for 10 minutes
+      await redis.set(cacheKey, JSON.stringify(userData), { EX: 600 });
     }
-  } catch (error: any) {
-    // Re-throw if it's a redirect to avoid breaking
-    if (error?.digest?.startsWith("NEXT_REDIRECT")) throw error
-    console.error("Database connection error:", error)
-    return <p>Unable to process request. Please try again later.</p>
   }
+} catch (err) {
+  console.error("Redirect cache/db error:", err);
+}
 
-  return user?.isProUser ? (
+
+  return userData?.isProUser ? (
     <p>
       No redirects found for this URL. Go to <strong>profile → tools → smart redirects</strong> to create one.
     </p>
