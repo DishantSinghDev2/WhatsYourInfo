@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import type { UserProfile } from "@/types";
 import redis from "@/lib/redis";
 import { cacheGet } from "@/lib/cache";
+import Script from "next/script";
 
 async function getProfile(username: string): Promise<UserProfile | null> {
   const cacheKey = `user:profile:${username}`;
@@ -130,11 +131,30 @@ export default async function ProfilePage({ params }: { params: { username: stri
 
   return <>
     <section>
+      <Script id="profile-analytics" strategy="afterInteractive">
+        {`
+          fetch('/api/analytics/profile-view', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              username: '${profile.username}',
+              referrer: document.referrer,
+              userAgent: navigator.userAgent
+            })
+          }).catch(() => {});
+        `}
+      </Script>
 
+      {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: safeJson }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(jsonLd),
+        }}
       />
+
       <PublicProfileView profile={profile} />
     </section>
   </>
