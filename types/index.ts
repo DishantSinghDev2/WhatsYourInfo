@@ -63,8 +63,8 @@ export interface UserProfile {
     backgroundImage?: string;
     backgroundBlur?: number;  // Blur in pixels (e.g., 0 to 20)
     backgroundOpacity?: number; // Opacity percentage for the color overlay (e.g., 0 to 100)
-    sections?: string[]; // Updated from [] to string[]
-    visibility?: { [key: string]: boolean }; // Updated to a key-boolean map
+    sections: string[]; // Updated from [] to string[]
+    visibility: { [key: string]: boolean }; // Updated to a key-boolean map
   };
   links?: { _id: string; title: string; url: string; }[];
   createdAt: Date;

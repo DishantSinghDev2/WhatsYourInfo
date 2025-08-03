@@ -11,7 +11,7 @@ export async function PUT(req: NextRequest) {
 
   const body = await req.json();
 
-  if (!body.settings) return NextResponse.json({ error: 'Missing settings' }, { status: 400 })
+  if (!body.profileVisibility) return NextResponse.json({ error: 'Missing profileVisibility' }, { status: 400 })
 
   const client = await clientPromise;
   const db = client.db();
@@ -19,7 +19,7 @@ export async function PUT(req: NextRequest) {
 
   await users.updateOne(
     { _id: new ObjectId(user._id) },
-    { $set: { settings: body.settings } }
+    { $set: { profileVisibility: body.profileVisibility } }
   );
 
   await cacheDel(`user:profile:${user.username}`);

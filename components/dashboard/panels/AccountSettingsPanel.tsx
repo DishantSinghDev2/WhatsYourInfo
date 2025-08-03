@@ -110,7 +110,7 @@ export default function AccountSettingsPanel({ user, onUpdate }: AccountSettings
     const toastId = toast.loading('Updating visibility...');
 
     try {
-      const response = await fetch('/api/profile/settings', {
+      const response = await fetch('/api/profile/visibility', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ profileVisibility: newVisibility }),

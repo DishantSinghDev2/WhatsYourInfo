@@ -75,33 +75,33 @@ export default function PublicProfileView({ profile }: { profile: UserProfile; }
   // State to track if we are currently checking the auth status
   const [isLoading, setIsLoading] = useState(true);
 
+  const checkOwnership = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/oauth/user'); // Fetches the currently logged-in user
+      if (res.ok) {
+        const loggedInUser = await res.json();
+        // Check if the logged-in user's ID matches the profile's ID
+        if (loggedInUser._id === profile._id) {
+          setIsOwner(true); // Viewer is the owner
+        } else {
+          setIsOwner(false); // Viewer is not the owner
+        }
+      } else {
+        // Not logged in or error, so they are definitely not the owner
+        setIsOwner(false);
+      }
+    } catch (error) {
+      console.error("Failed to fetch auth status:", error);
+      setIsOwner(false); // Assume not owner on any error
+    } finally {
+      setIsLoading(false); // Done loading, regardless of outcome
+    }
+  };
   useEffect(() => {
     // Only run this check if the profile is actually private
     if (profile.profileVisibility === 'private') {
-      const checkOwnership = async () => {
-        setIsLoading(true);
-        try {
-          const res = await fetch('/api/oauth/user'); // Fetches the currently logged-in user
-          if (res.ok) {
-            const loggedInUser = await res.json();
-            // Check if the logged-in user's ID matches the profile's ID
-            if (loggedInUser._id === profile._id) {
-              setIsOwner(true); // Viewer is the owner
-            } else {
-              setIsOwner(false); // Viewer is not the owner
-            }
-          } else {
-            // Not logged in or error, so they are definitely not the owner
-            setIsOwner(false);
-          }
-        } catch (error) {
-          console.error("Failed to fetch auth status:", error);
-          setIsOwner(false); // Assume not owner on any error
-        } finally {
-          setIsLoading(false); // Done loading, regardless of outcome
-        }
-      };
-
+      console.log('checking ownership')
       checkOwnership();
     } else {
       // If the profile is public, there's no need to load or check anything
