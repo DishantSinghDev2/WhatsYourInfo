@@ -3,6 +3,7 @@ import { getUserFromToken } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
 import { z } from 'zod';
 import { ObjectId } from 'mongodb';
+import { cacheDel } from '@/lib/cache';
 
 interface Link {
   _id: ObjectId;
@@ -44,15 +45,17 @@ export async function POST(request: NextRequest) {
     };
 
     const client = await clientPromise;
-const db = client.db('whatsyourinfo');
+    const db = client.db('whatsyourinfo');
 
-// Use typed collection
-const usersCollection = db.collection<UserDocument>('users');
+    // Use typed collection
+    const usersCollection = db.collection<UserDocument>('users');
 
-await usersCollection.updateOne(
-  { _id: new ObjectId(user._id) },
-  { $push: { links: newLink } }
-);
+    await usersCollection.updateOne(
+      { _id: new ObjectId(user._id) },
+      { $push: { links: newLink } }
+    );
+    await cacheDel(`user:profile:${user.username}`);
+
 
     return NextResponse.json({ message: 'Link added successfully', link: newLink }, { status: 201 });
   } catch {
@@ -69,35 +72,38 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
-    
+
     // Check if the body is an array for reordering
     if (Array.isArray(body)) {
       const validatedLinks = linksArraySchema.parse(body);
       const client = await clientPromise;
       const db = client.db('whatsyourinfo');
-      
+
       // Atomically update the entire array
       await db.collection('users').updateOne(
         { _id: new ObjectId(user._id) },
-        { $set: { links: validatedLinks.map(l => ({...l, _id: new ObjectId(l.id)})) } }
+        { $set: { links: validatedLinks.map(l => ({ ...l, _id: new ObjectId(l.id) })) } }
       );
-      
+
       return NextResponse.json({ message: 'Links reordered successfully.' });
     }
 
     // Otherwise, assume it's a single link update
     const { id, ...linkData } = linkSchema.parse(body);
     if (!id) {
-        return NextResponse.json({ error: 'Link ID is required for an update.' }, { status: 400 });
+      return NextResponse.json({ error: 'Link ID is required for an update.' }, { status: 400 });
     }
 
     const client = await clientPromise;
     const db = client.db('whatsyourinfo');
     await db.collection('users').updateOne(
-        { _id: new ObjectId(user._id), "links._id": new ObjectId(id) },
-        { $set: { "links.$.title": linkData.title, "links.$.url": linkData.url } }
+      { _id: new ObjectId(user._id), "links._id": new ObjectId(id) },
+      { $set: { "links.$.title": linkData.title, "links.$.url": linkData.url } }
     );
-    
+
+    await cacheDel(`user:profile:${user.username}`);
+
+
     return NextResponse.json({ message: 'Link updated successfully.' });
 
   } catch {
@@ -120,9 +126,12 @@ export async function DELETE(request: NextRequest) {
     const client = await clientPromise;
     const db = client.db('whatsyourinfo');
     await db.collection<UserDocument>('users').updateOne(
-        { _id: new ObjectId(user._id) },
-        { $pull: { links: { _id: new ObjectId(linkId) } } }
+      { _id: new ObjectId(user._id) },
+      { $pull: { links: { _id: new ObjectId(linkId) } } }
     );
+
+    await cacheDel(`user:profile:${user.username}`);
+
 
     return NextResponse.json({ message: 'Link removed successfully' });
   } catch {

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromToken } from '@/lib/auth'; // Assuming you're using session-based auth
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { cacheDel } from '@/lib/cache';
 
 export async function PUT(req: NextRequest) {
   const user = await getUserFromToken(req);
@@ -18,6 +19,8 @@ export async function PUT(req: NextRequest) {
     { _id: new ObjectId(user._id) },
     { $set: { settings: body.settings } }
   );
+
+  await cacheDel(`user:profile:${user.username}`);
 
   return NextResponse.json({ success: true });
 }

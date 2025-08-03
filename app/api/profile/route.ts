@@ -5,6 +5,7 @@ import { getUserFromToken } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { sendAccountDeletionEmail } from '@/lib/email'; // We will create this
+import { cacheDel } from '@/lib/cache';
 
 export async function DELETE(request: NextRequest) {
   try {
@@ -26,6 +27,8 @@ export async function DELETE(request: NextRequest) {
     // Send a notification email to the user
     // We don't await this, as the core action is complete
     await sendAccountDeletionEmail(user.email, user.firstName);
+
+    await cacheDel(`user:profile:${user.username}`);
 
     // Invalidate the user's session by clearing the auth cookie
     const response = NextResponse.json({ message: 'Account scheduled for permanent deletion.' });

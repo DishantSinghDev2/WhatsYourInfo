@@ -2,17 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromToken } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
 import { z } from 'zod';
+import { ObjectId } from 'mongodb';
+import { cacheDel } from '@/lib/cache';
 
 const profileDetailsSchema = z.object({
   firstName: z.string().min(1, "First name cannot be empty."),
   lastName: z.string().min(1, "Last name cannot be empty."),
   bio: z.string().max(1000, "Bio cannot exceed 1000 characters.").optional(),
-  socialLinks: z.object({
-    twitter: z.string().url().or(z.literal('')).optional(),
-    linkedin: z.string().url().or(z.literal('')).optional(),
-    github: z.string().url().or(z.literal('')).optional(),
-    website: z.string().url().or(z.literal('')).optional(),
-  }).optional(),
+  businessName: z.string().min(1, "Business name cannot be empty.").optional()
 });
 
 export async function PUT(request: NextRequest) {
@@ -29,13 +26,14 @@ export async function PUT(request: NextRequest) {
     const db = client.db('whatsyourinfo');
 
     const result = await db.collection('users').updateOne(
-      { _id: user._id },
+      { _id: new ObjectId(user._id) },
       { $set: { ...validatedData, updatedAt: new Date() } }
     );
 
     if (result.modifiedCount === 0) {
       return NextResponse.json({ message: 'No changes detected.' });
     }
+    await cacheDel(`user:profile:${user.username}`);
 
     return NextResponse.json({ message: 'Profile details updated successfully.' });
 

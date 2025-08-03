@@ -72,7 +72,7 @@ export default function AccountSettingsPanel({ user, onUpdate }: AccountSettings
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const router = useRouter();
-  
+
   // When user prop changes, sync the local state
   useEffect(() => {
     setUsername(user.username);
@@ -110,22 +110,22 @@ export default function AccountSettingsPanel({ user, onUpdate }: AccountSettings
     const toastId = toast.loading('Updating visibility...');
 
     try {
-        const response = await fetch('/api/profile/settings', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ profileVisibility: newVisibility }),
-        });
+      const response = await fetch('/api/profile/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileVisibility: newVisibility }),
+      });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Failed to update visibility');
-        }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update visibility');
+      }
 
-        toast.success('Profile visibility updated!', { id: toastId });
-        onUpdate({ profileVisibility: newVisibility }); // Notify parent of success
+      toast.success('Profile visibility updated!', { id: toastId });
+      onUpdate({ profileVisibility: newVisibility }); // Notify parent of success
     } catch (error) {
-        toast.error(error instanceof Error ? error.message : 'Could not update visibility.', { id: toastId });
-        setVisibility(user.profileVisibility || 'public'); // Revert on error
+      toast.error(error instanceof Error ? error.message : 'Could not update visibility.', { id: toastId });
+      setVisibility(user.profileVisibility || 'public'); // Revert on error
     } finally {
       setIsSavingVisibility(false);
     }
@@ -207,13 +207,14 @@ export default function AccountSettingsPanel({ user, onUpdate }: AccountSettings
               disabled={isSavingVisibility}
               className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
             />
-            <span className="ml-3 text-sm font-medium text-gray-900">
-              Private
-              <p className="text-xs font-normal text-gray-500">Only you can view your profile page.</p>
-            </span>
+            <div className="ml-3 text-sm font-medium text-gray-900">
+              <p>Public</p>
+              <p className="text-xs font-normal text-gray-500">
+                Visible to everyone, including search engines.
+              </p>
+            </div>
           </label>
         </div>
-        {isSavingVisibility && <p className="text-xs text-gray-500 mt-2">Updating...</p>}
       </div>
 
 

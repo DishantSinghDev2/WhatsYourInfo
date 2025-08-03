@@ -3,6 +3,7 @@ import { getUserFromToken } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
 import { z } from 'zod';
 import { ObjectId } from 'mongodb';
+import { cacheDel } from '@/lib/cache';
 
 const walletAddressSchema = z.object({
   paymentType: z.string().min(1, "Payment type is required"),
@@ -34,6 +35,9 @@ export async function PUT(request: NextRequest) {
       { _id: new ObjectId(user._id) },
       { $set: { wallet: walletData, updatedAt: new Date() } }
     );
+
+    await cacheDel(`user:profile:${user.username}`);
+
 
     return NextResponse.json({ message: 'Wallet updated successfully.' });
   } catch (error) {

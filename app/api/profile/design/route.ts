@@ -5,6 +5,7 @@ import { getUserFromToken } from '@/lib/auth'; // ASSUMPTION: This utility exist
 import clientPromise from '@/lib/mongodb'; // ASSUMPTION: This is your configured MongoDB client
 import { z } from 'zod';
 import { ObjectId } from 'mongodb';
+import { cacheDel } from '@/lib/cache';
 
 // Zod schema for validating the incoming design data
 const designSchema = z.object({
@@ -49,6 +50,7 @@ export async function PUT(request: NextRequest) {
         },
       }
     );
+    await cacheDel(`user:profile:${user.username}`);
 
     if (result.matchedCount === 0) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });

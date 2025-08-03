@@ -5,6 +5,7 @@ import { getUserFromToken } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { z } from 'zod';
+import { cacheDel } from '@/lib/cache';
 
 // Zod schema to enforce username rules
 const usernameSchema = z.string()
@@ -43,6 +44,10 @@ export async function PUT(request: NextRequest) {
       { _id: new ObjectId(user._id) },
       { $set: { username: validatedUsername, updatedAt: new Date() } }
     );
+    await cacheDel(`user:profile:${user.username}`); // old username
+    await cacheDel(`user:profile:${validatedUsername}`); // new username
+
+
 
     return NextResponse.json({ message: 'Username updated successfully.' });
 
