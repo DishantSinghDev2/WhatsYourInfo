@@ -9,7 +9,8 @@ const profileDetailsSchema = z.object({
   firstName: z.string().min(1, "First name cannot be empty."),
   lastName: z.string().min(1, "Last name cannot be empty."),
   bio: z.string().max(1000, "Bio cannot exceed 1000 characters.").optional(),
-  businessName: z.string().min(1, "Business name cannot be empty.").optional()
+  businessName: z.string().max(100, "Business name cannot exceed 100 characters.").optional(),
+
 });
 
 export async function PUT(request: NextRequest) {
