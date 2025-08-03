@@ -1,7 +1,6 @@
 // components/StructuredData.tsx
 'use client';
 import { UserProfile } from '@/types';
-import Head from 'next/head';
 
 export default function StructuredData({ profile }: { profile: UserProfile }) {
   const jsonLd = {
@@ -20,7 +19,7 @@ export default function StructuredData({ profile }: { profile: UserProfile }) {
       jobTitle: profile.designation || undefined,
     }),
     ...(profile.firstName && profile.lastName &&
-      (profile.type === "business" || profile.type === "official") && {
+      (profile.type === "business") && {
       founder: {
         "@type": "Person",
         name: `${profile.firstName} ${profile.lastName}`,
@@ -29,11 +28,9 @@ export default function StructuredData({ profile }: { profile: UserProfile }) {
   };
 
   return (
-    <Head>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-    </Head>
   );
 }

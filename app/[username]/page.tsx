@@ -91,8 +91,9 @@ export default async function ProfilePage({ params }: { params: { username: stri
   if (!profile) notFound();
 
   return <>
-  
+    <head>
       <StructuredData profile={profile} />
+    </head>
 
     <body className="m-0 p-0">
       <PublicProfileView profile={profile} />;
