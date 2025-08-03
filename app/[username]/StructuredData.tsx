@@ -1,7 +1,5 @@
-// components/StructuredData.tsx
-'use client';
+// app/[username]/StructuredData.tsx
 import { UserProfile } from '@/types';
-import Head from 'next/head';
 
 export default function StructuredData({ profile }: { profile: UserProfile }) {
   const jsonLd = {
@@ -27,13 +25,13 @@ export default function StructuredData({ profile }: { profile: UserProfile }) {
       },
     }),
   };
+  const safeJson = JSON.stringify(jsonLd).replace(/</g, '\\u003c');
 
   return (
-    <Head>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-    </Head>
+    <script
+      id="profile-ld-json"
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: safeJson }}
+    />
   );
 }

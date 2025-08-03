@@ -104,12 +104,10 @@ export default async function ProfilePage({ params }: { params: { username: stri
   if (!profile) notFound();
 
   return <>
-    <head>
+    <section>
+      {/* Render JSON-LD *before* any hydrated component */}
       <StructuredData profile={profile} />
-    </head>
-
-    <body className="m-0 p-0">
-      <PublicProfileView profile={profile} />;
-    </body>
+      <PublicProfileView profile={profile} />
+    </section>
   </>
 }
