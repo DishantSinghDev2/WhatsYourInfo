@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from './ui/Button';
-import { Menu, X, LogOut, Settings, LayoutDashboard, ChevronDown, Loader2, CreditCard, Users, Code } from 'lucide-react';
+import { Menu, X, LogOut, Settings, LayoutDashboard, ChevronDown, Loader2, CreditCard, Users, Code, ChartBar } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -151,6 +151,11 @@ export default function Header() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
+                    <Link href="/analytics" className="flex items-center cursor-pointer">
+                      <ChartBar className="w-4 h-4 mr-2" /> Analytics
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
                     <Link href="/billing" className="flex items-center cursor-pointer">
                       <CreditCard className="w-4 h-4 mr-2" /> Billing
                     </Link>
@@ -250,6 +255,9 @@ export default function Header() {
                       <>
                         <Link href="/dashboard" className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50">
                           Dashboard
+                        </Link>
+                        <Link href="/analytics" className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50">
+                          Analytics
                         </Link>
                         <Link href="/billing" className="-mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-gray-900 hover:bg-gray-50">
                           Billing

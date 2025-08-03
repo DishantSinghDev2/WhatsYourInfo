@@ -151,7 +151,15 @@ export default async function ProfilePage({ params }: { params: { username: stri
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(jsonLd),
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'Person',
+            name: `${profile.firstName} ${profile.lastName}`,
+            url: `https://whatsyour.info/${profile.username}`,
+            image: `https://whatsyour.info/api/avatars/${profile.username}`,
+            description: profile.bio,
+            sameAs: profile.verifiedAccounts.map((account) => account.profileUrl),
+          }),
         }}
       />
 
