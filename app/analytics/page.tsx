@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { User } from '@/lib/auth';
+import { UserProfile } from '@/types';
 
 interface AnalyticsData {
   totalViews: number;
@@ -31,7 +32,7 @@ interface AnalyticsData {
 
 export default function AnalyticsPage() {
   const router = useRouter();
-  const [user, setUser] = useState<User>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   // const [timeRange, setTimeRange] = useState('30d');
@@ -46,7 +47,7 @@ export default function AnalyticsPage() {
       if (response.ok) {
         const userData = await response.json();
         setUser(userData.user);
-        fetchAnalytics(userData.user.username);
+        await fetchAnalytics();
       } else if (response.status === 401) {
         router.push('/login');
       }
@@ -57,9 +58,9 @@ export default function AnalyticsPage() {
     }
   };
 
-  const fetchAnalytics = async (username: string) => {
+  const fetchAnalytics = async () => {
     try {
-      const response = await fetch(`/api/analytics/stats/${username}`);
+      const response = await fetch(`/api/analytics/stats`);
       if (response.ok) {
         const data = await response.json();
         setAnalytics(data);

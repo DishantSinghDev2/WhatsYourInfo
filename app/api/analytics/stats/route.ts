@@ -4,14 +4,12 @@ import clientPromise from '@/lib/mongodb';
 import redis from '@/lib/redis';
 
 export async function GET(
-  request: NextRequest,
-  { params }: { params: { username: string } }
+  request: NextRequest
 ) {
   try {
     const user = await getUserFromToken(request);
-    const { username } = params;
 
-    if (!user || user.username !== username) {
+    if (!user && !user?.username) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -22,15 +20,15 @@ export async function GET(
     const db = client.db('whatsyourinfo');
 
     // Get total views from Redis
-    const totalViews = await redis.get(`views:${username}:total`) || '0';
+    const totalViews = await redis.get(`views:${user?.username}:total`) || '0';
     
     // Get today's views
     const today = new Date().toISOString().split('T')[0];
-    const todayViews = await redis.get(`views:${username}:${today}`) || '0';
+    const todayViews = await redis.get(`views:${user?.username}:${today}`) || '0';
 
     // Get recent views from MongoDB
     const recentViews = await db.collection('profile_views')
-      .find({ username })
+      .find({ username: user?.username })
       .sort({ timestamp: -1 })
       .limit(10)
       .toArray();
@@ -42,7 +40,7 @@ export async function GET(
     const viewsByDay = await db.collection('profile_views').aggregate([
       {
         $match: {
-          username,
+          username: user?.username,
           timestamp: { $gte: thirtyDaysAgo }
         }
       },
@@ -63,7 +61,7 @@ export async function GET(
     const referrerStats = await db.collection('profile_views').aggregate([
       {
         $match: {
-          username,
+          username: user?.username,
           timestamp: { $gte: thirtyDaysAgo }
         }
       },
