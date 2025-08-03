@@ -242,6 +242,11 @@ export default function WalletPanel({ user, onUpdate, changesSaved }: WalletPane
           {supportedWallets.map(type => {
             const Icon = walletIcons[type];
             const isActive = activeWallet === type;
+
+            const isAdded = wallet.some(w => w.paymentType === type);
+
+            if (isAdded) return null;
+
             return (
               <div key={type}>
                 <button
