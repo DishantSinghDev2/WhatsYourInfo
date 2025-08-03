@@ -51,20 +51,20 @@ export function CustomColorMenu({ design, setDesign }: { design: UserProfile['de
             }));
           }
         }}
-        className={`relative border rounded-md p-3 text-left group transition-all duration-300 h-[90px] ${isSelected ? 'border-blue-500 shadow-md ring-2 ring-blue-500' : 'border-gray-200 hover:border-gray-400'}`}
+        className={`relative border rounded-md p-3 pr-2 text-left group transition-all duration-300 h-[90px] ${isSelected ? 'border-blue-500 shadow-md ring-2 ring-blue-500' : 'border-gray-200 hover:border-gray-400'}`}
       >
         <div className="relative h-6 w-6 mx-auto mt-1 flex justify-center">
           <span className="absolute w-6 h-6 border border-gray-400 rounded-full transition-all duration-300 group-hover:translate-x-[-10px] group-hover:scale-110 z-10" style={{ background: customColors.surface }} />
           <span className="absolute w-6 h-6 border border-gray-400 rounded-full translate-x-[6px] transition-all duration-300 group-hover:translate-x-[0px] group-hover:scale-110 z-20" style={{ background: customColors.background }} />
           <span className="absolute w-6 h-6 border border-gray-400 rounded-full translate-x-[12px] transition-all duration-300 group-hover:translate-x-[10px] group-hover:scale-110 z-30" style={{ background: customColors.accent }} />
         </div>
-        <span className="block text-xs mt-6 font-medium">Custom</span>
+        <span className="block text-xs mt-6 font-medium text-center">Custom</span>
       </button>
 
       <AnimatePresence>
         {isSelected && (
           <motion.div
-            className="border-x border-b rounded-b-lg bg-white p-4 grid gap-3 overflow-hidden"
+            className=" p-4 grid gap-3 overflow-hidden"
             initial={{ opacity: 0, height: 'auto' }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}

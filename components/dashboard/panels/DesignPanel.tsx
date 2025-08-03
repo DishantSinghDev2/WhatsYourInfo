@@ -31,7 +31,6 @@ export const colorThemes = {
   Solar: { background: '#FDF6E3', surface: '#F5EFC1', accent: '#B58900' },
   Rose: { background: '#FFF1F2', surface: '#FEE2E2', accent: '#E11D48' },
   Forest: { background: '#1A2A27', surface: '#2D423F', accent: '#4ADE80' },
-  Cyber: { background: '#0A0A0A', surface: '#1F1F1F', accent: '#F000B8' },
   Lavender: { background: '#F5F3FF', surface: '#EDE9FE', accent: '#8B5CF6' },
   Sky: { background: '#E0F2FE', surface: '#BAE6FD', accent: '#0284C7' },
   Grape: { background: '#F3E8FF', surface: '#E9D5FF', accent: '#7C3AED' },
