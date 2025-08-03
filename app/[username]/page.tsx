@@ -107,24 +107,39 @@ export default async function ProfilePage({ params }: { params: { username: stri
     "@context": "https://schema.org",
     "@type": profile.type === "business" ? "Organization" : "Person",
     name: profile.type === "business"
-      ? profile.businessName || `${profile.firstName} ${profile.lastName}`
+      ? (profile.businessName || `${profile.firstName} ${profile.lastName}`)
       : `${profile.firstName} ${profile.lastName}`,
     url: `https://whatsyour.info/${profile.username}`,
-    description: profile.bio?.replace(/\s+/g, ' ').trim().slice(0, 160) || undefined,
+    description: profile.bio
+      ? profile.bio.replace(/\s+/g, ' ').trim().slice(0, 160)
+      : undefined,
     image: `https://whatsyour.info/api/avatars/${profile.username}`,
+
+    // official profiles or Wikipedia references
     ...(profile.verifiedAccounts?.length > 0 && {
-      sameAs: profile.verifiedAccounts.map((account) => account.profileUrl),
+      sameAs: profile.verifiedAccounts.map(acc => acc.profileUrl)
     }),
+
+    // PERSON: if user is verified and not a business—adds job title + worksFor
     ...(profile.isOfficial && profile.type !== "business" && {
-      jobTitle: profile.designation || undefined,
+      jobTitle: profile.designation,
+      worksFor: profile.businessName && {
+        "@type": "Organization",
+        name: profile.businessName,
+        ...(profile.links && profile.links[0].url && {
+          url: profile.links[0].url
+        })
+      }
     }),
-    ...(profile.firstName && profile.lastName &&
-      profile.type === "business" && {
+
+    // BUSINESS: founder property linking to Person
+    ...(profile.type === "business" && profile.firstName && profile.lastName && {
       founder: {
         "@type": "Person",
-        name: `${profile.firstName} ${profile.lastName}`,
-      },
+        name: `${profile.firstName} ${profile.lastName}`
+      }
     }),
+
   };
 
   const safeJson = JSON.stringify(jsonLd).replace(/</g, '\\u003c');
@@ -148,20 +163,9 @@ export default async function ProfilePage({ params }: { params: { username: stri
       </Script>
 
       {/* JSON-LD Structured Data */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'Person',
-            name: `${profile.firstName} ${profile.lastName}`,
-            url: `https://whatsyour.info/${profile.username}`,
-            image: `https://whatsyour.info/api/avatars/${profile.username}`,
-            description: profile.bio,
-            sameAs: profile.verifiedAccounts.map((account) => account.profileUrl),
-          }),
-        }}
-      />
+      <script type="application/ld+json">
+        {JSON.stringify(jsonLd)}
+      </script>
 
       <PublicProfileView profile={profile} />
     </section>
