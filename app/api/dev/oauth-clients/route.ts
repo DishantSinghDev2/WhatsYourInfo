@@ -27,6 +27,20 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
 
+        // Gracefully handle if any required collection is missing
+        const requiredCollections = ['oauth_clients', 'oauth_authorizations', 'users'];
+        const existingCollections = await db.listCollections().toArray();
+        const existingNames = new Set(existingCollections.map(col => col.name));
+
+        for (const collection of requiredCollections) {
+            if (!existingNames.has(collection)) {
+                return NextResponse.json(
+                    { error: `Required collection '${collection}' does not exist` },
+                    { status: 500 }
+                );
+            }
+        }
+
         if (id) {
             if (!ObjectId.isValid(id)) {
                 return NextResponse.json({ error: 'Invalid client ID format' }, { status: 400 });
@@ -34,16 +48,13 @@ export async function GET(request: NextRequest) {
 
             const clientId = new ObjectId(id);
 
-            // --- UPDATED & ENHANCED AGGREGATION PIPELINE ---
             const aggregationPipeline = [
-                // Stage 1: Match the specific client and ensure the current user owns it
                 {
                     $match: {
                         _id: clientId,
                         userId: user._id,
                     }
                 },
-                // Stage 2: Lookup authorizations for this client
                 {
                     $lookup: {
                         from: 'oauth_authorizations',
@@ -52,9 +63,7 @@ export async function GET(request: NextRequest) {
                         as: 'authorizations'
                     }
                 },
-                // Stage 3: Unwind authorizations to process each one individually
-                { $unwind: { path: "$authorizations", preserveNullAndEmptyArrays: true } },
-                // Stage 4: Lookup the user details for each authorization
+                { $unwind: { path: '$authorizations', preserveNullAndEmptyArrays: true } },
                 {
                     $lookup: {
                         from: 'users',
@@ -63,7 +72,6 @@ export async function GET(request: NextRequest) {
                         as: 'authorizedUserDetails'
                     }
                 },
-                // Stage 5: Group back, conditionally adding user data based on granted scopes
                 {
                     $group: {
                         _id: '$_id',
@@ -71,64 +79,63 @@ export async function GET(request: NextRequest) {
                         authorizedUsers: {
                             $push: {
                                 $cond: [
-                                    { $gt: [{ $size: '$authorizedUserDetails' }, 0] }, // Only add if user exists
+                                    { $gt: [{ $size: '$authorizedUserDetails' }, 0] },
                                     {
                                         _id: { $arrayElemAt: ['$authorizedUserDetails._id', 0] },
                                         authorizedAt: '$authorizations.createdAt',
-                                        // --- PRIVACY LOGIC: Conditionally add data based on scopes ---
                                         username: {
                                             $cond: {
                                                 if: { $in: ['profile:read', '$authorizations.grantedScopes'] },
                                                 then: { $arrayElemAt: ['$authorizedUserDetails.username', 0] },
-                                                else: null // Return null if scope not granted
+                                                else: null
                                             }
                                         },
                                         firstName: {
                                             $cond: {
                                                 if: { $in: ['profile:read', '$authorizations.grantedScopes'] },
                                                 then: { $arrayElemAt: ['$authorizedUserDetails.firstName', 0] },
-                                                else: null // Return null if scope not granted
+                                                else: null
                                             }
                                         },
                                         lastName: {
                                             $cond: {
                                                 if: { $in: ['profile:read', '$authorizations.grantedScopes'] },
                                                 then: { $arrayElemAt: ['$authorizedUserDetails.lastName', 0] },
-                                                else: null // Return null if scope not granted
+                                                else: null
                                             }
                                         },
                                         email: {
                                             $cond: {
                                                 if: { $in: ['email:read', '$authorizations.grantedScopes'] },
                                                 then: { $arrayElemAt: ['$authorizedUserDetails.email', 0] },
-                                                else: null // Return null if scope not granted
+                                                else: null
                                             }
                                         },
                                         avatar: {
                                             $cond: {
                                                 if: { $in: ['profile:read', '$authorizations.grantedScopes'] },
                                                 then: { $arrayElemAt: ['$authorizedUserDetails.avatar', 0] },
-                                                else: null // Return null if scope not granted
+                                                else: null
                                             }
                                         }
                                     },
-                                    '$$REMOVE' // Do not include in array if user lookup failed
+                                    '$$REMOVE'
                                 ]
                             }
                         }
                     }
                 },
-                // Stage 6: Reshape the final output
                 {
                     $replaceRoot: {
-                        newRoot: { $mergeObjects: ['$doc', { authorizedUsers: '$authorizedUsers' }] }
+                        newRoot: {
+                            $mergeObjects: ['$doc', { authorizedUsers: '$authorizedUsers' }]
+                        }
                     }
                 },
-                // Stage 7: Clean up temporary fields
                 {
                     $project: {
                         authorizations: 0,
-                        authorizedUserDetails: 0,
+                        authorizedUserDetails: 0
                     }
                 }
             ];
@@ -138,22 +145,21 @@ export async function GET(request: NextRequest) {
             if (results.length === 0) {
                 return NextResponse.json({ error: 'OAuth client not found' }, { status: 404 });
             }
-            
-            const oauthClient = results[0];
 
+            const oauthClient = results[0];
             return NextResponse.json({
                 client: { ...oauthClient, _id: oauthClient._id.toString() },
             });
         }
 
-        // Original logic to fetch all clients remains the same
-        const clients = await db.collection('oauth_clients').find(
-            { userId: user._id },
-            { sort: { createdAt: -1 } }
-        ).toArray();
+        // Fallback: return all clients for the current user
+        const clients = await db.collection('oauth_clients')
+            .find({ userId: user._id })
+            .sort({ createdAt: -1 })
+            .toArray();
 
         return NextResponse.json({
-            clients: clients.map(c => ({ ...c, _id: c._id.toString() }))
+            clients: clients.map(c => ({ ...c, _id: c._id.toString() })),
         });
 
     } catch (error) {
@@ -161,7 +167,6 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }
-
 
 
 export async function POST(request: NextRequest) {

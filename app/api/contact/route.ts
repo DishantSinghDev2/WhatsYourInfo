@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     const result = await db.collection('contact_messages').insertOne(contactMessage);
 
     await sendContactUsEmail({
-      to: process.env.EMAIL_TO,
+      to: process.env.EMAIL_TO as string,
       name: validatedData.name,
       email: validatedData.email,
       subject: validatedData.subject,
