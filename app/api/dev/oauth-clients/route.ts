@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
                                         },
                                         email: {
                                             $cond: {
-                                                if: { $in: ['email:read', '$authorizations.grantedScopes'] },
+                                                if: { $in: ['email:read', { $ifNull: ['$authorizations.grantedScopes', []]}] },
                                                 then: { $arrayElemAt: ['$authorizedUserDetails.email', 0] },
                                                 else: null
                                             }
