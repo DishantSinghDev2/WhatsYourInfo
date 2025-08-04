@@ -85,21 +85,21 @@ export async function GET(request: NextRequest) {
                                         authorizedAt: '$authorizations.createdAt',
                                         username: {
                                             $cond: {
-                                                if: { $in: ['profile:read', '$authorizations.grantedScopes'] },
+                                                if: { $in: ['profile:read', { $ifNull: ['$authorizations.grantedScopes', []] }] },
                                                 then: { $arrayElemAt: ['$authorizedUserDetails.username', 0] },
                                                 else: null
                                             }
                                         },
                                         firstName: {
                                             $cond: {
-                                                if: { $in: ['profile:read', '$authorizations.grantedScopes'] },
+                                                if: { $in: ['profile:read', { $ifNull: ['$authorizations.grantedScopes', []] }] },
                                                 then: { $arrayElemAt: ['$authorizedUserDetails.firstName', 0] },
                                                 else: null
                                             }
                                         },
                                         lastName: {
                                             $cond: {
-                                                if: { $in: ['profile:read', '$authorizations.grantedScopes'] },
+                                                if: { $in: ['profile:read', { $ifNull: ['$authorizations.grantedScopes', []] }] },
                                                 then: { $arrayElemAt: ['$authorizedUserDetails.lastName', 0] },
                                                 else: null
                                             }
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
                                         },
                                         avatar: {
                                             $cond: {
-                                                if: { $in: ['profile:read', '$authorizations.grantedScopes'] },
+                                                if: { $in: ['profile:read', { $ifNull: ['$authorizations.grantedScopes', []] }] },
                                                 then: { $arrayElemAt: ['$authorizedUserDetails.avatar', 0] },
                                                 else: null
                                             }
