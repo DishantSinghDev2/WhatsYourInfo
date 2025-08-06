@@ -100,7 +100,7 @@ async function generateCodeAndRedirect(userId: ObjectId, oauthClient: WithId<Doc
   const size = Buffer.byteLength(JSON.stringify(doc));
   if (size > 16 * 1024 * 1024) {
     console.error(`❌ Document too large: ${size} bytes`, doc);
-    return NextResponse.json({ error: 'Document too large' }, { status: 500 });
+    return NextResponse.json({ error: 'Data received is too large' }, { status: 500 });
   }
 
   await db.collection('oauth_codes').insertOne(doc);

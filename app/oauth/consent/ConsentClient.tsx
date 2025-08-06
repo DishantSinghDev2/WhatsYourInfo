@@ -117,7 +117,7 @@ export default function ConsentPage() {
     if (client) {
       const isVerified = client.opByWYI;
       const appName = isVerified ? "WhatsYour.Info (Verified)" : client.name;
-      const appLogo = isVerified ? "/logo.png" : client.appLogo || '/default-logo.png';
+      const appLogo = client.appLogo || '/default-logo.png';
 
 
       return (
