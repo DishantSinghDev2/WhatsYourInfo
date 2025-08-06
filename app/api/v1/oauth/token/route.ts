@@ -29,8 +29,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const grantType = body.grant_type;
 
-    console.log(body)
-
     if (grantType === 'authorization_code') {
       return handleAuthorizationCodeGrant(body);
     }

@@ -41,7 +41,6 @@ export async function GET(request: NextRequest) {
     const client = await clientPromise;
     const db = client.db('whatsyourinfo');
     const oauthClient = await db.collection('oauth_clients').findOne({ clientId: clientId });
-    console.log("oauth_clients", oauthClient)
 
     // IMPORTANT: The redirect_uri from the request MUST EXACTLY match one of the registered URIs.
     if (!oauthClient || !oauthClient.redirectUris.includes(redirectUri)) {
@@ -96,7 +95,6 @@ async function generateCodeAndRedirect(userId: ObjectId, oauthClient: WithId<Doc
     expiresAt: codeExpires,
   };
 
-  console.log(oauthClient._id)
 
   const size = Buffer.byteLength(JSON.stringify(doc));
   if (size > 16 * 1024 * 1024) {
@@ -106,7 +104,6 @@ async function generateCodeAndRedirect(userId: ObjectId, oauthClient: WithId<Doc
 
   await db.collection('oauth_codes').insertOne(doc);
 
-  console.log()
   // 3. Store the user's consent
   await db.collection('oauth_authorizations').updateOne(
     { userId: userId, clientId: oauthClient._id },
