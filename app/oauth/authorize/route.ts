@@ -30,11 +30,11 @@ export async function GET(request: NextRequest) {
     const responseType = searchParams.get('response_type');
 
     if (responseType !== 'code') {
-        return NextResponse.json({ error: 'Unsupported response_type. Must be "code".' }, { status: 400 });
+      return NextResponse.json({ error: 'Unsupported response_type. Must be "code".' }, { status: 400 });
     }
 
     if (!clientId || !redirectUri) {
-        return NextResponse.json({ error: 'client_id and redirect_uri are required.' }, { status: 400 });
+      return NextResponse.json({ error: 'client_id and redirect_uri are required.' }, { status: 400 });
     }
 
     // 3. Validate the client_id and redirect_uri against the database.
@@ -48,19 +48,22 @@ export async function GET(request: NextRequest) {
     }
 
     // 4. Check if the user has already given consent for these scopes.
-     const existingAuthorization = await db.collection('oauth_authorizations').findOne({
-        userId: user._id,
-        clientId: oauthClient._id,
-     });
+    const existingAuthorization = await db.collection('oauth_authorizations').findOne({
+      userId: user._id,
+      clientId: oauthClient._id,
+    });
 
-    const requestedScopes = scope ? scope.split(' ') : [];
+    const requestedScopes = scope
+      ? scope.split(' ').filter(s => /^[a-zA-Z0-9:_-]{1,64}$/.test(s)).slice(0, 10)
+      : [];
+
     const hasConsent = existingAuthorization && requestedScopes.every(s => existingAuthorization.grantedScopes.includes(s));
 
     // If consent already exists, skip the consent screen and grant the code directly.
     if (hasConsent) {
-        return generateCodeAndRedirect(new ObjectId(user._id), oauthClient, redirectUri, state, requestedScopes);
+      return generateCodeAndRedirect(new ObjectId(user._id), oauthClient, redirectUri, state, requestedScopes);
     }
-    
+
     // 5. If no prior consent, redirect to the consent page.
     // Pass all the necessary info for the consent page to render.
     const consentUrl = new URL('/oauth/consent', request.url);
@@ -76,38 +79,49 @@ export async function GET(request: NextRequest) {
 
 // --- NEW: Helper function to avoid duplicating code ---
 async function generateCodeAndRedirect(userId: ObjectId, oauthClient: WithId<Document>, redirectUri: string, state: string | null, scopes: string[]) {
-    const client = await clientPromise;
-    const db = client.db('whatsyourinfo');
+  const client = await clientPromise;
+  const db = client.db('whatsyourinfo');
 
-    // 1. Generate Authorization Code
-    const authCode = crypto.randomBytes(32).toString('hex');
-    const codeExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+  // 1. Generate Authorization Code
+  const authCode = crypto.randomBytes(32).toString('hex');
+  const codeExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    // 2. Store the code
-    await db.collection('oauth_codes').insertOne({
-        code: authCode,
-        userId: userId,
-        clientId: oauthClient._id,
-        scope: scopes,
-        expiresAt: codeExpires,
-    });
-    
-    // 3. Store the user's consent
-    await db.collection('oauth_authorizations').updateOne(
-        { userId: userId, clientId: oauthClient._id },
-        { $addToSet: { grantedScopes: { $each: scopes } }, $set: { updatedAt: new Date() } },
-        { upsert: true }
-    );
+  // 2. Store the code
+  const doc = {
+    code: authCode,
+    userId: userId,
+    clientId: oauthClient._id,
+    scope: scopes,
+    expiresAt: codeExpires,
+  };
 
-    // 4. Redirect back to the third-party app with the code
-    const finalRedirectUrl = new URL(redirectUri);
-    finalRedirectUrl.searchParams.set('code', authCode);
-    if(state) finalRedirectUrl.searchParams.set('state', state);
+  console.log(doc)
 
-    // From the POST handler, we return JSON. From GET, we redirect directly.
-    if (typeof window === 'undefined') { // We are on the server (GET request)
-        return NextResponse.redirect(finalRedirectUrl.toString());
-    } else { // We are in the POST handler (called from client-side)
-        return NextResponse.json({ redirect: finalRedirectUrl.toString() });
-    }
+  const size = Buffer.byteLength(JSON.stringify(doc));
+  if (size > 16 * 1024 * 1024) {
+    console.error(`❌ Document too large: ${size} bytes`, doc);
+    return NextResponse.json({ error: 'Document too large' }, { status: 500 });
+  }
+
+  await db.collection('oauth_codes').insertOne(doc);
+
+
+  // 3. Store the user's consent
+  await db.collection('oauth_authorizations').updateOne(
+    { userId: userId, clientId: oauthClient._id },
+    { $addToSet: { grantedScopes: { $each: scopes } }, $set: { updatedAt: new Date() } },
+    { upsert: true }
+  );
+
+  // 4. Redirect back to the third-party app with the code
+  const finalRedirectUrl = new URL(redirectUri);
+  finalRedirectUrl.searchParams.set('code', authCode);
+  if (state) finalRedirectUrl.searchParams.set('state', state);
+
+  // From the POST handler, we return JSON. From GET, we redirect directly.
+  if (typeof window === 'undefined') { // We are on the server (GET request)
+    return NextResponse.redirect(finalRedirectUrl.toString());
+  } else { // We are in the POST handler (called from client-side)
+    return NextResponse.json({ redirect: finalRedirectUrl.toString() });
+  }
 }
