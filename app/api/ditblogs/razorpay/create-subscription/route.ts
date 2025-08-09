@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
 
   const options = {
     plan_id,
+    total_count: yearly ? 1 : 60, // Number of billing cycles
     quantity: 1,
     customer_notify: 1,
     notes: {
