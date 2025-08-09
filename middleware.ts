@@ -99,16 +99,32 @@ export async function middleware(request: NextRequest) {
     return NextResponse.rewrite(url);
   }
 
+  const nonce = crypto.randomUUID();
+  const cspHeader = `
+    default-src 'self';
+    script-src 'self' 'nonce-${nonce}' https://www.googletagmanager.com https://www.google-analytics.com https://checkout.razorpay.com;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    img-src 'self' data: https://www.google-analytics.com;
+    font-src 'self' https://fonts.gstatic.com;
+    connect-src 'self' https://www.google-analytics.com https://checkout.razorpay.com;
+    frame-src https://checkout.razorpay.com;
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self';
+  `.replace(/\s{2,}/g, ' ').trim();
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('Content-Security-Policy', cspHeader);
+  requestHeaders.set('x-nonce', nonce); // pass nonce to pages
+
 
   // --- 10. Security Headers ---
-  const response = NextResponse.next();
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'origin-when-cross-origin');
-  response.headers.set(
-    'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https:;"
-  );
+  response.headers.set('Content-Security-Policy', cspHeader);
+
 
   return response;
 }
