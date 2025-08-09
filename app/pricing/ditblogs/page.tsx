@@ -45,10 +45,10 @@ const PLAN_LIMITS = {
   },
 };
 const plans = [
-    { id: 'FREE', name: 'Free', price: { usd: 0, inr: 0 }, desc: 'For individuals starting out.' },
-    { id: 'GROWTH', name: 'Growth', price: { usd: 9, inr: 499 }, desc: 'For growing blogs and creators.' },
-    { id: 'SCALE', name: 'Scale', price: { usd: 29, inr: 1499 }, desc: 'For businesses and power users.' },
-    { id: 'CUSTOM', name: 'Custom', price: { usd: null, inr: null }, desc: 'For enterprise needs.' },
+    { id: 'FREE', name: 'Free', price: { usd: 0, inr: 0 }, yearly: { usd: 0, inr: 0 }, desc: 'For individuals starting out.' },
+    { id: 'GROWTH', name: 'Growth', price: { usd: 9, inr: 499 }, yearly: { usd: 89, inr: 4999 }, desc: 'For growing blogs and creators.' },
+    { id: 'SCALE', name: 'Scale', price: { usd: 29, inr: 1499 }, yearly: { usd: 289, inr: 14999 }, desc: 'For businesses and power users.' },
+    { id: 'CUSTOM', name: 'Custom', price: { usd: null, inr: null }, yearly: { usd: null, inr: null }, desc: 'For enterprise needs.' },
 ];
 
 // --- The Main Component ---
@@ -143,9 +143,9 @@ export default function DITBlogsPricingPage() {
             {userCountry === 'IN' && (
                 <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
             )}
-            <div className="min-h-screen bg-white">
+            <div className="min-h-screen bg-white ">
                 <Header />
-                <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 my-5">
                     {/* Hero Section */}
                     <div className="py-24 text-center">
                         <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">DITBlogs Pricing</h1>
@@ -153,7 +153,7 @@ export default function DITBlogsPricingPage() {
                         <div className="mt-10 flex items-center justify-center space-x-4">
                             <Label>Monthly</Label>
                             <Switch checked={isYearly} onChange={setIsYearly} />
-                            <Label>Yearly <span className="text-green-600 font-medium">(Save 15%)</span></Label>
+                            <Label>Yearly <span className="text-green-600 font-medium">(Save 2 months)</span></Label>
                         </div>
                     </div>
                     
@@ -170,7 +170,7 @@ export default function DITBlogsPricingPage() {
                                         <div className="mb-6">
                                             {plan.price[currency] !== null ? (
                                                 <>
-                                                    <span className="text-4xl font-bold">{currencySymbol}{isYearly ? plan.price[currency]! * 12 * 0.85 : plan.price[currency]}</span>
+                                                    <span className="text-4xl font-bold">{currencySymbol}{isYearly ? plan.yearly[currency] : plan.price[currency]}</span>
                                                     <span className="text-gray-500">/{isYearly ? 'year' : 'month'}</span>
                                                 </>
                                             ) : (
