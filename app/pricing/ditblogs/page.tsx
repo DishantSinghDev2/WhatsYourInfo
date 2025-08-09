@@ -15,34 +15,34 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 
 // --- Data Definitions ---
 const PLAN_LIMITS = {
-  ['FREE']: {
-    posts: 20,
-    members: 1,
-    viewsPerMonth: 2500,
-    categories: 5,   // <-- New Limit
-    tagsPerPost: 3,  // <-- New Limit
-  },
-  ['GROWTH']: {
-    posts: Infinity,
-    members: 5,
-    viewsPerMonth: 50000,
-    categories: 20,  // <-- New Limit
-    tagsPerPost: 10, // <-- New Limit
-  },
-  ['SCALE']: {
-    posts: Infinity,
-    members: 15,
-    viewsPerMonth: 250000,
-    categories: Infinity, // <-- New Limit
-    tagsPerPost: Infinity, // <-- New Limit
-  },
-  ['CUSTOM']: {
-    posts: Infinity,
-    members: Infinity,
-    viewsPerMonth: Infinity,
-    categories: Infinity, // <-- New Limit
-    tagsPerPost: Infinity, // <-- New Limit
-  },
+    ['FREE']: {
+        posts: 20,
+        members: 1,
+        viewsPerMonth: 2500,
+        categories: 5,   // <-- New Limit
+        tagsPerPost: 3,  // <-- New Limit
+    },
+    ['GROWTH']: {
+        posts: Infinity,
+        members: 5,
+        viewsPerMonth: 50000,
+        categories: 20,  // <-- New Limit
+        tagsPerPost: 10, // <-- New Limit
+    },
+    ['SCALE']: {
+        posts: Infinity,
+        members: 15,
+        viewsPerMonth: 250000,
+        categories: Infinity, // <-- New Limit
+        tagsPerPost: Infinity, // <-- New Limit
+    },
+    ['CUSTOM']: {
+        posts: Infinity,
+        members: Infinity,
+        viewsPerMonth: Infinity,
+        categories: Infinity, // <-- New Limit
+        tagsPerPost: Infinity, // <-- New Limit
+    },
 };
 const plans = [
     { id: 'FREE', name: 'Free', price: { usd: 0, inr: 0 }, yearly: { usd: 0, inr: 0 }, desc: 'For individuals starting out.' },
@@ -57,7 +57,7 @@ export default function DITBlogsPricingPage() {
     const [isYearly, setIsYearly] = useState(false);
     const [isLoading, setIsLoading] = useState<string | null>(null);
     const [userCountry, setUserCountry] = useState<'IN' | 'OTHER'>('OTHER');
-    
+
     // Fetch user's country on component mount
     useEffect(() => {
         fetch('/api/geo') // A simple API to get geo info
@@ -81,7 +81,7 @@ export default function DITBlogsPricingPage() {
         }
         setIsLoading(null);
     };
-    
+
     const handlePayPalPayment = async (plan: 'GROWTH' | 'SCALE') => {
         try {
             const res = await fetch('/api/ditblogs/paypal/create-subscription', {
@@ -99,6 +99,10 @@ export default function DITBlogsPricingPage() {
     };
 
     const handleRazorpayPayment = async (plan: 'GROWTH' | 'SCALE') => {
+        if (!window.Razorpay) {
+            toast.error("Payment gateway is still loading. Please wait a moment and try again.");
+            return;
+        }
         try {
             const res = await fetch('/api/ditblogs/razorpay/create-subscription', {
                 method: 'POST',
@@ -127,7 +131,7 @@ export default function DITBlogsPricingPage() {
                 },
                 theme: { color: '#3B82F6' },
             };
-            
+
             const rzp = new window.Razorpay(options);
             rzp.open();
 
@@ -156,7 +160,7 @@ export default function DITBlogsPricingPage() {
                             <Label>Yearly <span className="text-green-600 font-medium">(Save 2 months)</span></Label>
                         </div>
                     </div>
-                    
+
                     {/* Pricing Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                         {plans.map(plan => (
@@ -197,7 +201,7 @@ export default function DITBlogsPricingPage() {
                                                 disabled={!!isLoading}
                                                 onClick={() => handlePayment(plan.id as 'GROWTH' | 'SCALE')}
                                             >
-                                                {isLoading === plan.id ? <Loader2 className="h-4 w-4 animate-spin mr-2"/> : null}
+                                                {isLoading === plan.id ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                                                 Choose {plan.name}
                                             </Button>
                                         )}
