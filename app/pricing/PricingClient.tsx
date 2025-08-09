@@ -7,10 +7,12 @@ import Footer from '@/components/Footer';
 import { Check, HelpCircle, Loader2, X } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Switch from '@/components/ui/switch'; // Assuming you have a Switch component from shadcn/ui
 import { Label } from '@/components/ui/label';   // Assuming you have a Label component
 import { Dialog, DialogContent, DialogClose, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import toast from 'react-hot-toast';
+import Script from 'next/script';
 
 
 const featureCategories = [
@@ -84,6 +86,8 @@ export default function PricingPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const [userCountry, setUserCountry] = useState<'IN' | 'OTHER'>('OTHER'); // State for user's country
+
 
   const showCancel = searchParams.get('paypal_cancel') === 'true';
   const subId = searchParams.get('subscription_id');
@@ -93,49 +97,118 @@ export default function PricingPage() {
     router.replace(pathname);
   };
 
+  // --- NEW: Fetch user's country on component mount ---
+  useEffect(() => {
+    setIsLoading(true); // Show loader while we detect location
+    fetch('/api/geo')
+      .then(res => res.json())
+      .then(data => {
+        if (data.country === 'IN') {
+          setUserCountry('IN');
+        }
+      }).catch(() => {
+        // Default to OTHER if the API fails
+        setUserCountry('OTHER');
+      }).finally(() => {
+        setIsLoading(false);
+      });
+  }, []);
 
+  // --- NEW: Define pricing for both regions ---
+  const pricingData = {
+    monthly: { usd: 6, inr: 149 },
+    yearly: { usd: 59, inr: 1499 },
+  };
+  const currency = userCountry === 'IN' ? 'inr' : 'usd';
+  const currencySymbol = userCountry === 'IN' ? '₹' : '$';
 
+  // --- NEW: Refactored Payment Handler Logic ---
+
+  // Main handler that decides which payment gateway to use
   const handleProClick = async () => {
     setIsLoading(true);
     setError(null);
+    if (userCountry === 'IN') {
+      await handleRazorpayPayment();
+    } else {
+      await handlePayPalPayment();
+    }
+    setIsLoading(false);
+  };
+
+  // Existing PayPal logic
+  const handlePayPalPayment = async () => {
     try {
       const res = await fetch('/api/paypal/create-subscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ yearly: isYearly }),
       });
-
       const data = await res.json();
-
       if (res.ok && data.approvalUrl) {
-        // Redirect the user to PayPal to approve the subscription
         router.push(data.approvalUrl);
       } else if (res.status === 401) {
-
-        router.push('/login')
-      }
-      else {
+        router.push('/login?callbackUrl=/pricing');
+      } else {
         throw new Error(data.error || 'Failed to create PayPal subscription.');
       }
-    } catch (err: Error | unknown) {
-      console.error('Error initiating PayPal payment:', err);
-      setError('Error occurred during payment.');
-      setIsLoading(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred.');
     }
   };
 
+  // New Razorpay logic
+  const handleRazorpayPayment = async () => {
+    try {
+      const res = await fetch('/api/razorpay/create-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ yearly: isYearly }),
+      });
+
+      if (res.status === 401) {
+        router.push('/login?callbackUrl=/pricing');
+        return;
+      }
+
+      const { subscriptionId, keyId } = await res.json();
+      if (!subscriptionId) throw new Error('Could not create Razorpay subscription.');
+
+      const options = {
+        key: keyId,
+        subscription_id: subscriptionId,
+        name: 'WhatsYour.Info Pro',
+        description: `WYI Pro Plan - ${isYearly ? 'Yearly' : 'Monthly'}`,
+        handler: function (response: any) {
+          toast.success('Subscription successful! Welcome to Pro.');
+          router.push('/dashboard?razorpay_success=true&sub_id=' + response.razorpay_subscription_id);
+        },
+        theme: { color: '#2563EB' }, // Blue-600
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (response: any) {
+        toast.error(`Payment failed: ${response.error.description}`);
+      });
+      rzp.open();
+
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Payment failed.");
+    }
+  };
+
+  // --- Dynamic plan object based on state ---
   const proPlan = {
     name: 'Pro',
-    price: isYearly ? '$59' : '$6',
+    price: `${currencySymbol}${pricingData[isYearly ? 'yearly' : 'monthly'][currency]}`,
     period: isYearly ? 'year' : 'month',
     description: 'For professionals who want more control',
     cta: 'Start 14-Day Free Trial',
-    popular: true,
   };
 
   const freePlan = {
     name: 'Free',
-    price: '$0',
+    price: `${currencySymbol}0}`,
     period: 'forever',
     description: 'Perfect for individuals getting started',
     cta: 'Get Started Free',
@@ -145,6 +218,9 @@ export default function PricingPage() {
 
   return (
     <>
+      {userCountry === 'IN' && (
+        <Script id="razorpay-checkout-js" src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+      )}
       <div className="min-h-screen bg-white">
         <Header />
 
@@ -164,17 +240,18 @@ export default function PricingPage() {
               <Switch
                 id="billing-cycle"
                 checked={isYearly}
-                onChange={setIsYearly}/>
+                onChange={setIsYearly} />
               <Label htmlFor="billing-cycle" className={isYearly ? 'text-blue-600' : 'text-gray-500'}>
                 Yearly <span className="text-green-600 font-medium">(Save 2 months)</span>
               </Label>
             </div>
           </div>
 
-          {/* Pricing Comparison Table */}
+          {/* --- UPDATED: Pricing Comparison Table --- */}
           <div className="sticky top-0 bg-white/80 backdrop-blur-md z-10">
             <div className="grid grid-cols-3 gap-8 max-w-5xl mx-auto py-4">
-              <div className="col-span-1"></div> {/* Empty cell for alignment */}
+              <div className="col-span-1">
+              </div> {/* Empty cell for alignment */}
 
               {/* Free Plan Column */}
               <div className="text-center">
@@ -190,7 +267,7 @@ export default function PricingPage() {
                 </Link>
               </div>
 
-              {/* Pro Plan Column */}
+              {/* UPDATED Pro Plan Column */}
               <div className="text-center">
                 <h2 className="text-xl font-bold">{proPlan.name}</h2>
                 <p className="text-sm text-gray-500">{proPlan.description}</p>
