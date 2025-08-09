@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromToken } from '@/lib/auth';
 import Razorpay from 'razorpay';
 
-// Initialize Razorpay with your credentials
+// Initialize Razorpay
 const instance = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID!,
   key_secret: process.env.RAZORPAY_KEY_SECRET!,
@@ -25,40 +25,49 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
 
-    // --- START OF NEW LOGIC ---
+    // --- START OF THE CORRECTED LOGIC ---
 
     // 1. Calculate the trial end date (14 days from now)
     const trialEndDate = new Date();
     trialEndDate.setDate(trialEndDate.getDate() + 14);
-
-    // 2. Convert the trial end date to a UNIX timestamp (in seconds)
-    // This is the `start_at` value.
     const startAtTimestamp = Math.floor(trialEndDate.getTime() / 1000);
 
-    // 3. Define the subscription options
+    // 2. Define the subscription options object
     const options: {
       plan_id: string;
-      total_count?: number; // Optional, for perpetual subscriptions
+      total_count: number; // total_count is now mandatory
       quantity: number;
-      start_at: number; // Add the start_at field
+      start_at: number;
       customer_notify: number;
       notes: Record<string, string>;
     } = {
       plan_id,
       quantity: 1,
-      start_at: startAtTimestamp, // Tell Razorpay when to start billing
+      start_at: startAtTimestamp,
       customer_notify: 1,
       notes: {
           userId: user._id.toString(),
           email: user.email,
           product: 'WYI_PRO'
-      }
+      },
+      // This is the key change to satisfy the API requirement
+      total_count: 0 // Default value, will be overridden
     };
 
-    // 4. For perpetual monthly billing, we OMIT the `total_count`.
-    // For yearly plans, we set it to 1, as it's a single charge for the year.
+    // 3. Set total_count based on the plan type
+    // To comply with Razorpay's API when a trial (`start_at`) is present,
+    // we must provide a `total_count`.
+    if (yearly) {
+      // For a yearly plan with a trial, it's 1 charge after the trial.
+      options.total_count = 1;
+    } else {
+      // For a monthly plan, we set a high number to simulate a perpetual subscription.
+      // 60 cycles = 5 years. This is effectively "forever" for most SaaS subscriptions.
+      // The user can cancel anytime.
+      options.total_count = 60;
+    }
 
-    // --- END OF NEW LOGIC ---
+    // --- END OF THE CORRECTED LOGIC ---
 
     // Create the subscription on Razorpay's servers
     const subscription = await instance.subscriptions.create(options);
