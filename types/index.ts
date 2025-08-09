@@ -17,7 +17,8 @@ export interface UserProfile {
   avatar?: string;
   isProUser: boolean;
   deactivatedAt?: Date;
-  paypalSubscriptionId?: string;
+  subscriptionId?: string;
+  subscriptionProvider: string;
   proStarted?: Date;
   nextDue?: Date;
   twoFactorEnabled: boolean; // Is 2FA active for this user?
