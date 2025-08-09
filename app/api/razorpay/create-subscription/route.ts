@@ -45,13 +45,13 @@ export async function POST(request: NextRequest) {
       quantity: 1,
       start_at: startAtTimestamp,
       customer_notify: 1,
+      total_count: 1, // Default value, will be overridden
       notes: {
           userId: user._id.toString(),
           email: user.email,
           product: 'WYI_PRO'
       },
       // This is the key change to satisfy the API requirement
-      total_count: 0 // Default value, will be overridden
     };
 
     // 3. Set total_count based on the plan type
