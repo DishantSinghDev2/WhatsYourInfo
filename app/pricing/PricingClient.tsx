@@ -183,6 +183,7 @@ export default function PricingPage() {
       const options = {
         key: keyId,
         subscription_id: subscriptionId,
+        image: `${process.env.NEXT_PUBLIC_APP_URL}/logo.png`,
         name: 'WhatsYour.Info Pro',
         description: `WYI Pro Plan - ${isYearly ? 'Yearly' : 'Monthly'}`,
         handler: function (response: any) {

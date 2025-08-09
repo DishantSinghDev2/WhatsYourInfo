@@ -121,6 +121,7 @@ export default function DITBlogsPricingPage() {
                 key: keyId,
                 subscription_id: subscriptionId,
                 name: 'DITBlogs on WYI',
+                image: `${process.env.NEXT_PUBLIC_APP_URL}/dit/ditblogs.png`,
                 description: `DITBlogs ${plan} Plan`,
                 handler: function (response: any) {
                     // This function is called on successful payment
