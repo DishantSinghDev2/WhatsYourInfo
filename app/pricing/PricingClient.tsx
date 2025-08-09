@@ -208,7 +208,7 @@ export default function PricingPage() {
 
   const freePlan = {
     name: 'Free',
-    price: `${currencySymbol}0}`,
+    price: `${currencySymbol}0`,
     period: 'forever',
     description: 'Perfect for individuals getting started',
     cta: 'Get Started Free',

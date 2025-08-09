@@ -56,7 +56,16 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'PayPal auth failed' }, { status: 500 });
         }
 
-        // === 2. Create subscription via REST API ===
+        const customIdPayload = {
+            userId: user._id.toString(),
+            product: 'DITBLOGS', // Tagging this subscription for DITBlogs
+            plan_name: plan,     // Storing the specific plan for easier handling
+        };
+
+        // --- END OF THE CRITICAL FIX ---
+
+
+        // === 2. Create subscription via REST API with the updated custom_id ===
         const subResp = await fetch(`${apiBase}/v1/billing/subscriptions`, {
             method: 'POST',
             headers: {
@@ -66,9 +75,10 @@ export async function POST(request: NextRequest) {
             },
             body: JSON.stringify({
                 plan_id: planId,
-                custom_id: user._id.toString(),
+                // --- Use the JSON stringified payload here ---
+                custom_id: JSON.stringify(customIdPayload),
                 application_context: {
-                    brand_name: 'DITBlogs',
+                    brand_name: 'DITBlogs', // This is correct
                     shipping_preference: 'NO_SHIPPING',
                     user_action: 'SUBSCRIBE_NOW',
                     return_url: `https://blogs.dishis.tech/dashboard?paypal_success=true`,
@@ -76,6 +86,7 @@ export async function POST(request: NextRequest) {
                 },
             }),
         });
+
 
         if (!subResp.ok) {
             const text = await subResp.text();

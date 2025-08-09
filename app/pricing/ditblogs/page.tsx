@@ -152,7 +152,7 @@ export default function DITBlogsPricingPage() {
                         <p className="mt-6 text-lg leading-8 text-gray-600">Powerful blogging, simple pricing. Choose your plan.</p>
                         <div className="mt-10 flex items-center justify-center space-x-4">
                             <Label>Monthly</Label>
-                            <Switch checked={isYearly} onCheckedChange={setIsYearly} />
+                            <Switch checked={isYearly} onChange={setIsYearly} />
                             <Label>Yearly <span className="text-green-600 font-medium">(Save 15%)</span></Label>
                         </div>
                     </div>
