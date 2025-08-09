@@ -102,12 +102,12 @@ export async function middleware(request: NextRequest) {
   const nonce = crypto.randomUUID();
   const cspHeader = `
     default-src 'self';
-    script-src 'self' 'nonce-${nonce}' https://www.googletagmanager.com https://www.google-analytics.com https://checkout.razorpay.com;
+    script-src 'self' 'nonce-${nonce}' 'sha256-+Vx62ZKie5HAVtAH6bk1wRsjZvEOuSD+oaSkIAfxEck=' https://www.googletagmanager.com https://www.google-analytics.com https://checkout.razorpay.com;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     img-src 'self' data: https://www.google-analytics.com;
     font-src 'self' https://fonts.gstatic.com;
-    connect-src 'self' https://www.google-analytics.com https://checkout.razorpay.com;
-    frame-src https://checkout.razorpay.com;
+    connect-src 'self' https://www.google-analytics.com https://checkout.razorpay.com https://lumberjack.razorpay.com;
+    frame-src https://checkout.razorpay.com https://api.razorpay.com;
     object-src 'none';
     base-uri 'self';
     form-action 'self';
