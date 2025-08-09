@@ -176,6 +176,10 @@ export default function PricingPage() {
         router.push('/login?callbackUrl=/pricing');
         return;
       }
+      if (!res.ok){
+        const error = await res.json();
+        setError(error.error || 'Failed to create Razorpay subscription.');
+      }
 
       const { subscriptionId, keyId } = await res.json();
       if (!subscriptionId) throw new Error('Could not create Razorpay subscription.');
@@ -200,7 +204,7 @@ export default function PricingPage() {
       rzp.open();
 
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Payment failed.");
+      console.log(error instanceof Error ? error.message : "Payment failed.");
     }
   };
 

@@ -59,6 +59,8 @@ export default function DITBlogsPricingPage() {
     const [isLoading, setIsLoading] = useState<string | null>(null);
     const [userCountry, setUserCountry] = useState<'IN' | 'OTHER'>('OTHER');
     const { isReady: isRazorpayReady } = useRazorpay();
+    const [error, setError] = useState<string | null>(null);
+
 
 
     // Fetch user's country on component mount
@@ -112,6 +114,10 @@ export default function DITBlogsPricingPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ plan, yearly: isYearly }),
             });
+            if (!res.ok) {
+                const error = await res.json();
+                setError(error.error || 'Failed to create Razorpay subscription.');
+            }
             const { subscriptionId, keyId } = await res.json();
             if (!subscriptionId) {
                 throw new Error('Could not create Razorpay subscription.');
@@ -162,6 +168,9 @@ export default function DITBlogsPricingPage() {
                             <Label>Yearly <span className="text-green-600 font-medium">(Save 2 months)</span></Label>
                         </div>
                     </div>
+
+
+                    {error && <p className="text-center text-red-500 text-sm mt-2">{error}</p>}
 
                     {/* Pricing Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
