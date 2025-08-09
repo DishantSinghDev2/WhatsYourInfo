@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromToken } from '@/lib/auth';
 import Razorpay from 'razorpay';
 
-// Initialize Razorpay with your credentials from .env.local
+// Initialize Razorpay with your credentials
 const instance = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID!,
   key_secret: process.env.RAZORPAY_KEY_SECRET!,
@@ -25,17 +25,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
 
-    const options = {
+    // --- START OF NEW LOGIC ---
+
+    // 1. Calculate the trial end date (14 days from now)
+    const trialEndDate = new Date();
+    trialEndDate.setDate(trialEndDate.getDate() + 14);
+
+    // 2. Convert the trial end date to a UNIX timestamp (in seconds)
+    // This is the `start_at` value.
+    const startAtTimestamp = Math.floor(trialEndDate.getTime() / 1000);
+
+    // 3. Define the subscription options
+    const options: {
+      plan_id: string;
+      total_count?: number; // Optional, for perpetual subscriptions
+      quantity: number;
+      start_at: number; // Add the start_at field
+      customer_notify: number;
+      notes: Record<string, string>;
+    } = {
       plan_id,
-      total_count: yearly ? 1 : 12, // Number of billing cycles for the subscription
       quantity: 1,
-      customer_notify: 1, // Let Razorpay handle notifications
+      start_at: startAtTimestamp, // Tell Razorpay when to start billing
+      customer_notify: 1,
       notes: {
           userId: user._id.toString(),
           email: user.email,
           product: 'WYI_PRO'
       }
     };
+
+    // 4. For perpetual monthly billing, we OMIT the `total_count`.
+    // For yearly plans, we set it to 1, as it's a single charge for the year.
+
+    // --- END OF NEW LOGIC ---
 
     // Create the subscription on Razorpay's servers
     const subscription = await instance.subscriptions.create(options);
@@ -47,8 +70,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Razorpay subscription creation failed:', error);
-    // Check if it's a Razorpay-specific error
+    console.error('Razorpay subscription creation with trial failed:', error);
     if (error instanceof Error && 'isRazorpayError' in error) {
         return NextResponse.json({ error: (error as any).description || 'Payment gateway error.' }, { status: 500 });
     }
