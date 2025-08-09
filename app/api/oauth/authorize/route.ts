@@ -4,12 +4,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromToken } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
 import crypto from 'crypto';
+import { dispatchWebhookEvent } from '@/lib/webhooks';
+import { ObjectId } from 'mongodb';
 
 export async function POST(request: NextRequest) {
   try {
     const user = await getUserFromToken(request);
     if (!user) {
-        return NextResponse.json({ error: 'User session not found.' }, { status: 401 });
+      return NextResponse.json({ error: 'User session not found.' }, { status: 401 });
     }
 
     const { client_id, redirect_uri, scope, state, allow } = await request.json();
@@ -24,10 +26,10 @@ export async function POST(request: NextRequest) {
     }
 
     const finalRedirectUrl = new URL(redirect_uri);
-    
+
     if (!allow) {
       finalRedirectUrl.searchParams.set('error', 'access_denied');
-      if(state) finalRedirectUrl.searchParams.set('state', state);
+      if (state) finalRedirectUrl.searchParams.set('state', state);
       return NextResponse.json({ redirect: finalRedirectUrl.toString() });
     }
 
@@ -39,23 +41,32 @@ export async function POST(request: NextRequest) {
 
     // 2. Store the code with user and client info
     await db.collection('oauth_codes').insertOne({
-        code: authCode,
-        userId: user._id,
-        clientId: oauthClient._id,
-        scope: scope,
-        expiresAt: codeExpires,
+      code: authCode,
+      userId: new ObjectId(user._id),
+      clientId: oauthClient._id,
+      scope: scope,
+      expiresAt: codeExpires,
     });
-    
+
     // 3. Store the user's consent so they don't have to be asked again
-    await db.collection('oauth_authorizations').updateOne(
-        { userId: user._id, clientId: oauthClient._id },
-        { $set: { grantedScopes: scope.split(' '), updatedAt: new Date() }, $setOnInsert: { createdAt: new Date() } },
-        { upsert: true }
+    const result = await db.collection('oauth_authorizations').updateOne(
+      { userId: new ObjectId(user._id), clientId: oauthClient._id },
+      { $set: { grantedScopes: scope.split(' '), updatedAt: new Date() }, $setOnInsert: { createdAt: new Date() } },
+      { upsert: true }
     );
+
+    if (result.upsertedCount > 0) { // This means it was a new authorization
+      // Dispatch a webhook event for a new user connection
+      await dispatchWebhookEvent('user.connected', new ObjectId(user._id), {
+        clientId: oauthClient._id.toString(),
+        grantedScopes: scope.split(' '),
+        timestamp: new Date().toISOString()
+      });
+    }
 
     // 4. Redirect back to the third-party app
     finalRedirectUrl.searchParams.set('code', authCode);
-    if(state) finalRedirectUrl.searchParams.set('state', state);
+    if (state) finalRedirectUrl.searchParams.set('state', state);
 
     return NextResponse.json({ redirect: finalRedirectUrl.toString() });
 

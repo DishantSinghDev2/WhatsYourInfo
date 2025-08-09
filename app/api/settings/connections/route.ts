@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromToken } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { dispatchWebhookEvent } from '@/lib/webhooks';
 
 // GET: Fetches all apps a user has authorized
 export async function GET(request: NextRequest) {
@@ -49,24 +50,32 @@ export async function DELETE(request: NextRequest) {
 
   const client = await clientPromise;
   const db = client.db('whatsyourinfo');
-  
+
   const oauthClient = await db.collection('oauth_clients').findOne({ clientId });
   if (!oauthClient) return NextResponse.json({ error: 'Client not found' }, { status: 404 });
-  
+
   const userId = new ObjectId(user._id);
   const internalClientId = oauthClient._id;
 
   // Perform both revocations concurrently
-  await Promise.all([
+  const result = await Promise.all([
     // 1. Delete the authorization record
     db.collection('oauth_authorizations').deleteOne({ userId, clientId: internalClientId }),
-    
+
     // 2. --- NEW: Revoke all refresh tokens for this user/client combo ---
     db.collection('oauth_refresh_tokens').updateMany(
       { userId, clientId: internalClientId },
       { $set: { revokedAt: new Date() } }
     )
   ]);
+
+  if (result[1].upsertedCount > 0) {
+    // Dispatch a webhook event when user revokes certain apps
+    await dispatchWebhookEvent('user.revoked', new ObjectId(user._id), {
+      clientId: oauthClient._id.toString(),
+      timestamp: new Date().toISOString()
+    });
+  }
 
   return NextResponse.json({ message: 'Application access has been revoked.' });
 }

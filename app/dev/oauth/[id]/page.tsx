@@ -554,8 +554,8 @@ export default function OAuthClientDetailsPage() {
                     </motion.div>
                 </div>
             </div>
-            <Dialog open={isWebhookDialogOpen} onOpenChange={setIsWebhookDialogOpen}>
-                <DialogContent>
+            <Dialog  open={isWebhookDialogOpen} onOpenChange={setIsWebhookDialogOpen}>
+                <DialogContent className='bg-white'>
                     <DialogHeader>
                         <DialogTitle>{editingWebhook ? 'Edit' : 'Create'} Webhook</DialogTitle>
                         <DialogDescription>

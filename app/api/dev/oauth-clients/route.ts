@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
                                         },
                                         email: {
                                             $cond: {
-                                                if: { $in: ['email:read', { $ifNull: ['$authorizations.grantedScopes', []]}] },
+                                                if: { $in: ['email:read', { $ifNull: ['$authorizations.grantedScopes', []] }] },
                                                 then: { $arrayElemAt: ['$authorizedUserDetails.email', 0] },
                                                 else: null
                                             }
@@ -314,11 +314,13 @@ export async function PATCH(request: NextRequest) {
 
         const result = await db.collection('oauth_clients').updateOne(
             { _id: new ObjectId(id), userId: user._id }, // Ensure user owns the client
-            { $set: {
-                ...updateFields,
-                grantedScopes: validatedData.grantedScopes?.push('webhook:verify') || [],
-                updatedAt: new Date()
-            } }
+            {
+                $set: {
+                    ...updateFields,
+                    grantedScopes: validatedData.grantedScopes?.push('webhook:verify') || [],
+                    updatedAt: new Date()
+                }
+            }
         );
 
         if (result.matchedCount === 0) {
