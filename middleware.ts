@@ -100,9 +100,9 @@ export async function middleware(request: NextRequest) {
   }
 
   const nonce = crypto.randomUUID();
-  const cspHeader = `
+  const csp = `
     default-src 'self';
-    script-src 'self' 'nonce-${nonce}' 'sha256-+Vx62ZKie5HAVtAH6bk1wRsjZvEOuSD+oaSkIAfxEck=' https://www.googletagmanager.com https://www.google-analytics.com https://checkout.razorpay.com;
+    script-src 'self' 'nonce-${nonce}' https://www.googletagmanager.com https://www.google-analytics.com https://checkout.razorpay.com;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     img-src 'self' data: https://www.google-analytics.com;
     font-src 'self' https://fonts.gstatic.com;
@@ -111,22 +111,27 @@ export async function middleware(request: NextRequest) {
     object-src 'none';
     base-uri 'self';
     form-action 'self';
-  `.replace(/\s{2,}/g, ' ').trim();
+  `.replace(/\s+/g, ' ').trim();
 
+  // put nonce into request headers so Next renderer can apply it to internal inline scripts
   const requestHeaders = new Headers(request.headers);
-  requestHeaders.set('Content-Security-Policy', cspHeader);
-  requestHeaders.set('x-nonce', nonce); // pass nonce to pages
+  requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set('Content-Security-Policy', csp);
 
+  const res = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 
-  // --- 10. Security Headers ---
-  const response = NextResponse.next({ request: { headers: requestHeaders } });
-  response.headers.set('X-Frame-Options', 'DENY');
-  response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('Referrer-Policy', 'origin-when-cross-origin');
-  response.headers.set('Content-Security-Policy', cspHeader);
+  // also add headers to response (browser must see CSP)
+  res.headers.set('Content-Security-Policy', csp);
+  res.headers.set('x-nonce', nonce);
+  res.headers.set('X-Frame-Options', 'DENY');
+  res.headers.set('X-Content-Type-Options', 'nosniff');
+  res.headers.set('Referrer-Policy', 'origin-when-cross-origin');
 
-
-  return response;
+  return res;
 }
 
 // --- Matcher remains unchanged ---
