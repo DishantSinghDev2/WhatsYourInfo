@@ -145,7 +145,7 @@ export default function DITBlogsPricingPage() {
         <>
             {/* Include Razorpay script for Indian users */}
             {userCountry === 'IN' && (
-                <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+                <Script id="razorpay-checkout-js" src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
             )}
             <div className="min-h-screen bg-white ">
                 <Header />
