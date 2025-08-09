@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromToken } from '@/lib/auth';
 import Razorpay from 'razorpay';
+import clientPromise from '@/lib/mongodb';
 
 const planMap = {
   GROWTH: {
@@ -21,6 +22,20 @@ const instance = new Razorpay({
 export async function POST(request: NextRequest) {
   const user = await getUserFromToken(request);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  // --- START: Check for Existing Active Subscription ---
+    const db = (await clientPromise).db('whatsyourinfo');
+    const existingDitSub = await db.collection('ditSub').findOne({ userId: user._id });
+
+    // Check if a DITBlogs subscription exists and is in an active state
+    if (existingDitSub?.ditblogs && ['active', 'activated'].includes(existingDitSub.ditblogs.status)) {
+        const provider = existingDitSub.ditblogs.provider || 'an existing';
+        return NextResponse.json(
+            { error: `You already have an active DITBlogs subscription via ${provider}.` },
+            { status: 409 } // 409 Conflict
+        );
+    }
+    // --- END: Check for Existing Active Subscription ---
 
   const { plan, yearly } = await request.json();
   const plan_id = planMap[plan as keyof typeof planMap]?.[yearly ? 'yearly' : 'monthly'];

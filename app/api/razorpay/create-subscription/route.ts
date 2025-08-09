@@ -15,6 +15,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // --- START: Check for Existing Active Subscription ---
+    // The `isProUser` flag is our source of truth for the main WYI Pro plan.
+    if (user.isProUser) {
+        // Provide a specific message based on the existing provider.
+        const provider = user.subscriptionProvider || 'an existing';
+        return NextResponse.json(
+            { error: `You already have an active Pro subscription via ${provider}. Please manage it in your billing settings.` },
+            { status: 409 } // 409 Conflict is the appropriate HTTP status code
+        );
+    }
+    // --- END: Check for Existing Active Subscription ---
+
     const { yearly } = await request.json();
     const plan_id = yearly
       ? process.env.RAZORPAY_PRO_YEARLY_PLAN_ID
