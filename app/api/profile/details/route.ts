@@ -4,6 +4,7 @@ import clientPromise from '@/lib/mongodb';
 import { z } from 'zod';
 import { ObjectId } from 'mongodb';
 import { cacheDel } from '@/lib/cache';
+import { dispatchWebhookEvent } from '@/lib/webhooks';
 
 const profileDetailsSchema = z.object({
   firstName: z.string().min(1, "First name cannot be empty."),
@@ -35,6 +36,15 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ message: 'No changes detected.' });
     }
     await cacheDel(`user:profile:${user.username}`);
+
+    if (result.modifiedCount > 0) {
+      // Dispatch a webhook event
+      await dispatchWebhookEvent('profile.updated', new ObjectId(user._id), {
+        updatedFields: Object.keys(validatedData), // e.g., ['firstName', 'bio']
+        timestamp: new Date().toISOString()
+      });
+      return NextResponse.json({ message: 'Profile updated successfully' });
+    }
 
     return NextResponse.json({ message: 'Profile details updated successfully.' });
 

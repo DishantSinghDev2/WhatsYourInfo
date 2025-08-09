@@ -10,6 +10,12 @@ import Header from '@/components/Header';
 import { Copy, Eye, EyeOff, Trash2, ArrowLeft, Edit, Save, X, PlusCircle, Trash, Users, ShieldAlert } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
+import {
+    Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger,
+} from '@/components/ui/dialog';
+import { Globe, RefreshCw, BellDot } from 'lucide-react';
+import { AVAILABLE_WEBHOOK_EVENTS, WebhookEvent } from '@/lib/constants';
+import { WebhookEndpoint } from '@/types';
 
 // --- Interfaces and Constants ---
 
@@ -38,6 +44,7 @@ interface OAuthClient {
     createdAt: string;
     // NEW: Add authorizedUsers to the client interface
     authorizedUsers: AuthorizedUser[];
+    webhooks: WebhookEndpoint[]; // Add this line
 }
 
 const AVAILABLE_SCOPES = [
@@ -59,10 +66,89 @@ export default function OAuthClientDetailsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isDeleting, setIsDeleting] = useState(false);
     const [showSecret, setShowSecret] = useState(false);
-    
+
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [editData, setEditData] = useState<Partial<OAuthClient>>({});
+
+    const [isWebhookDialogOpen, setIsWebhookDialogOpen] = useState(false);
+    const [editingWebhook, setEditingWebhook] = useState<WebhookEndpoint | null>(null);
+    const [webhookForm, setWebhookForm] = useState({ url: '', subscribedEvents: [] as string[] });
+
+    // --- START: New Handlers for Webhooks ---
+    const openWebhookDialog = (webhook: WebhookEndpoint | null = null) => {
+        if (webhook) {
+            setEditingWebhook(webhook);
+            setWebhookForm({ url: webhook.url, subscribedEvents: webhook.subscribedEvents });
+        } else {
+            setEditingWebhook(null);
+            setWebhookForm({ url: '', subscribedEvents: [] });
+        }
+        setIsWebhookDialogOpen(true);
+    };
+
+    const handleWebhookFormChange = (field: 'url' | 'subscribedEvents', value: string | string[]) => {
+        setWebhookForm(prev => ({ ...prev, [field]: value }));
+    }
+
+    const handleWebhookScopeChange = (event: WebhookEvent, checked: boolean) => {
+        const events = new Set(webhookForm.subscribedEvents);
+        if (checked) events.add(event);
+        else events.delete(event);
+        handleWebhookFormChange('subscribedEvents', Array.from(events));
+    }
+
+    const handleSaveWebhook = async () => {
+        const method = editingWebhook ? 'PATCH' : 'POST';
+        const body = {
+            clientId: client?._id,
+            webhookId: editingWebhook?._id,
+            ...webhookForm
+        };
+
+        try {
+            const res = await fetch('/api/dev/webhooks', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to save webhook');
+
+            toast.success(`Webhook ${editingWebhook ? 'updated' : 'created'}!`);
+            // Refresh client data to show the new/updated webhook
+            // This is a simple way; for better UX you could update state directly
+            window.location.reload();
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "An error occurred");
+        }
+    };
+
+    const handleDeleteWebhook = async (webhookId: string) => {
+        if (!confirm('Are you sure you want to delete this webhook?')) return;
+        try {
+            const res = await fetch(`/api/dev/webhooks?clientId=${client?._id}&webhookId=${webhookId}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error('Failed to delete webhook');
+            toast.success('Webhook deleted!');
+            window.location.reload();
+        } catch (e) { toast.error(e instanceof Error ? e.message : "An error occurred"); }
+    }
+
+    const handleWebhookAction = async (webhookId: string, action: 'ping' | 'regenerate_secret') => {
+        const toastId = toast.loading('Processing action...');
+        try {
+            const res = await fetch('/api/dev/webhooks', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ clientId: client?._id, webhookId, action }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Action failed');
+
+            if (action === 'regenerate_secret') {
+                toast.success('Secret regenerated! The page will reload.', { id: toastId });
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                toast.success(data.message, { id: toastId });
+            }
+        } catch (e) { toast.error(e instanceof Error ? e.message : 'An error occurred', { id: toastId }); }
+    };
 
     useEffect(() => {
         if (!id) return;
@@ -215,203 +301,295 @@ export default function OAuthClientDetailsPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <Header />
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
-                    {/* --- Top control buttons --- */}
-                    <div className="flex justify-between items-center">
-                        <Button variant="outline" onClick={() => router.push('/dev')}>
-                            <ArrowLeft className="h-4 w-4 mr-2" />
-                            Back to Dashboard
-                        </Button>
-                        <div className="flex space-x-2">
-                            {isEditing ? (
-                                <>
-                                    <Button variant="outline" onClick={handleEditToggle} disabled={isSaving}>
-                                        <X className="h-4 w-4 mr-2" /> Cancel
-                                    </Button>
-                                    <Button onClick={handleSaveChanges} disabled={isSaving}>
-                                        <Save className="h-4 w-4 mr-2" /> {isSaving ? 'Saving...' : 'Save Changes'}
-                                    </Button>
-                                </>
-                            ) : (
-                                <Button onClick={handleEditToggle}>
-                                    <Edit className="h-4 w-4 mr-2" /> Edit Application
-                                </Button>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* --- Main Application Details Card --- */}
-                    <Card>
-                         {/* Card Header, Content, and other sections remain the same */}
-                        <CardHeader className="flex flex-row items-start space-x-6">
-                            <img
-                                src={isEditing ? editData.appLogo || '...' : client?.appLogo || '...'}
-                                alt="App Logo"
-                                className="w-24 h-24 rounded-lg border object-cover bg-gray-100"
-                            />
-                            <div>
+        <>
+            <div className="min-h-screen bg-gray-50">
+                <Header />
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
+                        {/* --- Top control buttons --- */}
+                        <div className="flex justify-between items-center">
+                            <Button variant="outline" onClick={() => router.push('/dev')}>
+                                <ArrowLeft className="h-4 w-4 mr-2" />
+                                Back to Dashboard
+                            </Button>
+                            <div className="flex space-x-2">
                                 {isEditing ? (
-                                    <Input
-                                        value={editData.name}
-                                        onChange={(e) => handleInputChange('name', e.target.value)}
-                                        className="text-3xl font-bold p-2 h-auto mb-1"
-                                    />
-                                ) : (
-                                    <CardTitle className="text-3xl font-bold">{client?.name}</CardTitle>
-                                )}
-                                {isEditing ? (
-                                    <Input
-                                        value={editData.description}
-                                        onChange={(e) => handleInputChange('description', e.target.value)}
-                                        className="mt-1"
-                                    />
-                                ) : (
-                                    <CardDescription>{client?.description}</CardDescription>
-                                )}
-                                {isEditing ? (
-                                    <Input
-                                        value={editData.homepageUrl}
-                                        onChange={(e) => handleInputChange('homepageUrl', e.target.value)}
-                                        className="mt-2 text-sm"
-                                    />
-                                ) : (
-                                    <a href={client?.homepageUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline mt-2 block">
-                                        {client?.homepageUrl}
-                                    </a>
-                                )}
-                            </div>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            {isEditing && (
-                                <div className="p-4 border-t">
-                                    <h4 className="font-medium mb-3">Application Logo URL</h4>
-                                    <Input placeholder="https://example.com/logo.png" value={editData.appLogo || ''} onChange={e => handleInputChange('appLogo', e.target.value)} />
-                                </div>
-                            )}
-                            <div>
-                                <label className="text-sm font-medium text-gray-700">Client ID</label>
-                                <div className="flex items-center space-x-2 mt-1">
-                                    <code className="flex-1 bg-gray-100 p-2 rounded text-sm font-mono break-all">{client.clientId}</code>
-                                    <Button variant="outline" size="sm" onClick={() => copyToClipboard(client.clientId, 'Client ID')}><Copy className="h-4 w-4" /></Button>
-                                </div>
-                            </div>
-                            <div>
-                                <label className="text-sm font-medium text-gray-700">Client Secret</label>
-                                <div className="flex items-center space-x-2 mt-1">
-                                    <code className="flex-1 bg-gray-100 p-2 rounded text-sm font-mono break-all">
-                                        {showSecret ? client.clientSecret : '•'.repeat(client.clientSecret.length)}
-                                    </code>
-                                    <Button variant="outline" size="sm" onClick={() => setShowSecret(!showSecret)}>
-                                        {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                    </Button>
-                                    <Button variant="outline" size="sm" onClick={() => copyToClipboard(client.clientSecret, 'Client Secret')}><Copy className="h-4 w-4" /></Button>
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
-                                <div>
-                                    <h4 className="font-medium mb-2">Redirect URIs</h4>
-                                    {isEditing ? (
-                                        <div className="space-y-2">
-                                            {editData.redirectUris?.map((uri, i) => (
-                                                <div key={i} className="flex items-center space-x-2">
-                                                    <Input value={uri} onChange={e => handleRedirectUriChange(i, e.target.value)} />
-                                                    <Button variant="ghost" size="icon" onClick={() => removeRedirectUri(i)}><Trash className="h-4 w-4 text-red-500" /></Button>
-                                                </div>
-                                            ))}
-                                            <Button variant="outline" size="sm" onClick={addRedirectUri}><PlusCircle className="h-4 w-4 mr-2" />Add URI</Button>
-                                        </div>
-                                    ) : (
-                                        client.redirectUris.map((uri, i) => <code key={i} className="block bg-gray-100 p-2 rounded text-sm font-mono break-all mb-2">{uri}</code>)
-                                    )}
-                                </div>
-                                <div>
-                                    <h4 className="font-medium mb-2">Granted Scopes</h4>
-                                    {isEditing ? (
-                                        <div className="space-y-2">
-                                            {AVAILABLE_SCOPES.map(scope => (
-                                                <div key={scope.id} className="flex items-center space-x-3">
-                                                    <Checkbox
-                                                        id={`edit-${scope.id}`}
-                                                        checked={editData.grantedScopes?.includes(scope.id)}
-                                                        onCheckedChange={(checked) => handleScopeChange(scope.id, !!checked)}
-                                                    />
-                                                    <label htmlFor={`edit-${scope.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{scope.id}</label>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <ul className="list-disc list-inside space-y-1">
-                                            {client.grantedScopes.map((scope) => <li key={scope}><code className="text-sm">{scope}</code></li>)}
-                                        </ul>
-                                    )}
-                                </div>
-                            </div>
-                            {!isEditing && (
-                                <div className="pt-6 border-t border-red-200">
-                                    <h4 className="text-red-600 font-bold">Danger Zone</h4>
-                                    <div className="flex justify-between items-center mt-2 p-4 bg-red-50 rounded-lg">
-                                        <div>
-                                            <p className="font-semibold">Delete Application</p>
-                                            <p className="text-sm text-gray-600">This action is irreversible and will permanently delete the application.</p>
-                                        </div>
-                                        <Button variant="destructive" onClick={deleteClient} disabled={isDeleting}>
-                                            <Trash2 className="h-4 w-4 mr-2" />
-                                            {isDeleting ? 'Deleting...' : 'Delete'}
+                                    <>
+                                        <Button variant="outline" onClick={handleEditToggle} disabled={isSaving}>
+                                            <X className="h-4 w-4 mr-2" /> Cancel
                                         </Button>
+                                        <Button onClick={handleSaveChanges} disabled={isSaving}>
+                                            <Save className="h-4 w-4 mr-2" /> {isSaving ? 'Saving...' : 'Save Changes'}
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <Button onClick={handleEditToggle}>
+                                        <Edit className="h-4 w-4 mr-2" /> Edit Application
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* --- Main Application Details Card --- */}
+                        <Card>
+                            {/* Card Header, Content, and other sections remain the same */}
+                            <CardHeader className="flex flex-row items-start space-x-6">
+                                <img
+                                    src={isEditing ? editData.appLogo || '...' : client?.appLogo || '...'}
+                                    alt="App Logo"
+                                    className="w-24 h-24 rounded-lg border object-cover bg-gray-100" />
+                                <div>
+                                    {isEditing ? (
+                                        <Input
+                                            value={editData.name}
+                                            onChange={(e) => handleInputChange('name', e.target.value)}
+                                            className="text-3xl font-bold p-2 h-auto mb-1" />
+                                    ) : (
+                                        <CardTitle className="text-3xl font-bold">{client?.name}</CardTitle>
+                                    )}
+                                    {isEditing ? (
+                                        <Input
+                                            value={editData.description}
+                                            onChange={(e) => handleInputChange('description', e.target.value)}
+                                            className="mt-1" />
+                                    ) : (
+                                        <CardDescription>{client?.description}</CardDescription>
+                                    )}
+                                    {isEditing ? (
+                                        <Input
+                                            value={editData.homepageUrl}
+                                            onChange={(e) => handleInputChange('homepageUrl', e.target.value)}
+                                            className="mt-2 text-sm" />
+                                    ) : (
+                                        <a href={client?.homepageUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline mt-2 block">
+                                            {client?.homepageUrl}
+                                        </a>
+                                    )}
+                                </div>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                {isEditing && (
+                                    <div className="p-4 border-t">
+                                        <h4 className="font-medium mb-3">Application Logo URL</h4>
+                                        <Input placeholder="https://example.com/logo.png" value={editData.appLogo || ''} onChange={e => handleInputChange('appLogo', e.target.value)} />
+                                    </div>
+                                )}
+                                <div>
+                                    <label className="text-sm font-medium text-gray-700">Client ID</label>
+                                    <div className="flex items-center space-x-2 mt-1">
+                                        <code className="flex-1 bg-gray-100 p-2 rounded text-sm font-mono break-all">{client.clientId}</code>
+                                        <Button variant="outline" size="sm" onClick={() => copyToClipboard(client.clientId, 'Client ID')}><Copy className="h-4 w-4" /></Button>
                                     </div>
                                 </div>
-                            )}
-                        </CardContent>
-                    </Card>
-{/* --- UPDATED: Authorized Users Card with privacy-aware rendering --- */}
-                    {!isEditing && client.authorizedUsers && client.authorizedUsers.length > 0 && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center">
-                                    <Users className="h-6 w-6 mr-3" />
-                                    Authorized Users ({client.authorizedUsers.length})
-                                </CardTitle>
-                                <CardDescription>
-                                    Users who have granted this application access. Data shown is based on permissions granted.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    {client.authorizedUsers.map(user => (
-                                        <div key={user._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
-                                            <div className="flex items-center space-x-4">
-                                                <img 
-                                                    src={'https://whatsyourinfo-media-worker.dishis.workers.dev/' + user.avatar || 'https://avatar.vercel.sh/default'} 
-                                                    alt={user.username || 'User Avatar'}
-                                                    className="w-10 h-10 rounded-full bg-gray-200"
-                                                />
-                                                <div>
-                                                    <p className="font-semibold text-gray-900">{user.username || 'Name not available'}</p>
-                                                    {user.email ? (
-                                                      <p className="text-sm text-gray-500">{user.email}</p>
-                                                    ) : (
-                                                      <p className="text-xs text-amber-600 flex items-center">
-                                                          <ShieldAlert className="h-3 w-3 mr-1" />
-                                                          Email permission not granted
-                                                      </p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-sm text-gray-500">Authorized on</p>
-                                                <p className="text-sm font-medium text-gray-600">{new Date(user.authorizedAt).toLocaleDateString()}</p>
-                                            </div>
-                                        </div>
-                                    ))}
+                                <div>
+                                    <label className="text-sm font-medium text-gray-700">Client Secret</label>
+                                    <div className="flex items-center space-x-2 mt-1">
+                                        <code className="flex-1 bg-gray-100 p-2 rounded text-sm font-mono break-all">
+                                            {showSecret ? client.clientSecret : '•'.repeat(client.clientSecret.length)}
+                                        </code>
+                                        <Button variant="outline" size="sm" onClick={() => setShowSecret(!showSecret)}>
+                                            {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                        </Button>
+                                        <Button variant="outline" size="sm" onClick={() => copyToClipboard(client.clientSecret, 'Client Secret')}><Copy className="h-4 w-4" /></Button>
+                                    </div>
                                 </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
+                                    <div>
+                                        <h4 className="font-medium mb-2">Redirect URIs</h4>
+                                        {isEditing ? (
+                                            <div className="space-y-2">
+                                                {editData.redirectUris?.map((uri, i) => (
+                                                    <div key={i} className="flex items-center space-x-2">
+                                                        <Input value={uri} onChange={e => handleRedirectUriChange(i, e.target.value)} />
+                                                        <Button variant="ghost" size="icon" onClick={() => removeRedirectUri(i)}><Trash className="h-4 w-4 text-red-500" /></Button>
+                                                    </div>
+                                                ))}
+                                                <Button variant="outline" size="sm" onClick={addRedirectUri}><PlusCircle className="h-4 w-4 mr-2" />Add URI</Button>
+                                            </div>
+                                        ) : (
+                                            client.redirectUris.map((uri, i) => <code key={i} className="block bg-gray-100 p-2 rounded text-sm font-mono break-all mb-2">{uri}</code>)
+                                        )}
+                                    </div>
+                                    <div>
+                                        <h4 className="font-medium mb-2">Granted Scopes</h4>
+                                        {isEditing ? (
+                                            <div className="space-y-2">
+                                                {AVAILABLE_SCOPES.map(scope => (
+                                                    <div key={scope.id} className="flex items-center space-x-3">
+                                                        <Checkbox
+                                                            id={`edit-${scope.id}`}
+                                                            checked={editData.grantedScopes?.includes(scope.id)}
+                                                            onCheckedChange={(checked) => handleScopeChange(scope.id, !!checked)} />
+                                                        <label htmlFor={`edit-${scope.id}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">{scope.id}</label>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <ul className="list-disc list-inside space-y-1">
+                                                {client.grantedScopes.map((scope) => <li key={scope}><code className="text-sm">{scope}</code></li>)}
+                                            </ul>
+                                        )}
+                                    </div>
+                                </div>
+                                {!isEditing && (
+                                    <div className="pt-6 border-t border-red-200">
+                                        <h4 className="text-red-600 font-bold">Danger Zone</h4>
+                                        <div className="flex justify-between items-center mt-2 p-4 bg-red-50 rounded-lg">
+                                            <div>
+                                                <p className="font-semibold">Delete Application</p>
+                                                <p className="text-sm text-gray-600">This action is irreversible and will permanently delete the application.</p>
+                                            </div>
+                                            <Button variant="destructive" onClick={deleteClient} disabled={isDeleting}>
+                                                <Trash2 className="h-4 w-4 mr-2" />
+                                                {isDeleting ? 'Deleting...' : 'Delete'}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
                             </CardContent>
                         </Card>
-                    )}
-                </motion.div>
+                        {/* --- UPDATED: Authorized Users Card with privacy-aware rendering --- */}
+                        {!isEditing && client.authorizedUsers && client.authorizedUsers.length > 0 && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center">
+                                        <Users className="h-6 w-6 mr-3" />
+                                        Authorized Users ({client.authorizedUsers.length})
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Users who have granted this application access. Data shown is based on permissions granted.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-4">
+                                        {client.authorizedUsers.map(user => (
+                                            <div key={user._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+                                                <div className="flex items-center space-x-4">
+                                                    <img
+                                                        src={'https://whatsyourinfo-media-worker.dishis.workers.dev/' + user.avatar || 'https://avatar.vercel.sh/default'}
+                                                        alt={user.username || 'User Avatar'}
+                                                        className="w-10 h-10 rounded-full bg-gray-200" />
+                                                    <div>
+                                                        <p className="font-semibold text-gray-900">{user.username || 'Name not available'}</p>
+                                                        {user.email ? (
+                                                            <p className="text-sm text-gray-500">{user.email}</p>
+                                                        ) : (
+                                                            <p className="text-xs text-amber-600 flex items-center">
+                                                                <ShieldAlert className="h-3 w-3 mr-1" />
+                                                                Email permission not granted
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-sm text-gray-500">Authorized on</p>
+                                                    <p className="text-sm font-medium text-gray-600">{new Date(user.authorizedAt).toLocaleDateString()}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between">
+                                <div>
+                                    <CardTitle className="flex items-center">
+                                        <BellDot className="h-6 w-6 mr-3 text-purple-600" />
+                                        Webhooks
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Get notified when events happen on your application.
+                                    </CardDescription>
+                                </div>
+                                <Button onClick={() => openWebhookDialog()}>
+                                    <PlusCircle className="h-4 w-4 mr-2" /> Add Webhook
+                                </Button>
+                            </CardHeader>
+                            <CardContent>
+                                {client.webhooks && client.webhooks.length > 0 ? (
+                                    <div className="space-y-4">
+                                        {client.webhooks.map(wh => (
+                                            <div key={wh._id} className="p-4 border rounded-lg space-y-3">
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <code className="font-semibold break-all">{wh.url}</code>
+                                                        <p className={`text-xs font-medium px-2 py-0.5 rounded-full inline-block ml-2 ${wh.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                                                            {wh.status}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex space-x-2">
+                                                        <Button variant="outline" size="sm" onClick={() => openWebhookDialog(wh)}>Edit</Button>
+                                                        <Button variant="ghost" size="icon" onClick={() => handleDeleteWebhook(wh._id)}><Trash className="h-4 w-4 text-red-500" /></Button>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-medium mb-1">Subscribed Events:</p>
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {wh.subscribedEvents.map(event => <code key={event} className="text-xs bg-gray-100 p-1 rounded">{event}</code>)}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-medium mb-1">Secret Key</p>
+                                                    <div className="flex items-center space-x-2">
+                                                        <code className="flex-1 bg-gray-100 p-2 rounded text-sm font-mono">whsec_••••••••••••••••••••••••••••••••</code>
+                                                        <Button variant="outline" size="sm" onClick={() => handleWebhookAction(wh._id, 'regenerate_secret')}>
+                                                            <RefreshCw className="h-3 w-3 mr-2" /> Regenerate
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                                <Button variant="secondary" size="sm" onClick={() => handleWebhookAction(wh._id, 'ping')}>Send Test Ping</Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-8 text-gray-500">
+                                        <p>No webhooks configured yet.</p>
+                                        <p className="text-sm">Click "Add Webhook" to get started.</p>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                </div>
             </div>
-        </div>
+            <Dialog open={isWebhookDialogOpen} onOpenChange={setIsWebhookDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{editingWebhook ? 'Edit' : 'Create'} Webhook</DialogTitle>
+                        <DialogDescription>
+                            Configure an endpoint to receive event data from What'sYour.Info.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div>
+                            <label className="text-sm font-medium">Payload URL *</label>
+                            <Input
+                                placeholder="https://yourapp.com/api/webhooks/wyi"
+                                value={webhookForm.url}
+                                onChange={e => handleWebhookFormChange('url', e.target.value)} />
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium">Events to send</label>
+                            <div className="space-y-2 mt-2 p-3 border rounded-md">
+                                {AVAILABLE_WEBHOOK_EVENTS.map(event => (
+                                    <div key={event.event} className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id={event.event}
+                                            checked={webhookForm.subscribedEvents.includes(event.event)}
+                                            onCheckedChange={checked => handleWebhookScopeChange(event.event, !!checked)} />
+                                        <label htmlFor={event.event} className="text-sm">{event.event}</label>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <Button onClick={handleSaveWebhook} className="w-full">
+                            {editingWebhook ? 'Save Changes' : 'Create Webhook'}
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }

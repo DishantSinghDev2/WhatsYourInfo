@@ -199,7 +199,7 @@ export async function POST(request: NextRequest) {
             clientId,
             clientSecret,
             redirectUris: validatedData.redirectUris,
-            grantedScopes: validatedData.grantedScopes || [],
+            grantedScopes: validatedData.grantedScopes?.push('webhook:verify') || [],
             // --- NEW & UPDATED FIELDS ---
             isInternal: validatedData.isInternal || false, // Default to false
             opByWYI: validatedData.opByWYI || false,       // Default to false
@@ -314,7 +314,11 @@ export async function PATCH(request: NextRequest) {
 
         const result = await db.collection('oauth_clients').updateOne(
             { _id: new ObjectId(id), userId: user._id }, // Ensure user owns the client
-            { $set: updateFields }
+            { $set: {
+                ...updateFields,
+                grantedScopes: validatedData.grantedScopes?.push('webhook:verify') || [],
+                updatedAt: new Date()
+            } }
         );
 
         if (result.matchedCount === 0) {

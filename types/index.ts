@@ -1,5 +1,7 @@
 // app/types/index.ts
 
+import { WebhookEvent } from "@/lib/constants";
+
 export interface UserProfile {
   _id: string;
   type: 'personal' | 'business' | 'official'
@@ -69,4 +71,13 @@ export interface UserProfile {
   links?: { _id: string; title: string; url: string; }[];
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface WebhookEndpoint {
+  _id: string; // The unique ID for this webhook endpoint
+  url: string; // The URL to send the payload to
+  secret: string; // A secret key used to sign payloads
+  subscribedEvents: WebhookEvent[]; // Array of events, e.g., ['profile.updated']
+  status: 'active' | 'disabled';
+  createdAt: string;
 }
