@@ -116,8 +116,8 @@ export default function PricingPage() {
 
   // --- NEW: Define pricing for both regions ---
   const pricingData = {
-    monthly: { usd: 6, inr: 149 },
-    yearly: { usd: 59, inr: 1499 },
+    monthly: { usd: 6, inr: 399 },
+    yearly: { usd: 59, inr: 3999 },
   };
   const currency = userCountry === 'IN' ? 'inr' : 'usd';
   const currencySymbol = userCountry === 'IN' ? '₹' : '$';
