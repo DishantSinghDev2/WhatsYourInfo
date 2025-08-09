@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';   // Assuming you have a Label co
 import { Dialog, DialogContent, DialogClose, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import toast from 'react-hot-toast';
 import Script from 'next/script';
+import { useRazorpay } from '@/lib/use-razorpay';
 
 
 const featureCategories = [
@@ -87,6 +88,7 @@ export default function PricingPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [userCountry, setUserCountry] = useState<'IN' | 'OTHER'>('OTHER'); // State for user's country
+  const { isReady: isRazorpayReady } = useRazorpay();
 
 
   const showCancel = searchParams.get('paypal_cancel') === 'true';
@@ -159,6 +161,10 @@ export default function PricingPage() {
 
   // New Razorpay logic
   const handleRazorpayPayment = async () => {
+    if (!isRazorpayReady) {
+      toast.error("Payment gateway isn't ready. Please wait a moment.");
+      return;
+    }
     try {
       const res = await fetch('/api/razorpay/create-subscription', {
         method: 'POST',
@@ -218,8 +224,6 @@ export default function PricingPage() {
 
   return (
     <>
-      <Script id="razorpay-checkout-js" src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
-
       <div className="min-h-screen bg-white">
         <Header />
 

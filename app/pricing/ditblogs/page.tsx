@@ -12,6 +12,7 @@ import { Check, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Script from 'next/script';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { useRazorpay } from '@/lib/use-razorpay';
 
 // --- Data Definitions ---
 const PLAN_LIMITS = {
@@ -57,6 +58,8 @@ export default function DITBlogsPricingPage() {
     const [isYearly, setIsYearly] = useState(false);
     const [isLoading, setIsLoading] = useState<string | null>(null);
     const [userCountry, setUserCountry] = useState<'IN' | 'OTHER'>('OTHER');
+    const { isReady: isRazorpayReady } = useRazorpay();
+
 
     // Fetch user's country on component mount
     useEffect(() => {
@@ -99,8 +102,8 @@ export default function DITBlogsPricingPage() {
     };
 
     const handleRazorpayPayment = async (plan: 'GROWTH' | 'SCALE') => {
-        if (!window.Razorpay) {
-            toast.error("Payment gateway is still loading. Please wait a moment and try again.");
+        if (!isRazorpayReady) {
+            toast.error("Payment gateway isn't ready. Please wait a moment.");
             return;
         }
         try {
@@ -144,7 +147,7 @@ export default function DITBlogsPricingPage() {
     return (
         <>
             {/* Include Razorpay script for Indian users */}
-                <Script id="razorpay-checkout-js" src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+            <Script id="razorpay-checkout-js" src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
             <div className="min-h-screen bg-white ">
                 <Header />
                 <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 my-5">
