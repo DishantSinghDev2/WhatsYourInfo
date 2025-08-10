@@ -91,13 +91,6 @@ export async function createUser(userData: {
 
   const result = await db.collection('users').insertOne(user);
 
-  await fetch(`${process.env.FRONTEND_URL || `localhost:3000`}/api/auth/send-otp`, {
-    method: "POST",
-    body: JSON.stringify({
-      email: user.email
-    })
-  })
-
   return {
     ...user,
     _id: result.insertedId.toString(),
