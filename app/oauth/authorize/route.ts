@@ -101,7 +101,6 @@ async function generateCodeAndRedirect(userId: ObjectId, oauthClient: WithId<Doc
     console.error(`❌ Document too large: ${size} bytes`, doc);
     return NextResponse.json({ error: 'Data received is too large' }, { status: 500 });
   }
-  console.log(doc)
 
   await db.collection('oauth_codes').insertOne(doc);
 
@@ -109,9 +108,16 @@ async function generateCodeAndRedirect(userId: ObjectId, oauthClient: WithId<Doc
 
 
   // 3. Store the user's consent
+  const existingAuth = await db.collection('oauth_authorizations').findOne({ userId: userId, clientId: doc.clientId });
+  const existingScopes = existingAuth?.grantedScopes || [];
+  const combinedScopes = Array.from(new Set([...existingScopes, ...scopes])); // Merge and remove duplicates
+
   await db.collection('oauth_authorizations').updateOne(
-    { userId: userId, clientId: new ObjectId(oauthClient._id) },
-    { $addToSet: { grantedScopes: { $each: scopes } }, $set: { updatedAt: new Date() } },
+    { userId: userId, clientId: doc.clientId },
+    {
+      $set: { grantedScopes: combinedScopes, updatedAt: new Date() },
+      $setOnInsert: { createdAt: new Date() }
+    },
     { upsert: true }
   );
 
