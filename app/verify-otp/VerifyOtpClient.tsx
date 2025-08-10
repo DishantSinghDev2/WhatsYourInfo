@@ -24,27 +24,17 @@ export default function VerifyOtpPage() {
         if (callback) setCallbackUrl(callback);
     }, [searchParams]);
 
-    const fetchUser = async () => {
-        try {
-            const response = await fetch('/api/auth/user')
-            const data = await response.json()
-            if (response.ok) {
-                if (data.user.emailVerified) {
-                    router.push('/profile')
-                }
-                setEmail(data.user.email)
-            }
-        } catch {
+
+    useEffect(() => {
+        const emailFromQuery = searchParams.get('email');
+        if (emailFromQuery) {
+            setEmail(emailFromQuery);
+        } else {
             // Handle case where email is not in the query parameters
             toast.error('Email not found. Please try registering again.');
             router.push('/register');
         }
-    }
-
-
-    useEffect(() => {
-        fetchUser();
-    }, [router]);
+    }, [searchParams, router]);
 
     const handleOtpChange = (value: string) => {
         setOtp(value);

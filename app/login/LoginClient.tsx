@@ -277,7 +277,7 @@ export default function LoginPage() {
                 </div>
 
                 <div className="mt-6 text-center">
-                  <Link href={`/register${callbackUrl !== null && `?callbackUrl=${encodeURIComponent(callbackUrl)}`}`}>
+                  <Link href={`/register${(callbackUrl !== null) ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`}>
                     <Button variant="outline" className="w-full">
                       Create Account
                     </Button>

@@ -159,7 +159,7 @@ export default function RegisterPage() {
 
       if (response.ok) {
         toast.success('Account created! Please check your email to verify your account.');
-        router.push(`/verify-otp${(callbackUrl !== null) ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`);
+        router.push(`/verify-otp?email=${formData.email}${(callbackUrl !== null) ? `&callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`);
       } else {
         toast.error(data.error || 'Registration failed');
         if (data.details) {
