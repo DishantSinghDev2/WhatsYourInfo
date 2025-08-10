@@ -102,7 +102,7 @@ export default function LoginPage() {
       if (response.ok) {
         if (data.emailVerified === false) {
           toast.error("Email not verified. Please verify your email.");
-          router.push(`/verify-otp${(callbackUrl !== null) ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`);
+          router.push(`/verify-otp?email=${formData.email}${(callbackUrl !== null) ? `&callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`);
           return;
         }
 

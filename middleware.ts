@@ -58,8 +58,8 @@ export async function middleware(request: NextRequest) {
   // --- 6. Logged in but Email Not Verified ---
   if (isLoggedIn && !isEmailVerified && pathname !== '/verify-otp') {
     url.pathname = '/verify-otp';
-    url.searchParams.set('email', decodedToken?.email || '')
     url.searchParams.set('callbackUrl', pathname);
+    url.searchParams.set('email', decodedToken.email)
     return NextResponse.redirect(url);
   }
 

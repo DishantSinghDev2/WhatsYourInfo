@@ -65,10 +65,10 @@ const DEFAULT_VISIBILITY = DEFAULT_SECTIONS.reduce(
   (acc, sec) => ({ ...acc, [sec]: true }), {}
 );
 
-export default function PublicProfileView({ profile }: { profile: UserProfile; }) {
+export default function PublicProfileView({ profile, isPreview = false }: { profile: UserProfile; isPreview?: boolean;   }) {
 
 
-  // --- START: NEW AND IDEAL WAY TO HANDLE PRIVATE PROFILES ---
+  // --- START: MODIFIED LOGIC TO HANDLE PRIVATE PROFILES AND PREVIEW MODE ---
 
   // State to track if the current viewer is the owner of the private profile
   const [isOwner, setIsOwner] = useState(false);
@@ -98,21 +98,22 @@ export default function PublicProfileView({ profile }: { profile: UserProfile; }
       setIsLoading(false); // Done loading, regardless of outcome
     }
   };
+
   useEffect(() => {
-    // Only run this check if the profile is actually private
-    if (profile.profileVisibility === 'private') {
-      console.log('checking ownership')
+    // Only run the ownership check if the profile is private AND we are NOT in preview mode.
+    if (profile.profileVisibility === 'private' && !isPreview) {
+      console.log('checking ownership for live private profile');
       checkOwnership();
     } else {
-      // If the profile is public, there's no need to load or check anything
+      // If profile is public or if it's a preview, we don't need to check ownership.
       setIsLoading(false);
     }
-    // This effect should re-run if the profile object itself changes
-  }, [profile]);
+    // This effect should re-run if the profile object itself or the preview state changes.
+  }, [profile, isPreview]);
 
-  // If the profile is private, we must check the state before rendering anything else
-  if (profile.profileVisibility === 'private') {
-    // 1. Show a loading state while we check
+  // If the profile is private and we are NOT in preview mode, run the lock-down logic.
+  if (profile.profileVisibility === 'private' && !isPreview) {
+    // 1. Show a loading state while we check ownership
     if (isLoading) {
       return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
@@ -122,7 +123,7 @@ export default function PublicProfileView({ profile }: { profile: UserProfile; }
       );
     }
 
-    // 2. If loading is done and the user is NOT the owner, show the private message
+    // 2. If loading is done and the user is NOT the owner, show the private message.
     if (!isOwner) {
       return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 text-center p-4">
@@ -134,7 +135,7 @@ export default function PublicProfileView({ profile }: { profile: UserProfile; }
     }
     // 3. If loading is done AND the user IS the owner, the code will continue and render the full profile below.
   }
-  // --- END OF NEW LOGIC ---
+  // --- END OF MODIFIED LOGIC ---
 
 
   // All existing setup logic is preserved
@@ -343,6 +344,17 @@ export default function PublicProfileView({ profile }: { profile: UserProfile; }
 
   return (
     <>
+      {/* --- NEW: Private Profile Preview Indicator --- */}
+      {/* This banner shows ONLY when in preview mode for a private profile */}
+      {isPreview && profile.profileVisibility === 'private' && (
+        <div className="w-full bg-orange-100 text-orange-800 p-3 text-center text-sm font-semibold sticky top-0 z-50">
+          <div className="max-w-4xl mx-auto flex items-center justify-center gap-2">
+            <Lock className="w-4 h-4 flex-shrink-0" />
+            <span>You are viewing a preview of your private profile. This is not visible to others.</span>
+          </div>
+        </div>
+      )}
+
       <div
         className={`min-h-screen pb-0 transition-colors duration-500 ${forceLightText ? 'text-white' : 'text-black'}`}
         style={containerStyle}
