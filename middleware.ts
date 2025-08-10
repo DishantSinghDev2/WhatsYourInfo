@@ -91,7 +91,7 @@ export async function middleware(request: NextRequest) {
 
   if (hostname.endsWith('.whatsyour.info') && !hostname.startsWith('www.')) {
     const subdomain = hostname.split('.')[0]; // extract `username` from `username.whatsyour.info`
-    
+
     // Rewriting to: /[username]/[original pathname]
     const newPath = `/${subdomain}${url.pathname}`;
     url.pathname = newPath;
@@ -102,7 +102,7 @@ export async function middleware(request: NextRequest) {
   const nonce = crypto.randomUUID();
   const csp = `
     default-src 'self';
-    script-src 'self' 'nonce-${nonce}' https://www.googletagmanager.com https://www.google-analytics.com https://checkout.razorpay.com;
+    script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://checkout.razorpay.com;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     img-src 'self' data: https://www.google-analytics.com;
     font-src 'self' https://fonts.gstatic.com;
