@@ -101,8 +101,11 @@ async function generateCodeAndRedirect(userId: ObjectId, oauthClient: WithId<Doc
     console.error(`❌ Document too large: ${size} bytes`, doc);
     return NextResponse.json({ error: 'Data received is too large' }, { status: 500 });
   }
+  console.log(doc)
 
   await db.collection('oauth_codes').insertOne(doc);
+
+  console.log('1')
 
 
   // 3. Store the user's consent
@@ -111,6 +114,8 @@ async function generateCodeAndRedirect(userId: ObjectId, oauthClient: WithId<Doc
     { $addToSet: { grantedScopes: { $each: scopes } }, $set: { updatedAt: new Date() } },
     { upsert: true }
   );
+
+  console.log('2')
 
 
   // 4. Redirect back to the third-party app with the code
