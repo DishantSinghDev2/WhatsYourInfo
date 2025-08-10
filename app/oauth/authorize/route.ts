@@ -95,8 +95,6 @@ async function generateCodeAndRedirect(userId: ObjectId, oauthClient: WithId<Doc
     expiresAt: codeExpires,
   };
 
-  console.log(doc)
-
 
   const size = Buffer.byteLength(JSON.stringify(doc));
   if (size > 16 * 1024 * 1024) {
@@ -106,7 +104,6 @@ async function generateCodeAndRedirect(userId: ObjectId, oauthClient: WithId<Doc
 
   await db.collection('oauth_codes').insertOne(doc);
 
-  console.log("reached 1")
 
   // 3. Store the user's consent
   await db.collection('oauth_authorizations').updateOne(
@@ -115,7 +112,6 @@ async function generateCodeAndRedirect(userId: ObjectId, oauthClient: WithId<Doc
     { upsert: true }
   );
 
-  console.log('reached 2')
 
   // 4. Redirect back to the third-party app with the code
   const finalRedirectUrl = new URL(redirectUri);
