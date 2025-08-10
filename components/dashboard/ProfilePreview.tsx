@@ -111,7 +111,7 @@ export default function ProfilePreview({
         )}
 
         <div className="h-full w-full overflow-y-auto custom-scrollbar">
-          <PublicProfileView profile={user} />
+          <PublicProfileView profile={user} isPreview={true} />
         </div>
       </div>
     </div>
