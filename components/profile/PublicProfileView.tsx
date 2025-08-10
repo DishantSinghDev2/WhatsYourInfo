@@ -9,10 +9,11 @@ import {
   Globe, Share2, Download, Link as LinkIcon, Mail, Lock,
   Loader2,
   Landmark,
-  WalletIcon
+  WalletIcon,
+  Eye
 } from 'lucide-react';
-import VerifiedTick from './VerifiedTick'; // Ensure this path is correct
-import { AdvancedDetailsDialog } from './AdvancedDetailsDialog'; // Ensure this path is correct
+import VerifiedTick from './VerifiedTick';
+import { AdvancedDetailsDialog } from './AdvancedDetailsDialog';
 import tinycolor from 'tinycolor2';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -27,8 +28,6 @@ import {
 } from 'react-icons/si';
 import { motion } from 'framer-motion';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-
-
 
 // This part of the file remains unchanged...
 const iconMap: { [key: string]: React.ElementType } = {
@@ -65,79 +64,8 @@ const DEFAULT_VISIBILITY = DEFAULT_SECTIONS.reduce(
   (acc, sec) => ({ ...acc, [sec]: true }), {}
 );
 
-export default function PublicProfileView({ profile, isPreview = false }: { profile: UserProfile; isPreview?: boolean;   }) {
-
-
-  // --- START: MODIFIED LOGIC TO HANDLE PRIVATE PROFILES AND PREVIEW MODE ---
-
-  // State to track if the current viewer is the owner of the private profile
-  const [isOwner, setIsOwner] = useState(false);
-  // State to track if we are currently checking the auth status
-  const [isLoading, setIsLoading] = useState(true);
-
-  const checkOwnership = async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch('/api/oauth/user'); // Fetches the currently logged-in user
-      if (res.ok) {
-        const loggedInUser = await res.json();
-        // Check if the logged-in user's ID matches the profile's ID
-        if (loggedInUser._id === profile._id) {
-          setIsOwner(true); // Viewer is the owner
-        } else {
-          setIsOwner(false); // Viewer is not the owner
-        }
-      } else {
-        // Not logged in or error, so they are definitely not the owner
-        setIsOwner(false);
-      }
-    } catch (error) {
-      console.error("Failed to fetch auth status:", error);
-      setIsOwner(false); // Assume not owner on any error
-    } finally {
-      setIsLoading(false); // Done loading, regardless of outcome
-    }
-  };
-
-  useEffect(() => {
-    // Only run the ownership check if the profile is private AND we are NOT in preview mode.
-    if (profile.profileVisibility === 'private' && !isPreview) {
-      console.log('checking ownership for live private profile');
-      checkOwnership();
-    } else {
-      // If profile is public or if it's a preview, we don't need to check ownership.
-      setIsLoading(false);
-    }
-    // This effect should re-run if the profile object itself or the preview state changes.
-  }, [profile, isPreview]);
-
-  // If the profile is private and we are NOT in preview mode, run the lock-down logic.
-  if (profile.profileVisibility === 'private' && !isPreview) {
-    // 1. Show a loading state while we check ownership
-    if (isLoading) {
-      return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
-          <Loader2 className="h-12 w-12 text-gray-400 animate-spin" />
-          <p className="mt-4 text-gray-600">Checking permissions...</p>
-        </div>
-      );
-    }
-
-    // 2. If loading is done and the user is NOT the owner, show the private message.
-    if (!isOwner) {
-      return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 text-center p-4">
-          <Lock className="h-12 w-12 text-gray-400 mb-4" />
-          <h1 className="text-2xl font-bold text-gray-800">This Profile is Private</h1>
-          <p className="text-gray-600 mt-2">The user has chosen to keep their profile information private.</p>
-        </div>
-      );
-    }
-    // 3. If loading is done AND the user IS the owner, the code will continue and render the full profile below.
-  }
-  // --- END OF MODIFIED LOGIC ---
-
-
+// --- NEW, ROBUST COMPONENT TO RENDER THE ACTUAL PROFILE CONTENT ---
+const ProfileContent = ({ profile, isPreview }: { profile: UserProfile; isPreview?: boolean; }) => {
   // All existing setup logic is preserved
   const background = profile.design?.customColors?.background || '#ffffff';
   const accent = profile.design?.customColors?.accent || '#111827';
@@ -333,7 +261,6 @@ export default function PublicProfileView({ profile, isPreview = false }: { prof
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => { e.currentTarget.src = '/default-avatar.png'; };
 
-  // --- NEW: Dynamic Name and Handle Logic ---
   const displayName = profile.type === 'business' && profile.businessName
     ? profile.businessName
     : `${profile.firstName} ${profile.lastName}`;
@@ -344,29 +271,23 @@ export default function PublicProfileView({ profile, isPreview = false }: { prof
 
   return (
     <>
-      {/* --- NEW: Private Profile Preview Indicator --- */}
-      {/* This banner shows ONLY when in preview mode for a private profile */}
       {isPreview && profile.profileVisibility === 'private' && (
-        <div className="w-full bg-orange-100 text-orange-800 p-3 text-center text-sm font-semibold sticky top-0 z-50">
+        <div className="w-full bg-yellow-100 border-b border-yellow-300 text-yellow-900 p-3 text-center text-sm font-semibold sticky top-0 z-50">
           <div className="max-w-4xl mx-auto flex items-center justify-center gap-2">
-            <Lock className="w-4 h-4 flex-shrink-0" />
-            <span>You are viewing a preview of your private profile. This is not visible to others.</span>
+            <Eye className="w-4 h-4 flex-shrink-0" />
+            <span>This is a preview of your private profile. Only you can see this.</span>
           </div>
         </div>
       )}
-
       <div
         className={`min-h-screen pb-0 transition-colors duration-500 ${forceLightText ? 'text-white' : 'text-black'}`}
         style={containerStyle}
       >
-        {/* HEADER (Unchanged) */}
         <div
           className="h-48 bg-gray-200"
           style={{ backgroundImage: `url(${profile.design?.headerImage || (profile.isProUser ? '/pro-header.png' : '/header.png')})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
         />
-
         <div className="relative z-0">
-          {/* BG IMAGE OVERLAY (Unchanged) */}
           {backgroundImage && profile.isProUser && (
             <div
               className="absolute inset-0 top-20 z-[-1] pointer-events-none"
@@ -375,7 +296,6 @@ export default function PublicProfileView({ profile, isPreview = false }: { prof
           )}
 
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            {/* USER INFO */}
             <div className="relative flex flex-col sm:flex-row items-center sm:items-end justify-between -mt-20">
               <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 text-center sm:text-left">
                 <img
@@ -388,17 +308,10 @@ export default function PublicProfileView({ profile, isPreview = false }: { prof
                   onError={handleImageError}
                 />
                 <div className="pb-2 sm:pb-0">
-                  <h1
-                    className="text-2xl sm:text-3xl font-bold flex flex-row items-center gap-2"
-                    style={textStyle}
-                  >
-                    {/* --- UPDATED: Use dynamic display name --- */}
+                  <h1 className="text-2xl sm:text-3xl font-bold flex flex-row items-center gap-2" style={textStyle}>
                     <span>{displayName}</span>
-
-                    {/* --- UPDATED: Pass full profile to tick component --- */}
                     <VerifiedTick profile={profile} />
                   </h1>
-                  {/* --- UPDATED: Use dynamic display handle --- */}
                   <p className="text-base sm:text-lg opacity-70">
                     {displayHandle}
                   </p>
@@ -410,103 +323,47 @@ export default function PublicProfileView({ profile, isPreview = false }: { prof
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: 'easeOut' }}
               >
-                {/* Share Dropdown */}
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <Share2 className="w-5 h-5" />
-                    </Button>
-                  </DropdownMenuTrigger>
+                  <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><Share2 className="w-5 h-5" /></Button></DropdownMenuTrigger>
                   <DropdownMenuContent sideOffset={8} align="end">
                     {shareOptions.map(({ label, icon, url }) => (
-                      <DropdownMenuItem
-                        key={label}
-                        className="flex items-center gap-2 cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors"
-                        onClick={() => window.open(url, '_blank')}
-                      >
+                      <DropdownMenuItem key={label} className="flex items-center gap-2 cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors" onClick={() => window.open(url, '_blank')}>
                         {icon}
                         <span>{label}</span>
                       </DropdownMenuItem>
-
                     ))}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="flex items-center gap-2 cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors"
-                      onClick={() => {
-                        if (navigator.share) {
-                          navigator.share({
-                            title: 'Check my profile',
-                            url: window.location.href,
-                          });
-                        }
-                      }}
-                    >
+                    <DropdownMenuItem className="flex items-center gap-2 cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors" onClick={() => { if (navigator.share) { navigator.share({ title: 'Check my profile', url: window.location.href, }); } }}>
                       <Share2 className="w-4 h-4" />
                       Native Share
                     </DropdownMenuItem>
-
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                {/* Download Button with animation */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleDownload}
-                  disabled={isDownloading}
-                >
-                  {isDownloading ? (
-                    <motion.div
-                      className="animate-spin"
-                      key="loader"
-                      initial={{ rotate: 0 }}
-                      animate={{ rotate: 360 }}
-                      transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-                    >
-                      <Loader2 className="h-5 w-5" />
-                    </motion.div>
-                  ) : (
-                    <Download className="h-5 w-5" key="download" />
-                  )}
+                <Button variant="ghost" size="icon" onClick={handleDownload} disabled={isDownloading}>
+                  {isDownloading ? (<motion.div className="animate-spin" key="loader" initial={{ rotate: 0 }} animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}><Loader2 className="h-5 w-5" /></motion.div>) : (<Download className="h-5 w-5" key="download" />)}
                 </Button>
               </motion.div>
             </div>
 
-            {/* VERIFIED ICONS */}
             {(profile.verifiedAccounts?.length > 0 || profile.settings?.privateMessagesEnabled) && (
               <div className="flex flex-wrap gap-3 mt-4 justify-center sm:justify-start">
                 {profile.verifiedAccounts.map((acc) => {
                   const Icon = iconMap[acc.provider.toLowerCase()];
                   return Icon ? (
-                    <a
-                      key={acc.provider}
-                      href={acc.profileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 p-2 hover:bg-black/10 rounded-full transition-colors"
-                    >
+                    <a key={acc.provider} href={acc.profileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 hover:bg-black/10 rounded-full transition-colors">
                       <Icon className="h-5 w-5" />
                     </a>
                   ) : null;
                 })}
-                {profile.settings?.privateMessagesEnabled && <a
-                  href={'mailto:' + profile.email}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 p-2 hover:bg-black/10 rounded-full transition-colors"
-                >
-                  <Mail className="h-5 w-5" />
-                </a>}
+                {profile.settings?.privateMessagesEnabled && <a href={'mailto:' + profile.email} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 hover:bg-black/10 rounded-full transition-colors"><Mail className="h-5 w-5" /></a>}
               </div>
             )}
 
-            {/* DYNAMIC CONTENT */}
             <div className="mt-8 space-y-6">
               {sectionOrder.map((key) => {
                 const component = sectionComponents[key];
-                return visibility[key] && component ? (
-                  <div key={key}>{component}</div>
-                ) : null;
+                return visibility[key] && component ? (<div key={key}>{component}</div>) : null;
               })}
             </div>
 
@@ -514,46 +371,83 @@ export default function PublicProfileView({ profile, isPreview = false }: { prof
               <AdvancedDetailsDialog profile={profile} />
             </div>
 
-            {/* FOOTER */}
             {!profile.isProUser && (
               <footer className="mt-16 py-8 border-t flex md:flex-row flex-col w-full justify-center md:justify-between text-sm md:gap-0 gap-5 items-center">
-                <Link
-                  href="/"
-                  className="-m-1.5 p-1.5 flex items-center justify-center space-x-2"
-                >
-                  <Image
-                    src="/logotext.svg"
-                    alt="WhatsYour.Info"
-                    width={160}
-                    height={28}
-                  />
-                </Link>
+                <Link href="/" className="-m-1.5 p-1.5 flex items-center justify-center space-x-2"><Image src="/logotext.svg" alt="WhatsYour.Info" width={160} height={28} /></Link>
                 <div className="flex justify-center md:items-center gap-4">
-                  <Link href="/terms" className="hover:underline">
-                    Terms
-                  </Link>
-                  <Link href="/privacy" className="hover:underline">
-                    Privacy Policy
-                  </Link>
+                  <Link href="/terms" className="hover:underline">Terms</Link>
+                  <Link href="/privacy" className="hover:underline">Privacy Policy</Link>
                 </div>
-                <Link href="/register">
-                  <Button style={accentButtonStyle}>
-                    Create Your Profile
-                  </Button>
-                </Link>
+                <Link href="/register"><Button style={accentButtonStyle}>Create Your Profile</Button></Link>
               </footer>
             )}
           </div>
         </div>
       </div>
-      {/* Modal (Unchanged) */}
-      {modalOpen && (
-        <GalleryModal
-          images={profile.gallery}
-          initialIndex={selectedImageIndex}
-          onClose={() => setModalOpen(false)}
-        />
-      )}
+      {modalOpen && (<GalleryModal images={profile.gallery} initialIndex={selectedImageIndex} onClose={() => setModalOpen(false)} />)}
     </>
   );
+}
+
+// --- THIS IS NOW THE MAIN EXPORTED COMPONENT ---
+export default function PublicProfileView({ profile, isPreview = false }: { profile: UserProfile; isPreview?: boolean; }) {
+  const [isOwner, setIsOwner] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const isProfilePrivate = profile.profileVisibility === 'private';
+
+  useEffect(() => {
+    // We only need to check ownership for a live private profile.
+    if (isProfilePrivate && !isPreview) {
+      const checkOwnership = async () => {
+        setIsLoading(true);
+        try {
+          const res = await fetch('/api/oauth/user');
+          if (res.ok) {
+            const loggedInUser = await res.json();
+            setIsOwner(loggedInUser._id === profile._id);
+          } else {
+            setIsOwner(false);
+          }
+        } catch (error) {
+          console.error("Failed to fetch auth status:", error);
+          setIsOwner(false);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      checkOwnership();
+    } else {
+      // For public profiles or any preview, we don't need to load anything.
+      setIsLoading(false);
+    }
+  }, [profile._id, isProfilePrivate, isPreview]); // Depend on stable values
+
+  // --- REFACTORED RENDER LOGIC ---
+  // This logic is now inside the main return, ensuring hooks are always called.
+
+  // Case 1: Live private profile, still checking permission.
+  if (isProfilePrivate && !isPreview && isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+        <Loader2 className="h-12 w-12 text-gray-400 animate-spin" />
+        <p className="mt-4 text-gray-600">Checking permissions...</p>
+      </div>
+    );
+  }
+
+  // Case 2: Live private profile, viewer is NOT the owner.
+  if (isProfilePrivate && !isPreview && !isOwner) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 text-center p-4">
+        <Lock className="h-12 w-12 text-gray-400 mb-4" />
+        <h1 className="text-2xl font-bold text-gray-800">This Profile is Private</h1>
+        <p className="text-gray-600 mt-2">The user has chosen to keep their profile information private.</p>
+      </div>
+    );
+  }
+
+  // Case 3: Public profile, or a preview, or the owner of a private profile.
+  // In all these cases, we show the full profile content.
+  return <ProfileContent profile={profile} isPreview={isPreview} />;
 }
