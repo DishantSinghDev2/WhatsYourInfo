@@ -106,7 +106,7 @@ async function generateCodeAndRedirect(userId: ObjectId, oauthClient: WithId<Doc
 
   // 3. Store the user's consent
   await db.collection('oauth_authorizations').updateOne(
-    { userId: userId, clientId: oauthClient._id },
+    { userId: userId, clientId: new ObjectId(oauthClient._id) },
     { $addToSet: { grantedScopes: { $each: scopes } }, $set: { updatedAt: new Date() } },
     { upsert: true }
   );

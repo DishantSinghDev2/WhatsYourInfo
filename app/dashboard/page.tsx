@@ -115,7 +115,7 @@ export default function DashboardPage() {
           <div className="flex items-center space-x-2">
              <Button variant="outline" asChild>
                 <a href={`/${user.username}`} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="h-4 w-4 mr-2" /> View Public Profile
+                  <ExternalLink className="h-4 w-4 mr-2 inline" /> View Public Profile
                 </a>
              </Button>
              <Button variant="ghost" onClick={handleLogout}>Sign Out</Button>
