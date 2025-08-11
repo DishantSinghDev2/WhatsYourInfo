@@ -21,11 +21,15 @@ export async function PUT(req: NextRequest) {
 
   const result = await users.updateOne(
     { _id: new ObjectId(user._id) },
-    { $set: { profileVisibility: body.profileVisibility } },
+    { $set: { profileVisibility: body.profileVisibility as string } },
     { upsert: true }
   );
 
   await cacheDel(`user:profile:${user.username}`);
+
+  if (result.modifiedCount === 0) {
+    return NextResponse.json({ error: 'Failed to update profile visibility' }, { status: 500 });
+  }
 
   return NextResponse.json({ visibility: body.profileVisibility }, { status: 200 });
 }
