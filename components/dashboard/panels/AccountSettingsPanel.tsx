@@ -120,9 +120,11 @@ export default function AccountSettingsPanel({ user, onUpdate }: AccountSettings
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to update visibility');
       }
+      const data = await response.json();
+
 
       toast.success('Profile visibility updated!', { id: toastId });
-      onUpdate({ profileVisibility: newVisibility }); // Notify parent of success
+      onUpdate({ profileVisibility: data.visibility }); // Notify parent of success
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Could not update visibility.', { id: toastId });
       setVisibility(user.profileVisibility || 'public'); // Revert on error

@@ -13,16 +13,19 @@ export async function PUT(req: NextRequest) {
 
   if (!body.profileVisibility) return NextResponse.json({ error: 'Missing profileVisibility' }, { status: 400 })
 
+    console.log(body.profileVisibility)
+
   const client = await clientPromise;
   const db = client.db();
   const users = db.collection('users');
 
-  await users.updateOne(
+  const result = await users.updateOne(
     { _id: new ObjectId(user._id) },
-    { $set: { profileVisibility: body.profileVisibility } }
+    { $set: { profileVisibility: body.profileVisibility } },
+    { upsert: true }
   );
 
   await cacheDel(`user:profile:${user.username}`);
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ visibility: body.profileVisibility }, { status: 200 });
 }

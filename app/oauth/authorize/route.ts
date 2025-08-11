@@ -109,8 +109,12 @@ async function generateCodeAndRedirect(userId: ObjectId, oauthClient: WithId<Doc
 
   // 3. Store the user's consent
   const existingAuth = await db.collection('oauth_authorizations').findOne({ userId: userId, clientId: doc.clientId });
-  const existingScopes = existingAuth?.grantedScopes || [];
+  const existingScopes = Array.isArray(existingAuth?.grantedScopes)
+    ? existingAuth.grantedScopes
+    : [];
   const combinedScopes = Array.from(new Set([...existingScopes, ...scopes])); // Merge and remove duplicates
+
+  console.log(combinedScopes)
 
   await db.collection('oauth_authorizations').updateOne(
     { userId: userId, clientId: doc.clientId },
