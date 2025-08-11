@@ -47,6 +47,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Invalid client_id or redirect_uri." }, { status: 400 });
     }
 
+    console.log('oauthClient 0', oauthClient)
+
     // 4. Check if the user has already given consent for these scopes.
     const existingAuthorization = await db.collection('oauth_authorizations').findOne({
       userId: user._id,

@@ -81,6 +81,8 @@ async function handleAuthorizationCodeGrant(body: unknown) {
   if (!oauthClient) return NextResponse.json({ error: 'invalid_client' }, { status: 401 });
   if (!oauthClient.redirectUris.includes(redirect_uri)) return NextResponse.json({ error: 'invalid_grant' }, { status: 400 });
 
+  console.log('oauthClient 1', oauthClient)
+
   const authCode = await db.collection('oauth_codes').findOneAndDelete({ code });
   if (!authCode || authCode.expiresAt < new Date()) {
     return NextResponse.json({ error: 'invalid_grant', error_description: 'Authorization code is invalid or expired.' }, { status: 400 });
