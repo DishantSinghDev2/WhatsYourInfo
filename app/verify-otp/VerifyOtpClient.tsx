@@ -170,7 +170,7 @@ export default function VerifyOtpPage() {
                                 <Button
                                     type="submit"
                                     className="w-full"
-                                    disabled={isLoading || otp.length !== 6}
+                                    disabled={true}
                                 >
                                     {isLoading ? 'Verifying...' : 'Verify'}
                                 </Button>
