@@ -8,10 +8,13 @@ import { ObjectId } from 'mongodb';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { sendRecoveryEmailVerification } from '@/lib/email';
+import DOMPurify from 'isomorphic-dompurify'; // --- (1) IMPORT THE SANITIZER ---
 
+// --- (2) STRENGTHEN THE ZOD SCHEMA ---
 const changeSchema = z.object({
   currentPassword: z.string().min(1, 'Your current password is required.'),
-  newEmail: z.string().email('Please enter a valid email address.'),
+  // .trim() and .toLowerCase() are data hygiene best practices for emails.
+  newEmail: z.string().trim().toLowerCase().email('Please enter a valid email address.'),
 });
 
 export async function PUT(request: NextRequest) {
@@ -21,12 +24,17 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { currentPassword, newEmail } = changeSchema.parse(await request.json());
+    const body = await request.json();
+    // Validate the incoming data first.
+    const { currentPassword, newEmail: validatedEmail } = changeSchema.parse(body);
+
+    // --- (3) SANITIZE THE VALIDATED EMAIL ---
+    const sanitizedEmail = DOMPurify.sanitize(validatedEmail);
 
     const client = await clientPromise;
     const db = client.db('whatsyourinfo');
 
-    // 1. Verify the user's current password for security
+    // 1. Verify password (Your logic here is already perfect)
     const fullUser = await db.collection('users').findOne({ _id: new ObjectId(user._id) });
     if (!fullUser) return NextResponse.json({ error: 'User not found.' }, { status: 404 });
 
@@ -35,23 +43,23 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'The password you entered is incorrect.' }, { status: 403 });
     }
 
-    // 2. Generate token and set temporary fields in the database
+    // 2. Generate token and use the sanitized email for the database update
     const token = crypto.randomBytes(32).toString('hex');
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
     await db.collection('users').updateOne(
       { _id: new ObjectId(user._id) },
       { $set: {
-          pendingRecoveryEmail: newEmail,
+          pendingRecoveryEmail: sanitizedEmail, // Use the clean email
           recoveryEmailToken: token,
           recoveryEmailExpires: expires
       }}
     );
     
-    // 3. Send the verification email
-    await sendRecoveryEmailVerification({ to: newEmail, name: user.firstName, token });
+    // 3. Send the verification email to the clean, sanitized address
+    await sendRecoveryEmailVerification({ to: sanitizedEmail, name: user.firstName, token });
 
-    return NextResponse.json({ message: `A confirmation link has been sent to ${newEmail}. Please check your inbox.` });
+    return NextResponse.json({ message: `A confirmation link has been sent to ${sanitizedEmail}. Please check your inbox.` });
 
   } catch (error) {
     if (error instanceof z.ZodError) {
