@@ -2,24 +2,37 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateToken } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
 import { z } from 'zod';
+import DOMPurify from 'isomorphic-dompurify'; // --- (1) IMPORT THE SANITIZER ---
 
+// --- (2) STRENGTHEN THE ZOD SCHEMA ---
+// Add .trim() to both fields to handle extraneous whitespace
 const verifyOtpSchema = z.object({
-  email: z.string().email('Valid email is required'),
-  otp: z.string().length(6, 'OTP must be 6 digits'),
+  email: z.string().trim().email('Valid email is required'),
+  otp: z.string().trim().length(6, 'OTP must be 6 digits'),
 });
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, otp } = verifyOtpSchema.parse(body);
+    const validatedData = verifyOtpSchema.parse(body);
+
+    // --- (3) SANITIZE THE INPUTS ---
+    // Sanitize the email with DOMPurify
+    const sanitizedEmail = DOMPurify.sanitize(validatedData.email);
+
+    // Sanitize the OTP by removing any non-digit characters.
+    // This ensures only a clean numeric string is used for the query.
+    const sanitizedOtp = validatedData.otp.replace(/\D/g, '');
+
 
     const client = await clientPromise;
     const db = client.db('whatsyourinfo');
 
-    // Find user with valid OTP
+    // --- (4) USE SANITIZED DATA FOR THE DATABASE QUERY ---
+    // Find user with a valid OTP using the cleaned inputs
     const user = await db.collection('users').findOne({
-      email,
-      loginOtp: otp,
+      email: sanitizedEmail,
+      loginOtp: sanitizedOtp,
       loginOtpExpires: { $gt: new Date() }
     });
 
@@ -30,7 +43,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Clear OTP
+    // Clear OTP (Unchanged)
     await db.collection('users').updateOne(
       { _id: user._id },
       {
@@ -40,19 +53,20 @@ export async function POST(request: NextRequest) {
         },
         $set: {
           updatedAt: new Date(),
-          emailVerified: true
+          emailVerified: true // Also mark email as verified on successful OTP login
         }
       }
     );
 
-    // Generate JWT token
+    // Generate JWT token (Unchanged)
     const token = generateToken({
       userId: user._id,
       emailVerified: true,
       tfa_enabled: user.twoFactorEnabled,
+      // Consider adding a session token here as well for consistency
     });
 
-    // Create response with user data
+    // Create response with user data (Unchanged)
     const response = NextResponse.json(
       {
         message: 'OTP verified successfully',
@@ -68,7 +82,7 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
 
-    // Set HTTP-only cookie
+    // Set HTTP-only cookie (Unchanged)
     response.cookies.set('auth-token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

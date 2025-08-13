@@ -2,6 +2,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromToken } from '@/lib/auth';
+import { z } from 'zod'; // --- (1) IMPORT ZOD ---
+
+// --- (2) DEFINE A STRICT SCHEMA FOR THE REQUEST BODY ---
+const subscriptionSchema = z.object({
+  // Enforces that 'yearly' must be a boolean (true or false).
+  yearly: z.boolean(),
+});
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,22 +17,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { yearly } = await request.json();
+    const body = await request.json();
+    // --- (3) VALIDATE THE BODY AGAINST THE SCHEMA ---
+    // If validation fails, this will throw an error and be caught below.
+    const { yearly } = subscriptionSchema.parse(body);
+
     const planId = yearly
       ? process.env.PAYPAL_PRO_YEARLY_PLAN_ID
       : process.env.PAYPAL_PRO_MONTHLY_PLAN_ID;
 
     if (!planId) {
       console.error('PayPal Plan ID not set in .env');
-      return NextResponse.json({ error: 'Server config error' }, { status: 500 });
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
 
-    // === 1. Fetch access token manually ===
+    // === 1. Fetch access token manually (Unchanged) ===
     const clientId = process.env.PAYPAL_CLIENT_ID;
     const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
     if (!clientId || !clientSecret) {
       console.error('PayPal credentials missing');
-      return NextResponse.json({ error: 'Server config error' }, { status: 500 });
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
 
     const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
@@ -50,11 +61,11 @@ export async function POST(request: NextRequest) {
 
     const { access_token: accessToken } = await tokenResp.json();
     if (!accessToken) {
-      console.error('Missing access_token in PayPal response', await tokenResp.text());
+      console.error('Missing access_token in PayPal response');
       return NextResponse.json({ error: 'PayPal auth failed' }, { status: 500 });
     }
 
-    // === 2. Create subscription via REST API ===
+    // === 2. Create subscription via REST API (Unchanged) ===
     const subResp = await fetch(`${apiBase}/v1/billing/subscriptions`, {
       method: 'POST',
       headers: {
@@ -64,7 +75,7 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         plan_id: planId,
-        custom_id: user._id.toString(),
+        custom_id: user._id.toString(), // custom_id is server-controlled, which is secure
         application_context: {
           brand_name: 'WhatsYour.Info',
           shipping_preference: 'NO_SHIPPING',
@@ -91,6 +102,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ approvalUrl: approvalLink.href });
 
   } catch (err) {
+    // --- (4) CATCH VALIDATION ERRORS FROM ZOD ---
+    if (err instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Validation error', details: err.errors },
+        { status: 400 }
+      );
+    }
     console.error('Subscription creation exception:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

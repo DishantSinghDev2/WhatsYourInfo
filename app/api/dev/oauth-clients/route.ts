@@ -4,16 +4,19 @@ import clientPromise from '@/lib/mongodb';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { ObjectId } from 'mongodb'; // Important: Import ObjectId
+import DOMPurify from 'isomorphic-dompurify'; // --- (1) IMPORT THE SANITIZER ---
 
-// Expanded Zod schema for validation
+// Schema remains the same
 const createClientSchema = z.object({
-    name: z.string().min(1, 'Application name is required').max(50),
-    description: z.string().max(300).optional(),
-    homepageUrl: z.string().url('Homepage URL must be a valid URL.').optional(),
-    appLogo: z.string().url('Logo URL must be a valid URL.').optional(),
+    name: z.string().trim().min(1, 'Application name is required').max(50),
+    description: z.string().trim().max(300).optional(),
+    homepageUrl: z.string().trim().url('Homepage URL must be a valid URL.').optional(),
+    appLogo: z.string().trim().url('Logo URL must be a valid URL.').optional(),
     redirectUris: z.array(z.string().url('Each Redirect URI must be a valid URL.')).min(1),
-    grantedScopes: z.array(z.string()).optional(), // Scopes the app is allowed to request
+    grantedScopes: z.array(z.string()).optional(),
 });
+
+
 
 export async function GET(request: NextRequest) {
     try {
@@ -177,12 +180,18 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        // Assuming you might add these to your form later
         const fullSchema = createClientSchema.extend({
             isInternal: z.boolean().optional(),
             opByWYI: z.boolean().optional(),
         });
         const validatedData = fullSchema.parse(body);
+
+        // --- (2) SANITIZE ALL USER-PROVIDED STRINGS ---
+        const sanitizedName = DOMPurify.sanitize(validatedData.name);
+        const sanitizedDescription = validatedData.description ? DOMPurify.sanitize(validatedData.description) : undefined;
+        const sanitizedHomepageUrl = validatedData.homepageUrl ? DOMPurify.sanitize(validatedData.homepageUrl) : undefined;
+        const sanitizedAppLogo = validatedData.appLogo ? DOMPurify.sanitize(validatedData.appLogo) : undefined;
+        const sanitizedRedirectUris = validatedData.redirectUris.map(uri => DOMPurify.sanitize(uri));
 
         const clientId = `wyi_client_${crypto.randomBytes(16).toString('hex')}`;
         const clientSecret = `wyi_secret_${crypto.randomBytes(32).toString('hex')}`;
@@ -190,20 +199,20 @@ export async function POST(request: NextRequest) {
         const client = await clientPromise;
         const db = client.db('whatsyourinfo');
 
+        // --- (3) USE SANITIZED DATA FOR INSERTION ---
         const clientData = {
             userId: user._id,
-            name: validatedData.name,
-            description: validatedData.description,
-            appLogo: validatedData.appLogo,
-            homepageUrl: validatedData.homepageUrl,
+            name: sanitizedName,
+            description: sanitizedDescription,
+            appLogo: sanitizedAppLogo,
+            homepageUrl: sanitizedHomepageUrl,
             clientId,
             clientSecret,
-            redirectUris: validatedData.redirectUris,
+            redirectUris: sanitizedRedirectUris,
             grantedScopes: validatedData.grantedScopes?.push('webhook:verify') || [],
-            // --- NEW & UPDATED FIELDS ---
-            isInternal: validatedData.isInternal || false, // Default to false
-            opByWYI: validatedData.opByWYI || false,       // Default to false
-            users: 0,                                      // Initialize user count at 0
+            isInternal: validatedData.isInternal || false,
+            opByWYI: validatedData.opByWYI || false,
+            users: 0,
             isActive: true,
             createdAt: new Date(),
         };
@@ -267,16 +276,16 @@ export async function DELETE(request: NextRequest) {
     }
 }
 
+// Schema for update remains the same
 const updateClientSchema = z.object({
-    name: z.string().min(1, 'Application name is required').max(50).optional(),
-    description: z.string().max(300).optional().nullable(),
-    homepageUrl: z.string().url('Homepage URL must be a valid URL.').optional().nullable(),
-    appLogo: z.string().url('Logo URL must be a valid URL.').optional().nullable(),
+    name: z.string().trim().min(1, 'Application name is required').max(50).optional(),
+    description: z.string().trim().max(300).optional().nullable(),
+    homepageUrl: z.string().trim().url('Homepage URL must be a valid URL.').optional().nullable(),
+    appLogo: z.string().trim().url('Logo URL must be a valid URL.').optional().nullable(),
     redirectUris: z.array(z.string().url()).min(1, 'At least one Redirect URI is required.').optional(),
     grantedScopes: z.array(z.string()).optional(),
 });
 
-// --- NEW: Add a PATCH handler for updating clients ---
 export async function PATCH(request: NextRequest) {
     try {
         const user = await getUserFromToken(request);
@@ -294,30 +303,41 @@ export async function PATCH(request: NextRequest) {
         const body = await request.json();
         const validatedData = updateClientSchema.parse(body);
 
-        const client = await clientPromise;
-        const db = client.db('whatsyourinfo');
+        const updateFields: { [key: string]: any } = {};
 
-        // Construct the update object to avoid clearing fields with undefined
-        const updateFields: { [key: string]: unknown } = {};
-
-        Object.keys(validatedData).forEach((key: string) => {
-            const value = (validatedData as Record<string, unknown>)[key];
-            if (value !== undefined) {
-                updateFields[key] = value;
-            }
-        });
-
+        // --- (4) SANITIZE EACH FIELD BEFORE ADDING IT TO THE UPDATE OBJECT ---
+        if (validatedData.name !== undefined) {
+            updateFields.name = DOMPurify.sanitize(validatedData.name);
+        }
+        if (validatedData.description !== undefined) {
+            updateFields.description = validatedData.description ? DOMPurify.sanitize(validatedData.description) : null;
+        }
+        if (validatedData.homepageUrl !== undefined) {
+            updateFields.homepageUrl = validatedData.homepageUrl ? DOMPurify.sanitize(validatedData.homepageUrl) : null;
+        }
+        if (validatedData.appLogo !== undefined) {
+            updateFields.appLogo = validatedData.appLogo ? DOMPurify.sanitize(validatedData.appLogo) : null;
+        }
+        if (validatedData.redirectUris !== undefined) {
+            updateFields.redirectUris = validatedData.redirectUris.map(uri => DOMPurify.sanitize(uri));
+        }
+        if (validatedData.grantedScopes !== undefined) {
+            updateFields.grantedScopes = validatedData.grantedScopes; // Scopes are not user-content, no need to sanitize
+        }
 
         if (Object.keys(updateFields).length === 0) {
             return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
         }
 
+        const client = await clientPromise;
+        const db = client.db('whatsyourinfo');
+
+        // --- (5) PERFORM THE UPDATE WITH SANITIZED DATA ---
         const result = await db.collection('oauth_clients').updateOne(
-            { _id: new ObjectId(id), userId: user._id }, // Ensure user owns the client
+            { _id: new ObjectId(id), userId: user._id }, // Crucial ownership check
             {
                 $set: {
                     ...updateFields,
-                    grantedScopes: validatedData.grantedScopes?.push('webhook:verify') || [],
                     updatedAt: new Date()
                 }
             }

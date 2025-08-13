@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromToken } from '@/lib/auth';
+import { z } from 'zod'; // --- (1) IMPORT ZOD ---
 
 const planMap = {
     GROWTH: {
@@ -12,17 +13,32 @@ const planMap = {
     },
 };
 
+// --- (2) DEFINE A STRICT SCHEMA FOR THE REQUEST BODY ---
+const subscriptionSchema = z.object({
+  // Ensures 'plan' can ONLY be one of these two strings.
+  plan: z.enum(['GROWTH', 'SCALE']),
+  // Ensures 'yearly' is a boolean.
+  yearly: z.boolean(),
+});
+
 export async function POST(request: NextRequest) {
     try {
         const user = await getUserFromToken(request);
         if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-        const { plan, yearly } = await request.json(); // e.g., plan: 'GROWTH', yearly: true
+        const body = await request.json();
+        // --- (3) VALIDATE THE BODY AGAINST THE SCHEMA ---
+        // If validation fails, this will throw an error and be caught below.
+        const { plan, yearly } = subscriptionSchema.parse(body);
 
-        const planId = planMap[plan as keyof typeof planMap]?.[yearly ? 'yearly' : 'monthly'];
-        if (!planId) return NextResponse.json({ error: 'Invalid plan selected.' }, { status: 400 });
+        // This check is now even more robust because 'plan' and 'yearly' are guaranteed to be the correct types.
+        const planId = planMap[plan][yearly ? 'yearly' : 'monthly'];
+        if (!planId) {
+            // This case would now only be triggered by a server-side configuration issue (e.g., missing env var).
+            return NextResponse.json({ error: 'Invalid plan selected or plan not available.' }, { status: 400 });
+        }
 
-        // === 1. Fetch access token manually ===
+        // === 1. Fetch access token manually (Unchanged) ===
         const clientId = process.env.PAYPAL_CLIENT_ID;
         const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
         if (!clientId || !clientSecret) {
@@ -37,10 +53,7 @@ export async function POST(request: NextRequest) {
 
         const tokenResp = await fetch(`${apiBase}/v1/oauth2/token`, {
             method: 'POST',
-            headers: {
-                Authorization: `Basic ${auth}`,
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
+            headers: { Authorization: `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
             body: 'grant_type=client_credentials',
         });
 
@@ -52,20 +65,18 @@ export async function POST(request: NextRequest) {
 
         const { access_token: accessToken } = await tokenResp.json();
         if (!accessToken) {
-            console.error('Missing access_token in PayPal response', await tokenResp.text());
+            console.error('Missing access_token in PayPal response');
             return NextResponse.json({ error: 'PayPal auth failed' }, { status: 500 });
         }
 
+        // --- (4) USE VALIDATED DATA (This data is now guaranteed to be safe) ---
         const customIdPayload = {
             userId: user._id.toString(),
-            product: 'DITBLOGS', // Tagging this subscription for DITBlogs
-            plan_name: plan,     // Storing the specific plan for easier handling
+            product: 'DITBLOGS',
+            plan_name: plan, // 'plan' is guaranteed to be either 'GROWTH' or 'SCALE'
         };
 
-        // --- END OF THE CRITICAL FIX ---
-
-
-        // === 2. Create subscription via REST API with the updated custom_id ===
+        // === 2. Create subscription via REST API (Unchanged) ===
         const subResp = await fetch(`${apiBase}/v1/billing/subscriptions`, {
             method: 'POST',
             headers: {
@@ -75,10 +86,9 @@ export async function POST(request: NextRequest) {
             },
             body: JSON.stringify({
                 plan_id: planId,
-                // --- Use the JSON stringified payload here ---
                 custom_id: JSON.stringify(customIdPayload),
                 application_context: {
-                    brand_name: 'DITBlogs', // This is correct
+                    brand_name: 'DITBlogs',
                     shipping_preference: 'NO_SHIPPING',
                     user_action: 'SUBSCRIBE_NOW',
                     return_url: `https://blogs.dishis.tech/dashboard?paypal_success=true`,
@@ -86,7 +96,6 @@ export async function POST(request: NextRequest) {
                 },
             }),
         });
-
 
         if (!subResp.ok) {
             const text = await subResp.text();
@@ -104,6 +113,13 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ approvalUrl: approvalLink.href });
 
     } catch (err) {
+        // --- (5) CATCH VALIDATION ERRORS FROM ZOD ---
+        if (err instanceof z.ZodError) {
+            return NextResponse.json(
+              { error: 'Validation error', details: err.errors },
+              { status: 400 }
+            );
+        }
         console.error('Subscription creation exception:', err);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }

@@ -4,9 +4,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { z } from 'zod';
 import { Db, ObjectId } from 'mongodb';
+import DOMPurify from 'isomorphic-dompurify'; // --- (1) IMPORT THE SANITIZER ---
 
-// Helper function to contain the core verification logic
+// Helper function to contain the core verification logic (no changes needed here)
 async function verifyToken(db: Db, token: string): Promise<boolean> {
+  // This function now receives a pre-sanitized token
   const user = await db.collection('users').findOne({
     emailVerificationToken: token,
     emailVerificationExpires: { $gt: new Date() }
@@ -29,32 +31,35 @@ async function verifyToken(db: Db, token: string): Promise<boolean> {
 }
 
 
-// --- NEW: Handle link clicks from the email ---
+// --- Handle link clicks from the email ---
 export async function GET(request: NextRequest) {
-  const token = request.nextUrl.searchParams.get('token');
+  const unsafeToken = request.nextUrl.searchParams.get('token');
   const redirectBaseUrl = new URL('/login', request.nextUrl.origin);
 
-  if (!token) {
+  if (!unsafeToken) {
     redirectBaseUrl.searchParams.set('error', 'notoken');
     return NextResponse.redirect(redirectBaseUrl);
   }
 
   try {
+    // --- (2) SANITIZE THE TOKEN FROM THE URL ---
+    const sanitizedToken = DOMPurify.sanitize(unsafeToken);
+
     const client = await clientPromise;
     const db = client.db('whatsyourinfo');
-    const success = await verifyToken(db, token);
+    // Pass the sanitized token to the verification logic
+    const success = await verifyToken(db, sanitizedToken);
 
     if (success) {
-      // On success, redirect to the login page with a success message
       redirectBaseUrl.searchParams.set('verified', 'true');
       return NextResponse.redirect(redirectBaseUrl);
     } else {
-      // On failure, redirect to the verify page with an error
       const verifyPageUrl = new URL('/verify-email', request.nextUrl.origin);
       verifyPageUrl.searchParams.set('error', 'invalid_token');
       return NextResponse.redirect(verifyPageUrl);
     }
-  } catch {
+  } catch (error) {
+    console.error("Email verification GET error:", error);
     const verifyPageUrl = new URL('/verify-email', request.nextUrl.origin);
     verifyPageUrl.searchParams.set('error', 'server_error');
     return NextResponse.redirect(verifyPageUrl);
@@ -62,16 +67,22 @@ export async function GET(request: NextRequest) {
 }
 
 // --- Your existing POST route for manual form submission ---
+// Add .trim() for good measure
 const verifyEmailSchema = z.object({
-  token: z.string().min(1, 'Verification token is required'),
+  token: z.string().trim().min(1, 'Verification token is required'),
 });
 
 export async function POST(request: NextRequest) {
   try {
-    const { token } = verifyEmailSchema.parse(await request.json());
+    const { token: unsafeToken } = verifyEmailSchema.parse(await request.json());
+
+    // --- (3) SANITIZE THE TOKEN FROM THE POST BODY ---
+    const sanitizedToken = DOMPurify.sanitize(unsafeToken);
+
     const client = await clientPromise;
     const db = client.db('whatsyourinfo');
-    const success = await verifyToken(db, token);
+    // Pass the sanitized token to the verification logic
+    const success = await verifyToken(db, sanitizedToken);
 
     if (success) {
       return NextResponse.json({ message: 'Email verified successfully' });
@@ -79,9 +90,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid or expired verification token' }, { status: 400 });
     }
 
-  } catch  {
-    const verifyPageUrl = new URL('/verify-email', request.nextUrl.origin);
-    verifyPageUrl.searchParams.set('error', 'server_error');
-    return NextResponse.redirect(verifyPageUrl);
+  } catch (error) {
+    console.error("Email verification POST error:", error);
+    // For API routes, it's better to return a JSON error than to redirect
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 });
+    }
+    return NextResponse.json({ error: 'An internal server error occurred.' }, { status: 500 });
   }
 }

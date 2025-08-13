@@ -1,77 +1,83 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createUser, generateToken, User } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
-import { isValidEmail, isValidUsername } from '@/lib/utils';
+// isValidEmail and isValidUsername are now handled by Zod, so they can be removed if not used elsewhere
 import { z } from 'zod';
 import { UAParser } from 'ua-parser-js';
 import crypto from 'crypto';
+import DOMPurify from 'isomorphic-dompurify'; // --- (1) IMPORT THE SANITIZER ---
 
+// --- (2) STRENGTHEN THE ZOD SCHEMA ---
+// We can add .trim() to automatically remove leading/trailing whitespace
+// and refine the regex for the username for better security.
 const registerSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: z.string().trim().email('Invalid email address'),
   profileVisibility: z.enum(['public', 'private']),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  username: z.string().min(3, 'Username must be at least 3 characters').max(30, 'Username must be less than 30 characters'),
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
+  // A stricter regex to ensure it only contains allowed characters
+  username: z.string()
+    .trim()
+    .min(3, 'Username must be at least 3 characters')
+    .max(30, 'Username must be less than 30 characters')
+    .regex(/^[a-zA-Z0-9_-]+$/, 'Username can only contain letters, numbers, hyphens, and underscores'),
+  firstName: z.string().trim().min(1, 'First name is required'),
+  lastName: z.string().trim().min(1, 'Last name is required'),
 });
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // Validate input
+    // --- (3) VALIDATE THE INPUT (No change here, this is correct) ---
     const validatedData = registerSchema.parse(body);
     const { email, password, username, firstName, lastName, profileVisibility } = validatedData;
 
-    // Additional validation
-    if (!isValidEmail(email)) {
-      return NextResponse.json(
-        { error: 'Invalid email format' },
-        { status: 400 }
-      );
-    }
+    // --- (4) SANITIZE THE INPUTS ---
+    // This is the new, crucial step. We clean the string fields before using them.
+    const sanitizedFirstName = DOMPurify.sanitize(firstName);
+    const sanitizedLastName = DOMPurify.sanitize(lastName);
+    const sanitizedUsername = DOMPurify.sanitize(username);
+    // Email is validated by Zod for structure, but sanitizing is a good defense-in-depth measure.
+    const sanitizedEmail = DOMPurify.sanitize(email);
 
-    if (!isValidUsername(username)) {
-      return NextResponse.json(
-        { error: 'Username can only contain letters, numbers, hyphens, and underscores' },
-        { status: 400 }
-      );
-    }
+    // Your additional validation checks with isValidEmail and isValidUsername are no longer needed
+    // because Zod's .email() and .regex() rules handle this more effectively.
 
     // Check if user already exists
     const client = await clientPromise;
     const db = client.db('whatsyourinfo');
 
     const existingUser = await db.collection('users').findOne({
-      $or: [{ email }, { username }]
+      // Use the sanitized email and username for the database query
+      $or: [{ email: sanitizedEmail }, { username: sanitizedUsername }]
     });
 
     if (existingUser) {
-      const field = existingUser.email === email ? 'email' : 'username';
+      const field = existingUser.email === sanitizedEmail ? 'email' : 'username';
       return NextResponse.json(
         { error: `User with this ${field} already exists` },
         { status: 409 }
       );
     }
 
-    // Create user
+    // --- (5) CREATE USER WITH SANITIZED DATA ---
+    // Pass the cleaned data to your user creation function.
     const user = await createUser({
       type: 'personal',
       profileVisibility,
-      email,
-      password,
-      username,
-      firstName,
-      lastName,
+      email: sanitizedEmail,
+      password, // Password is not sanitized, it is hashed by createUser
+      username: sanitizedUsername,
+      firstName: sanitizedFirstName,
+      lastName: sanitizedLastName,
     });
 
-    // --- Session Creation Logic ---
+    // --- Session Creation Logic (Unchanged) ---
     const ipAddress = request.headers.get('x-forwarded-for') || request.ip;
     const userAgent = request.headers.get('user-agent');
     const parsedUA = new UAParser(userAgent).getResult();
     const device = `${parsedUA.browser.name} on ${parsedUA.os.name}`;
 
-    // This session identifier will be stored in the cookie/JWT
     const sessionToken = crypto.randomBytes(32).toString('hex');
     const hashedSessionToken = crypto.createHash('sha256').update(sessionToken).digest('hex');
 
@@ -83,10 +89,9 @@ export async function POST(request: NextRequest) {
       lastUsedAt: new Date(),
       ipAddress,
       userAgent: device,
-      is2FAVerified: false, // This session was not verified with 2FA
+      is2FAVerified: false,
     });
 
-    // Issue the final JWT, now including the session token
     const token = generateToken({
       userId: user._id,
       emailVerified: user.emailVerified,
@@ -94,15 +99,14 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user.emailVerified) {
-      await fetch(`${process.env.FRONTEND_URL || `localhost:3000`}/api/auth/send-otp`, {
+      await fetch(`${process.env.FRONTEND_URL || `http://localhost:3000`}/api/auth/send-otp`, {
         method: "POST",
         body: JSON.stringify({
           email: user.email
         })
-      })
+      });
     }
 
-    // Remove password from response
     const { ...userResponse } = user as User;
 
     const response = NextResponse.json(
@@ -113,7 +117,6 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
 
-    // Set HTTP-only cookie
     response.cookies.set('auth-token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -122,7 +125,7 @@ export async function POST(request: NextRequest) {
       path: '/',
     });
 
-    return response
+    return response;
 
   } catch (error) {
     if (error instanceof z.ZodError) {

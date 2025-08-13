@@ -1,27 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateUser, generateToken } from '@/lib/auth';
 import { z } from 'zod';
-import clientPromise from '@/lib/mongodb'; // Import clientPromise
+import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import jwt from 'jsonwebtoken';
 import { UAParser } from 'ua-parser-js';
 import crypto from 'crypto';
+import DOMPurify from 'isomorphic-dompurify'; // --- (1) IMPORT THE SANITIZER ---
 
+// --- (2) STRENGTHEN THE ZOD SCHEMA ---
+// Add .trim() to automatically remove leading/trailing whitespace.
 const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(1, 'Password is required'),
+  email: z.string().trim().email('Invalid email address'),
+  password: z.string().min(1, 'Password is required'), // Password is not empty
 });
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // Validate input
+    // --- (3) VALIDATE THE INPUT ---
     const validatedData = loginSchema.parse(body);
     const { email, password } = validatedData;
 
-    // Authenticate user
-    const user = await authenticateUser(email, password);
+    // --- (4) SANITIZE THE EMAIL INPUT ---
+    // Clean the email address to remove any potentially malicious characters
+    // before using it to query the database via authenticateUser.
+    const sanitizedEmail = DOMPurify.sanitize(email);
+
+    // --- (5) AUTHENTICATE USING THE SANITIZED EMAIL ---
+    const user = await authenticateUser(sanitizedEmail, password);
 
     if (!user) {
       return NextResponse.json(
@@ -30,44 +38,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // --- NEW: 2FA Check ---
+    // --- NEW: 2FA Check (Unchanged) ---
     if (user.twoFactorEnabled) {
-      // User has 2FA enabled. Do NOT issue the final auth cookie.
-      // Instead, issue a short-lived "pre-auth" JWT.
       const preAuthToken = jwt.sign(
         { userId: user._id, type: 'pre-auth' },
         process.env.JWT_SECRET!,
         { expiresIn: '10m' }
       );
-
-      // Send this temporary token to the frontend.
       return NextResponse.json({ twoFactorRequired: true, preAuthToken });
     }
 
+    let recovered = false;
 
-
-    let recovered = false
-
-    // --- NEW: RECOVERY LOGIC ---
+    // --- NEW: RECOVERY LOGIC (Unchanged) ---
     if (user.deactivatedAt) {
-      // This is a recovery attempt. Reactivate the account.
       const client = await clientPromise;
       const db = client.db('whatsyourinfo');
       await db.collection('users').updateOne(
         { _id: new ObjectId(user._id) },
-        { $unset: { deactivatedAt: 1 } } // Remove the deactivation flag
+        { $unset: { deactivatedAt: 1 } }
       );
-
-      recovered = true
+      recovered = true;
     }
 
-    // --- Session Creation Logic ---
+    // --- Session Creation Logic (Unchanged) ---
     const ipAddress = request.headers.get('x-forwarded-for') || request.ip;
     const userAgent = request.headers.get('user-agent');
     const parsedUA = new UAParser(userAgent).getResult();
     const device = `${parsedUA.browser.name} on ${parsedUA.os.name}`;
 
-    // This session identifier will be stored in the cookie/JWT
     const sessionToken = crypto.randomBytes(32).toString('hex');
     const hashedSessionToken = crypto.createHash('sha256').update(sessionToken).digest('hex');
 
@@ -81,10 +80,9 @@ export async function POST(request: NextRequest) {
       lastUsedAt: new Date(),
       ipAddress,
       userAgent: device,
-      is2FAVerified: false, // This session was not verified with 2FA
+      is2FAVerified: false,
     });
 
-    // Issue the final JWT, now including the session token
     const token = generateToken({
       userId: user._id,
       emailVerified: user.emailVerified,
@@ -93,7 +91,6 @@ export async function POST(request: NextRequest) {
       ...(user.twoFactorEnabled ? { tfa_passed: true } : {}),
     });
 
-    // Create response with user data
     const response = NextResponse.json(
       {
         message: 'Login successful',
@@ -112,15 +109,14 @@ export async function POST(request: NextRequest) {
     );
 
     if (!user.emailVerified) {
-      await fetch(`${process.env.FRONTEND_URL || `localhost:3000`}/api/auth/send-otp`, {
+      await fetch(`${process.env.FRONTEND_URL || `http://localhost:3000`}/api/auth/send-otp`, {
         method: "POST",
         body: JSON.stringify({
           email: user.email
         })
-      })
+      });
     }
 
-    // Set HTTP-only cookie
     response.cookies.set('auth-token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

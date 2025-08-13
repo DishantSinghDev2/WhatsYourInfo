@@ -5,6 +5,7 @@ import { ObjectId } from 'mongodb';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { dispatchWebhookEvent } from '@/lib/webhooks';
+import { WebhookEndpoint } from '@/types';
 
 const webhookSchema = z.object({
   url: z.string().url({ message: "Invalid URL format." }),
@@ -124,7 +125,7 @@ export async function PUT(request: NextRequest) {
     }
 
     if (action === 'ping') {
-        await dispatchWebhookEvent('user.connected', user._id, {
+        await dispatchWebhookEvent('user.connected', new ObjectId(user._id), {
           test_event: true,
           message: "Ping from WhatsYour.Info!",
           user: { id: user._id, username: user.username },

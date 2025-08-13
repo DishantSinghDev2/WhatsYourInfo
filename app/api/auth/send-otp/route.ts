@@ -3,6 +3,7 @@ import clientPromise from '@/lib/mongodb';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { sendOtpEmail } from '@/lib/email';
+import { getUserFromToken } from '@/lib/auth';
 
 const sendOtpSchema = z.object({
   email: z.string().email('Valid email is required'),
@@ -10,6 +11,11 @@ const sendOtpSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    const userFromToken = await getUserFromToken(request);
+
+    if (!userFromToken || !userFromToken._id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const body = await request.json();
     const { email } = sendOtpSchema.parse(body);
 

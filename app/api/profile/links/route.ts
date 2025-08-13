@@ -1,9 +1,12 @@
+// app/api/profile/links/route.ts
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromToken } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
-import { z } from 'zod';
 import { ObjectId } from 'mongodb';
+import { z } from 'zod';
 import { cacheDel } from '@/lib/cache';
+import DOMPurify from 'isomorphic-dompurify'; // --- (1) IMPORT THE SANITIZER ---
 
 interface Link {
   _id: ObjectId;
@@ -13,52 +16,49 @@ interface Link {
 
 interface UserDocument {
   _id: ObjectId;
-  links: Link[]; // define `links` as an array
-  // Add other fields if needed
+  links: Link[];
 }
 
-// Schema for a single link
+// --- (2) STRENGTHENED ZOD SCHEMA ---
 const linkSchema = z.object({
-  id: z.string().optional(), // Used for identifying existing links to update
-  title: z.string().min(1, 'Title cannot be empty').max(100),
-  url: z.string().url('Please enter a valid URL'),
+  id: z.string().optional(),
+  title: z.string().trim().min(1, 'Title cannot be empty').max(100),
+  url: z.string().trim().url('Please enter a valid URL'),
 });
 
-// Schema for the entire array of links (for reordering)
 const linksArraySchema = z.array(linkSchema);
 
 // --- POST: Add a new link ---
 export async function POST(request: NextRequest) {
   const user = await getUserFromToken(request);
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
     const body = await request.json();
     const validatedData = linkSchema.parse(body);
 
+    // --- (3) SANITIZE USER INPUT ---
     const newLink = {
       _id: new ObjectId(),
-      title: validatedData.title,
-      url: validatedData.url,
+      title: DOMPurify.sanitize(validatedData.title),
+      url: DOMPurify.sanitize(validatedData.url),
     };
 
     const client = await clientPromise;
     const db = client.db('whatsyourinfo');
-
-    // Use typed collection
-    const usersCollection = db.collection<UserDocument>('users');
-
-    await usersCollection.updateOne(
+    await db.collection<UserDocument>('users').updateOne(
       { _id: new ObjectId(user._id) },
       { $push: { links: newLink } }
     );
+
     await cacheDel(`user:profile:${user.username}`);
-
-
     return NextResponse.json({ message: 'Link added successfully', link: newLink }, { status: 201 });
-  } catch {
+
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 });
+    }
+    console.error('Add link error:', error);
     return NextResponse.json({ error: 'Failed to add link' }, { status: 500 });
   }
 }
@@ -66,47 +66,54 @@ export async function POST(request: NextRequest) {
 // --- PUT: Update an existing link or the entire order ---
 export async function PUT(request: NextRequest) {
   const user = await getUserFromToken(request);
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
     const body = await request.json();
+    const client = await clientPromise;
+    const db = client.db('whatsyourinfo');
 
-    // Check if the body is an array for reordering
+    // Reordering entire list
     if (Array.isArray(body)) {
       const validatedLinks = linksArraySchema.parse(body);
-      const client = await clientPromise;
-      const db = client.db('whatsyourinfo');
+      
+      // --- (4) SANITIZE EACH LINK IN THE ARRAY ---
+      const sanitizedLinks = validatedLinks.map(l => ({
+        _id: new ObjectId(l.id),
+        title: DOMPurify.sanitize(l.title),
+        url: DOMPurify.sanitize(l.url),
+      }));
 
-      // Atomically update the entire array
       await db.collection('users').updateOne(
         { _id: new ObjectId(user._id) },
-        { $set: { links: validatedLinks.map(l => ({ ...l, _id: new ObjectId(l.id) })) } }
+        { $set: { links: sanitizedLinks } }
       );
 
+      await cacheDel(`user:profile:${user.username}`);
       return NextResponse.json({ message: 'Links reordered successfully.' });
     }
 
-    // Otherwise, assume it's a single link update
+    // Updating a single link
     const { id, ...linkData } = linkSchema.parse(body);
-    if (!id) {
-      return NextResponse.json({ error: 'Link ID is required for an update.' }, { status: 400 });
-    }
+    if (!id) return NextResponse.json({ error: 'Link ID is required for an update.' }, { status: 400 });
 
-    const client = await clientPromise;
-    const db = client.db('whatsyourinfo');
+    // --- (5) SANITIZE THE SINGLE LINK DATA ---
+    const sanitizedTitle = DOMPurify.sanitize(linkData.title);
+    const sanitizedUrl = DOMPurify.sanitize(linkData.url);
+
     await db.collection('users').updateOne(
       { _id: new ObjectId(user._id), "links._id": new ObjectId(id) },
-      { $set: { "links.$.title": linkData.title, "links.$.url": linkData.url } }
+      { $set: { "links.$.title": sanitizedTitle, "links.$.url": sanitizedUrl } }
     );
 
     await cacheDel(`user:profile:${user.username}`);
-
-
     return NextResponse.json({ message: 'Link updated successfully.' });
 
-  } catch {
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 });
+    }
+    console.error('Update link(s) error:', error);
     return NextResponse.json({ error: 'Failed to update link(s)' }, { status: 500 });
   }
 }
@@ -117,10 +124,13 @@ export async function DELETE(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { searchParams } = new URL(request.url);
-  const linkId = searchParams.get('id');
-  if (!linkId) {
-    return NextResponse.json({ error: 'Link ID is required' }, { status: 400 });
-  }
+  const unsafeLinkId = searchParams.get('id');
+  if (!unsafeLinkId) return NextResponse.json({ error: 'Link ID is required' }, { status: 400 });
+  
+  // --- (6) SANITIZE THE LINK ID ---
+  const linkId = DOMPurify.sanitize(unsafeLinkId);
+  if (!ObjectId.isValid(linkId)) return NextResponse.json({ error: 'Invalid Link ID format' }, { status: 400 });
+
 
   try {
     const client = await clientPromise;
@@ -131,10 +141,10 @@ export async function DELETE(request: NextRequest) {
     );
 
     await cacheDel(`user:profile:${user.username}`);
-
-
     return NextResponse.json({ message: 'Link removed successfully' });
-  } catch {
+
+  } catch (error) {
+    console.error('Remove link error:', error);
     return NextResponse.json({ error: 'Failed to remove link' }, { status: 500 });
   }
 }
