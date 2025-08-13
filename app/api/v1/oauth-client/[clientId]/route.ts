@@ -2,30 +2,38 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
+import DOMPurify from 'isomorphic-dompurify'; // --- (1) IMPORT THE SANITIZER ---
 
 // GET: Fetches public details for a single OAuth client
 export async function GET(request: NextRequest, { params }: { params: { clientId: string } }) {
   try {
-    const { clientId } = params;
+    const { clientId: unsafeClientId } = params;
 
-    if (!clientId) {
+    // --- (2) VALIDATE AND SANITIZE THE INPUT ---
+    if (!unsafeClientId) {
       return NextResponse.json({ error: 'Client ID is required' }, { status: 400 });
     }
+    // Sanitize the input to strip any characters that could be interpreted as a query object.
+    const sanitizedClientId = DOMPurify.sanitize(unsafeClientId);
 
     const client = await clientPromise;
     const db = client.db('whatsyourinfo');
 
+    // --- (3) SUGGESTION: Use an "allow-list" projection for even better security ---
+    // This explicitly states what is public, preventing accidental leaks if new fields are added.
+    const publicProjection = {
+        name: 1,
+        description: 1,
+        appLogo: 1,
+        homepageUrl: 1,
+        clientId: 1,
+        grantedScopes: 1,
+    };
+
+    // --- (4) USE THE SANITIZED CLIENT ID IN THE QUERY ---
     const oauthClient = await db.collection('oauth_clients').findOne(
-      { clientId },
-      // Projection: Ensure sensitive data like clientSecret is NEVER exposed
-      {
-        projection: {
-          clientSecret: 0,
-          userId: 0,
-          isInternal: 0,
-          isActive: 0
-        }
-      }
+      { clientId: sanitizedClientId },
+      { projection: publicProjection } // Using the safer allow-list projection
     );
 
     if (!oauthClient) {

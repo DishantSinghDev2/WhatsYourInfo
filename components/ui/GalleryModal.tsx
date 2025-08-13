@@ -31,7 +31,7 @@ export default function GalleryModal({
   const currentImg = images[current];
   const src =
     currentImg.url ||
-    `https://whatsyourinfo-media-worker.dishis.workers.dev/${currentImg.key}`;
+    `https://m.wyi.dishis.tech/${currentImg.key}`;
 
   const next = () => setCurrent((prev) => (prev + 1) % images.length);
   const prev = () => setCurrent((prev) => (prev - 1 + images.length) % images.length);
@@ -109,7 +109,7 @@ export default function GalleryModal({
         {images.map((img, idx) => {
           const thumb =
             img.url ||
-            `https://whatsyourinfo-media-worker.dishis.workers.dev/${img.key}`;
+            `https://m.wyi.dishis.tech/${img.key}`;
           return (
             <img
               key={idx}

@@ -210,7 +210,7 @@ const ProfileContent = ({ profile, isPreview }: { profile: UserProfile; isPrevie
                 }}
               >
                 <img
-                  src={item.url || (`https://whatsyourinfo-media-worker.dishis.workers.dev/${item.key}`)}
+                  src={item.url || (`https://m.wyi.dishis.tech/${item.key}`)}
                   alt={item.caption || 'Gallery image'}
                   className="rounded-md object-cover w-full h-28"
                   loading="lazy"

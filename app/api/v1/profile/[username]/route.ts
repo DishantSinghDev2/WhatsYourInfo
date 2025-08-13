@@ -1,22 +1,25 @@
+// app/api/v1/profile/[username]/route.ts
+
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
+import DOMPurify from 'isomorphic-dompurify'; // --- (1) IMPORT THE SANITIZER ---
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { username: string } }
 ) {
   try {
-    const { username } = params;
-
-    if (!username) {
+    // --- (2) VALIDATE AND SANITIZE THE USERNAME INPUT ---
+    if (!params.username) {
       return NextResponse.json({ error: 'Username is required' }, { status: 400 });
     }
+    // Sanitize the input to strip any characters that could be interpreted as a query object.
+    const sanitizedUsername = DOMPurify.sanitize(params.username);
 
     const client = await clientPromise;
     const db = client.db('whatsyourinfo');
 
-    // --- BEST PRACTICE: Use an "allowlist" projection to only fetch public data ---
-    // This is much safer than trying to exclude fields.
+    // This projection is an excellent security practice. No changes needed.
     const publicProjection = {
       username: 1,
       firstName: 1,
@@ -27,16 +30,17 @@ export async function GET(
       spotlightButton: 1,
       design: 1,
       verifiedAccounts: 1,
-      wallet: 1, // We fetch the wallet and its flag...
-      showWalletOnPublic: 1, // ...to decide if it should be public later.
+      wallet: 1,
+      showWalletOnPublic: 1,
       links: 1,
       gallery: 1,
       interests: 1,
-      createdAt: 1, // It's generally safe to show when a profile was created.
+      createdAt: 1,
     };
     
+    // --- (3) USE THE SANITIZED USERNAME FOR THE DATABASE QUERY ---
     const user = await db.collection('users').findOne(
-      { username: username.toLowerCase() },
+      { username: sanitizedUsername.toLowerCase() },
       { projection: publicProjection }
     );
 
@@ -44,31 +48,24 @@ export async function GET(
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
     
-    // --- Post-process the data to create the final public profile ---
-
-    // Conditionally include the wallet based on the user's setting
+    // Your post-processing logic is excellent. No changes needed.
     if (!user.showWalletOnPublic) {
       delete user.wallet;
     }
-    // Always remove the setting flag itself from the public response
     delete user.showWalletOnPublic;
 
-    // Construct the final, safe public profile object
     const publicProfile = {
       ...user,
       _id: user._id.toString(),
-      // Construct the public avatar URL
-      avatar: `https://whatsyour.info/api/avatars/${user.username}`,
-      // Add other helpful public URLs
+      avatar: `https://whatsyour.info/api/v1/avatars/${user.username}`,
       profileUrl: `https://whatsyour.info/${user.username}`,
       subdomainUrl: `https://${user.username}.whatsyour.info`,
     };
 
-    // Set cache headers
     const response = NextResponse.json(publicProfile);
     response.headers.set(
       'Cache-Control',
-      'public, s-maxage=300, stale-while-revalidate=600' // Cache for 5 mins, revalidate up to 10 mins
+      'public, s-maxage=300, stale-while-revalidate=600'
     );
 
     return response;
