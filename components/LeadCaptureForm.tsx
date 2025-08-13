@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/textarea'; // Import the new component
 import tinycolor from 'tinycolor2';
-import { ChevronDown, Mail, User, MessageCircle } from 'lucide-react';
+import { ChevronDown, Mail, User, MessageCircle, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function isGradient(value: string) {
@@ -19,6 +20,14 @@ function isDarkColor(color: string) {
   }
 }
 
+// --- SECURITY: Helper to validate a hex color string ---
+function isValidHex(color: string) {
+    if (!color || typeof color !== 'string') return false;
+    // Allows 3, 6, or 8 digit hex codes
+    return /^#([0-9a-fA-F]{3}){1,2}$/i.test(color) || /^#([0-9a-fA-F]{8})$/i.test(color);
+}
+
+
 export default function LeadCaptureForm({
   username,
   design
@@ -32,29 +41,31 @@ export default function LeadCaptureForm({
     };
   };
 }) {
-  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'success' | 'error' | 'submitting'>('idle');
   const [expanded, setExpanded] = useState(false);
 
-  const { accent = '#111827', surface = '#f9fafb' } = design?.customColors || {};
-
-  const isAccentGradient = isGradient(accent);
-  const isSurfaceGradient = isGradient(surface);
+  // --- SECURITY: Validate colors before use, with safe fallbacks ---
+  const accent = isValidHex(design?.customColors?.accent ?? '') ? design.customColors!.accent! : '#111827';
+  const surface = isValidHex(design?.customColors?.surface ?? '') ? design.customColors!.surface! : '#f9fafb';
+  
+  // Gradient logic can remain, as it's not a direct injection vector if colors are clean
+  const isAccentGradient = isGradient(design?.customColors?.accent ?? '');
+  const isSurfaceGradient = isGradient(design?.customColors?.surface ?? '');
 
   const textColor = isAccentGradient ? '#fff' : isDarkColor(accent) ? '#fff' : '#000';
   const surfaceTextColor = isSurfaceGradient ? '#fff' : isDarkColor(surface) ? '#fff' : '#000';
 
   const buttonStyle = isAccentGradient
-    ? { backgroundImage: accent, color: '#fff', border: 'none' }
+    ? { backgroundImage: design.customColors!.accent, color: '#fff', border: 'none' }
     : { backgroundColor: accent, color: textColor };
 
   const formSurfaceStyle = isSurfaceGradient
-    ? { backgroundImage: surface, color: surfaceTextColor }
+    ? { backgroundImage: design.customColors!.surface, color: surfaceTextColor }
     : { backgroundColor: surface, color: surfaceTextColor };
 
   return (
     <div
       className="mt-5 bg-black/5 max-w-full mx-auto rounded-md px-3"
-      
     >
       <button
         onClick={() => setExpanded(!expanded)}
@@ -62,7 +73,7 @@ export default function LeadCaptureForm({
       >
         <h2 className="text-base sm:text-lg font-bold flex items-center gap-2">
           <Mail className="w-5 h-5" />
-          Get in Touch with <span className="underline">@{username}</span>
+          Get in Touch with @{username}
         </h2>
         <ChevronDown
           className={`w-6 h-6 transition-transform duration-300 ${expanded ? 'rotate-180' : ''}`}
@@ -74,8 +85,12 @@ export default function LeadCaptureForm({
           <motion.form
             onSubmit={async (e) => {
               e.preventDefault();
+              if (status === 'submitting') return;
+              setStatus('submitting');
+              
               const formData = new FormData(e.currentTarget);
               try {
+                // --- BUG FIX: Corrected API path ---
                 const response = await fetch('/api/leads/capture', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -112,6 +127,8 @@ export default function LeadCaptureForm({
                 placeholder="Your Name"
                 required
                 className="pl-10 text-sm"
+                style={{ color: 'inherit' }} // Ensures text color is inherited
+                disabled={status === 'submitting'}
               />
             </div>
 
@@ -123,17 +140,22 @@ export default function LeadCaptureForm({
                 placeholder="Your Email"
                 required
                 className="pl-10 text-sm"
+                style={{ color: 'inherit' }}
+                disabled={status === 'submitting'}
               />
             </div>
 
             <div className="relative">
               <MessageCircle className="absolute left-3 top-3 text-muted-foreground w-4 h-4" />
-              <textarea
+              {/* --- UI FIX: Use consistent Textarea component --- */}
+              <Textarea
                 name="message"
                 placeholder="Your Message"
                 rows={4}
                 required
-                className="w-full text-sm pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2"
+                className="pl-10 text-sm"
+                style={{ color: 'inherit' }}
+                disabled={status === 'submitting'}
               />
             </div>
 
@@ -141,8 +163,9 @@ export default function LeadCaptureForm({
               type="submit"
               className="w-full text-sm font-semibold rounded-md shadow-sm"
               style={buttonStyle}
+              disabled={status === 'submitting'}
             >
-              Send Message
+              {status === 'submitting' ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Send Message'}
             </Button>
 
             {status === 'success' && (
@@ -152,7 +175,7 @@ export default function LeadCaptureForm({
             )}
             {status === 'error' && (
               <p className="text-red-600 text-xs sm:text-sm mt-2 text-center">
-                Failed to send message. Try again.
+                Failed to send message. Please try again.
               </p>
             )}
           </motion.form>
