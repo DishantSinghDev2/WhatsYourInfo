@@ -6,6 +6,7 @@ module.exports = {
     './components/**/*.{ts,tsx}',
     './app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
+    './node_modules/@dishistech/blogs-react/dist/**/*.js',
 	],
   theme: {
     container: {
@@ -22,6 +23,12 @@ module.exports = {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        card: 'hsl(var(--card))',
+        cardForeground: 'hsl(var(--card-foreground))',
+        primary: 'hsl(var(--primary))',
+        primaryForeground: 'hsl(var(--primary-foreground))',
+        muted: 'hsl(var(--muted))',
+        mutedForeground: 'hsl(var(--muted-foreground))',
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
