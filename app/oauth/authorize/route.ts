@@ -1,4 +1,4 @@
-// app/api/oauth/authorize/route.ts
+// app/oauth/authorize/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromToken } from '@/lib/auth';
@@ -6,7 +6,7 @@ import clientPromise from '@/lib/mongodb';
 import crypto from 'crypto';
 import { ObjectId, WithId, Document } from 'mongodb';
 
-// --- NEW: The GET handler that starts the OAuth flow ---
+// --- The GET handler that starts the OAuth flow ---
 export async function GET(request: NextRequest) {
   try {
     // 1. Check if the user is logged in.
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     console.log('oauthClient 0', oauthClient)
 
-    // 4. Check if the user has already given consent for these scopes.
+    // 4. Check if consent can be skipped.
     const existingAuthorization = await db.collection('oauth_authorizations').findOne({
       userId: user._id,
       clientId: oauthClient._id,
@@ -60,13 +60,18 @@ export async function GET(request: NextRequest) {
       : [];
 
     const hasConsent = existingAuthorization && requestedScopes.every(s => existingAuthorization.grantedScopes.includes(s));
+    
+    // --- MODIFICATION START ---
+    // Automatically skip consent if the app is internal and operated by us.
+    const isTrustedInternalApp = oauthClient.isInternal && oauthClient.opByWYI;
 
-    // If consent already exists, skip the consent screen and grant the code directly.
-    if (hasConsent) {
+    if (hasConsent || isTrustedInternalApp) {
       return generateCodeAndRedirect(new ObjectId(user._id), oauthClient, redirectUri, state, requestedScopes);
     }
+    // --- MODIFICATION END ---
 
-    // 5. If no prior consent, redirect to the consent page.
+
+    // 5. If no prior consent and not a trusted app, redirect to the consent page.
     // Pass all the necessary info for the consent page to render.
     const consentUrl = new URL('/oauth/consent', request.url);
     consentUrl.search = searchParams.toString(); // Forward all original params
@@ -79,7 +84,7 @@ export async function GET(request: NextRequest) {
 }
 
 
-// --- NEW: Helper function to avoid duplicating code ---
+// --- Helper function to avoid duplicating code ---
 async function generateCodeAndRedirect(userId: ObjectId, oauthClient: WithId<Document>, redirectUri: string, state: string | null, scopes: string[]) {
   const client = await clientPromise;
   const db = client.db('whatsyourinfo');

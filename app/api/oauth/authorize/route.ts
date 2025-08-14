@@ -1,3 +1,4 @@
+// app/api/oauth/authorize/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromToken } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
