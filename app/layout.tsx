@@ -3,7 +3,7 @@ import { Nunito } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
 import { GoogleAnalytics } from "@next/third-parties/google"
-import { ClientDITBlogsProvider } from '@/lib/ditblogs-provider';
+// import { ClientDITBlogsProvider } from '@/lib/ditblogs-provider';
 
 
 const inter = Nunito({ subsets: ['latin'] });
@@ -77,9 +77,9 @@ export default function RootLayout({
     <html lang="en" className="h-full">
       <body className={`${inter.className}`}>
 
-        <ClientDITBlogsProvider>
+        {/* <ClientDITBlogsProvider> */}
           {children}
-        </ClientDITBlogsProvider>
+        {/* </ClientDITBlogsProvider> */}
         <Toaster
           position="top-center"
           toastOptions={{
