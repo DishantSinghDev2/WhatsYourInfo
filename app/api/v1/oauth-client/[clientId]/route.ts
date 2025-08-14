@@ -28,6 +28,9 @@ export async function GET(request: NextRequest, { params }: { params: { clientId
         homepageUrl: 1,
         clientId: 1,
         grantedScopes: 1,
+        users: 1,
+        opByWYI: 1,
+        createdAt: 1
     };
 
     // --- (4) USE THE SANITIZED CLIENT ID IN THE QUERY ---
