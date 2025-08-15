@@ -7,6 +7,7 @@ import { CommentForm } from "@/components/blog/CommentForm"; // <-- Import form
 import { Comment } from "@dishistech/blogs-sdk";
 import { Badge } from "@/components/ui/Badge";
 import { Calendar } from "lucide-react";
+import './blog.scss'
 
 // Utility function for formatting dates
 function formatDate(dateString: string) {
@@ -75,7 +76,7 @@ export default async function SinglePostPage({ params }: { params: { slug: strin
                 
                 {/* Render post content */}
                 <div
-                    className="prose lg:prose-xl mx-auto"
+                    className="prose lg:prose-xl mx-auto ditb"
                     dangerouslySetInnerHTML={{ __html: post.content || '' }}
                 />
 
