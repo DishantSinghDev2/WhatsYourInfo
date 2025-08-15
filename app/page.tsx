@@ -50,27 +50,6 @@ const features = [
 ];
 
 const testimonials = [
-  {
-    name: 'Sarah Chen',
-    role: 'Senior Developer',
-    company: 'TechCorp',
-    content: 'What\'sYour.Info has become our go-to identity provider. The API is clean and the SSO integration was seamless.',
-    avatar: 'https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop&crop=face',
-  },
-  {
-    name: 'Marcus Johnson',
-    role: 'Product Manager',
-    company: 'StartupXYZ',
-    content: 'The AI bio generator is incredible. It helped me create a professional profile in minutes instead of hours.',
-    avatar: 'https://images.pexels.com/photos/1681010/pexels-photo-1681010.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop&crop=face',
-  },
-  {
-    name: 'Emily Rodriguez',
-    role: 'Freelance Designer',
-    company: 'Independent',
-    content: 'Love the custom domain feature! My clients can easily find me at emilyrodriguez.com, powered by What\'sYour.Info.',
-    avatar: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=150&h=150&fit=crop&crop=face',
-  },
 ];
 
 export default function HomePage() {
@@ -214,7 +193,7 @@ export default function HomePage() {
               See what people are saying about What'sYour.Info
             </p>
           </div>
-          <div className="mt-16 grid grid-cols-1 gap-8 lg:grid-cols-3">
+          {/*<div className="mt-16 grid grid-cols-1 gap-8 lg:grid-cols-3">
             {testimonials.map((testimonial, index) => (
               <Card key={index} className="border-gray-200">
                 <CardContent className="pt-6">
@@ -235,7 +214,7 @@ export default function HomePage() {
                 </CardContent>
               </Card>
             ))}
-          </div>
+          </div> */}
         </div>
       </section>
 
