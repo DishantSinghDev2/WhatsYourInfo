@@ -87,7 +87,7 @@ export async function middleware(request: NextRequest) {
     ['/login', '/register', '/', '/verify-otp', '/verify-2fa'].includes(pathname)
   ) {
     const callback = searchParams.get('callbackUrl');
-    url.pathname = callback && callback.startsWith('/') ? callback : '/profile';
+    url.pathname = callback ? callback : '/profile';
     return NextResponse.redirect(url);
   }
 
