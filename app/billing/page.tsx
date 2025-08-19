@@ -124,7 +124,7 @@ export default function BillingPage() {
                     <CardContent className="space-y-4">
                       <div className="flex justify-between items-baseline">
                         <span className="text-lg font-semibold text-gray-800">Current Plan</span>
-                        <span className={`px-2 py-1 text-xs font-medium text-green-800 bg-green-100 rounded-full capitalize`}>{details.plan.status}</span>
+                        <span className={`px-2 py-1 text-xs font-medium text-green-800 bg-green-100 rounded-full capitalize`}>{details.plan.status === 'authenticated' ? 'Free Trial' : details.plan.status}</span>
                       </div>
                       <div className="text-sm space-y-2 pt-4 border-t">
                         <div className="flex justify-between"><span className="text-gray-500">Provider:</span> <span className="font-medium capitalize">{details.plan.provider}</span></div>
