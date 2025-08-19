@@ -7,7 +7,12 @@ import { ObjectId } from 'mongodb';
 // --- Product-Specific Handler for WYI Pro ---
 async function handleWyiSubscription(db: any, userId: ObjectId, subscriptionData: any) {
   const { status, id } = subscriptionData;
-  const isPro = ['active', 'activated', 'resumed'].includes(status);
+  
+  // --- KEY CHANGE HERE ---
+  // Added 'authenticated' to the list. When a trial starts, the subscription
+  // status becomes 'authenticated'. This ensures the user gets Pro access
+  // immediately when their trial begins.
+  const isPro = ['active', 'activated', 'resumed', 'authenticated'].includes(status);
 
   await db.collection('users').updateOne(
     { _id: userId },
@@ -15,11 +20,11 @@ async function handleWyiSubscription(db: any, userId: ObjectId, subscriptionData
         isProUser: isPro,
         subscriptionProvider: 'razorpay',
         subscriptionId: id,
-        subscriptionStatus: status,
+        subscriptionStatus: status, // This will now correctly store 'authenticated'
       } 
     }
   );
-  console.log(`Updated WYI_PRO status for user ${userId} to ${isPro}`);
+  console.log(`Updated WYI_PRO status for user ${userId} to ${isPro} (status: ${status})`);
 }
 
 // --- Product-Specific Handler for DITBlogs ---
