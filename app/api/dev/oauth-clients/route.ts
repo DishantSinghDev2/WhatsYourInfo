@@ -17,7 +17,6 @@ const createClientSchema = z.object({
 });
 
 
-
 export async function GET(request: NextRequest) {
     try {
         const user = await getUserFromToken(request);
@@ -209,7 +208,8 @@ export async function POST(request: NextRequest) {
             clientId,
             clientSecret,
             redirectUris: sanitizedRedirectUris,
-            grantedScopes: validatedData.grantedScopes?.push('webhook:verify') || [],
+            // --- CORRECTED LINE ---
+            grantedScopes: [...(validatedData.grantedScopes || []), 'webhook:verify'],
             isInternal: validatedData.isInternal || false,
             opByWYI: validatedData.opByWYI || false,
             users: 0,
