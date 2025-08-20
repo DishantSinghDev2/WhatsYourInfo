@@ -59,8 +59,13 @@ export async function GET(request: NextRequest) {
       ? scope.split(' ').filter(s => /^[a-zA-Z0-9:_-]{1,64}$/.test(s)).slice(0, 10)
       : [];
 
-    const hasConsent = existingAuthorization && requestedScopes.every(s => existingAuthorization.grantedScopes.includes(s));
-    
+    // --- Safe check ---
+    const existingScopes = existingAuthorization && Array.isArray(existingAuthorization.grantedScopes)
+      ? existingAuthorization.grantedScopes
+      : [];
+
+    const hasConsent = existingAuthorization && requestedScopes.every(s => existingScopes.includes(s));
+
     // --- MODIFICATION START ---
     // Automatically skip consent if the app is internal and operated by us.
     const isTrustedInternalApp = oauthClient.isInternal && oauthClient.opByWYI;
