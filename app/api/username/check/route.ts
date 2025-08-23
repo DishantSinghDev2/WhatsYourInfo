@@ -7,7 +7,9 @@ import DOMPurify from 'isomorphic-dompurify'; // --- (1) IMPORT THE SANITIZER --
 const usernameCheckSchema = z.string()
   .min(3, { message: "Username must be at least 3 characters" })
   .max(20, { message: "Username cannot exceed 20 characters" })
-  .regex(/^[a-zA-Z0-9_-]+$/, { message: "Username can only contain letters, numbers, hyphens, and underscores." });
+  .regex(/^[a-zA-Z][a-zA-Z0-9_-]*$/, {
+    message: "Username must start with a letter and can only contain letters, numbers, hyphens, and underscores."
+  });
 
 // --- NEW: List of reserved usernames that cannot be registered ---
 const RESERVED_USERNAMES = new Set([
@@ -31,7 +33,7 @@ const RESERVED_USERNAMES = new Set([
 
   // Generic & Potentially Confusing
   'assets', 'static', 'media', 'download', 'search', 'explore', 'root', 'user', 'users',
-  'whatsyourinfo', 'info', 'whatsyour'
+  'whatsyourinfo', 'info', 'whatsyour', 'dit', 'ditmail', 'ditblogs', 'dishistech', 'dishistechnologies', 'dishistechnology', 'dishis-tech', 'dishis-technologies', 'dishis-technology', 'fce', 'git'
 ]);
 
 /**
