@@ -14,9 +14,9 @@ export async function POST(request: NextRequest) {
   try {
 
     const userFromToken = await getUserFromToken(request);
-        if (!userFromToken || !userFromToken._id) {
-          return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+    if (!userFromToken || !userFromToken._id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const body = await request.json();
     const validatedData = verifyOtpSchema.parse(body);
 

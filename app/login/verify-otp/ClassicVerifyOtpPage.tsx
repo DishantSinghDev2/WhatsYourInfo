@@ -18,17 +18,10 @@ export default function ClassicVerifyOtpPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [isResending, setIsResending] = useState(false);
     const [error, setError] = useState('');
-    const [email, setEmail] = useState('');
     const [callbackUrl, setCallbackUrl] = useState<string | null>(null);
     
     // --- All original logic is identical ---
     useEffect(() => {
-        const emailFromQuery = searchParams.get('email');
-        if (emailFromQuery) setEmail(emailFromQuery);
-        else {
-            toast.error('Email not found.');
-            router.push('/register?view=classic');
-        }
         const callback = searchParams.get('callbackUrl');
         if (callback) setCallbackUrl(callback);
     }, [searchParams, router]);
@@ -45,7 +38,7 @@ export default function ClassicVerifyOtpPage() {
             const response = await fetch('/api/auth/verify-otp', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, otp: code }),
+                body: JSON.stringify({ otp: code }),
             });
             const data = await response.json();
             if (response.ok) {
@@ -79,7 +72,7 @@ export default function ClassicVerifyOtpPage() {
             const response = await fetch('/api/auth/send-otp', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email }),
+                body: JSON.stringify({  }),
             });
             const data = await response.json();
             if (response.ok) toast.success('A new OTP has been sent!');
@@ -90,7 +83,7 @@ export default function ClassicVerifyOtpPage() {
             setIsResending(false);
         }
     };
-    const newViewUrl = `/login/verify-otp?email=${email}${callbackUrl ? `&callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`;
+    const newViewUrl = `/login/verify-otp?view=classic${callbackUrl ? `&callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`;
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -100,7 +93,7 @@ export default function ClassicVerifyOtpPage() {
                         <KeyRound className="mx-auto h-12 w-12 text-blue-600" />
                         <h2 className="mt-6 text-3xl font-bold tracking-tight text-gray-900">Check your email</h2>
                         <p className="mt-2 text-sm text-gray-600">
-                            We've sent a 6-digit code to <span className="font-medium text-gray-900">{email}</span>.
+                            We've sent a 6-digit code to <span className="font-medium text-gray-900">your email</span>.
                         </p>
                     </div>
                     <Card className="border-gray-200 shadow-lg">

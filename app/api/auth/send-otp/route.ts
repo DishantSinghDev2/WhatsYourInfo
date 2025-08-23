@@ -4,10 +4,6 @@ import { getUserFromToken } from '@/lib/auth';
 import { generateAndSendOtp } from '@/lib/otp';
 import { ObjectId } from 'mongodb';
 
-const sendOtpSchema = z.object({
-  email: z.string().email('Valid email is required'),
-});
-
 export async function POST(request: NextRequest) {
   try {
     const userFromToken = await getUserFromToken(request);
