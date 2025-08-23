@@ -45,7 +45,6 @@ export async function getUserFromToken(request: NextRequest): Promise<User | nul
       { projection: { password: 0 } }
     );
 
-
     return user as unknown as User;
   } catch (error) {
     console.error('Auth error:', error);

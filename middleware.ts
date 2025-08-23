@@ -27,7 +27,7 @@ export async function middleware(request: NextRequest) {
   // Simplified because `/login` and `/register` now cover their sub-routes.
   const publicRoutes = [
     '/', '/login', '/register', '/pricing', '/contact',
-    '/terms', '/privacy', '/blog', '/docs', '/tools', '/go', '/deleted', '/qr'
+    '/terms', '/privacy', '/blog', '/docs', '/tools', '/go', '/deleted', '/qr', '/logout'
   ];
 
   // The `startsWith` check correctly handles paths like `/login/2fa` and `/login/verify-otp`
@@ -43,11 +43,10 @@ export async function middleware(request: NextRequest) {
 
   // --- 4. Auth Verification (Unchanged) ---
   const decodedToken = await verifyAuthInEdge(request);
-  console.log(decodedToken)
   const isLoggedIn = !!decodedToken?.userId;
-  const isEmailVerified = decodedToken?.emailVerified === true;
-  const isTFAEnabled = decodedToken?.tfa_enabled === true;
-  const isTFAPassed = decodedToken?.tfa_passed === true;
+  const isEmailVerified = decodedToken?.emailVerified === true || false;
+  const isTFAEnabled = decodedToken?.tfa_enabled === true || false;
+  const isTFAPassed = decodedToken?.tfa_passed === true || false;
 
   // --- 5. Unauthenticated & Private Route → Redirect to Login (Unchanged) ---
   if (!isLoggedIn && !isPublicRoute) {

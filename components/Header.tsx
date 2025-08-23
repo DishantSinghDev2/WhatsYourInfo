@@ -69,19 +69,6 @@ export default function Header() {
     fetchUserProfile();
   }, []);
 
-  const handleLogout = async () => {
-    setIsLoading(true);
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      toast.success('Logged out successfully!');
-      router.refresh()
-      setUser(null);
-    } catch {
-      toast.error('Logout failed.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <header className="bg-white shadow-sm max-h-screen border-b border-gray-200 sticky top-0 z-[51]">
@@ -177,7 +164,7 @@ export default function Header() {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={handleLogout}
+                    onClick={() => router.push('/logout')}
                     disabled={isLoading}
                     className="flex items-center text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
                   >
@@ -300,7 +287,7 @@ export default function Header() {
                         <Button
                           variant="ghost"
                           className="w-full justify-start -mx-3 block rounded-lg px-3 py-2.5 text-base font-semibold leading-7 text-red-600 hover:bg-red-50"
-                          onClick={handleLogout}
+                          onClick={() => router.push('/logout')}
                           disabled={isLoading}
                         >
                           {isLoading ? 'Logging out...' : 'Logout'}
