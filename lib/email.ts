@@ -180,8 +180,8 @@ export async function sendOtpEmail({ to, otp, name }: SendOtpEmailOptions) {
 export async function sendVerificationEmail(to: string, name: string) {
   const verificationToken = crypto.randomBytes(32).toString('hex');
   await clientPromise.then(client => client.db('whatsyourinfo').collection('users').updateOne(
-      { email: to },
-      { $set: { emailVerificationToken: verificationToken, emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000) } }
+    { email: to },
+    { $set: { emailVerificationToken: verificationToken, emailVerificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000) } }
   ));
   const verificationUrl = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${verificationToken}`;
   const subject = 'Verify Your Email Address';
@@ -323,12 +323,13 @@ export async function sendPasswordResetEmail(to: string, name: string) {
 
   // 4. Update the user record in the database with the hashed token and expiry
   await clientPromise.then(client => client.db('whatsyourinfo').collection('users').updateOne(
-      { email: to },
-      { $set: { 
-          passwordResetToken: hashedToken,
-          passwordResetExpires: tokenExpiry 
-        } 
+    { email: to },
+    {
+      $set: {
+        passwordResetToken: hashedToken,
+        passwordResetExpires: tokenExpiry
       }
+    }
   ));
 
   // 5. Send the email with the un-hashed token in the link
