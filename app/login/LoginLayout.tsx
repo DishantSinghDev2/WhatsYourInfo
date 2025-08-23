@@ -1,31 +1,20 @@
+// app/login/LoginLayout.tsx - A small text update
+
 import Image from 'next/image';
 
-// This is now a regular component, not a special Next.js layout file.
-export default function LoginLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function LoginLayout({ children }: { children: React.ReactNode; }) {
   return (
     <div className="min-h-screen w-full grid grid-cols-1 lg:grid-cols-2">
-      {/* --- Left Side: Banner --- */}
       <div className="hidden lg:flex flex-col items-center justify-center bg-blue-600 p-12 text-white text-center">
-        <Image
-          src="/logo-login.png" // Using your updated logo path
-          alt="WhatsYour.Info Logo"
-          width={80}
-          height={80}
-          className="filter brightness-0 invert"
-        />
+        <Image src="/logo-login.png" alt="WhatsYour.Info Logo" width={80} height={80} className="filter brightness-0 invert" />
         <h1 className="mt-8 text-4xl font-bold tracking-tight">
           Your Digital Identity, Perfected.
         </h1>
+        {/* Updated Text: More generic for login/register */}
         <p className="mt-4 max-w-lg text-lg text-blue-100">
-          Manage your profile, connect with others, and control your information with privacy you can trust.
+          Join a community of professionals. Manage your profile, connect with others, and control your information with privacy you can trust.
         </p>
       </div>
-
-      {/* --- Right Side: Form Area --- */}
       <div className="flex flex-col items-center justify-center w-full bg-gray-50 p-6 sm:p-8">
         <div className="w-full max-w-md">
           <div className="text-center mb-8 lg:hidden">

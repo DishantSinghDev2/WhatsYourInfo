@@ -1,13 +1,33 @@
-// app/register/page.tsx
-import { Suspense } from 'react';
-import RegisterPage from './RegisterClient';
+'use client';
 
-export default function Register() {
+import { Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+
+import LoginLayout from '../login/LoginLayout'; // Reusing the same layout
+import NewRegisterPage from './NewRegisterPage';
+import ClassicRegisterPage from './ClassicRegisterPage';
+
+function RegisterViewSwitcher() {
+  const searchParams = useSearchParams();
+  const view = searchParams.get('view');
+
+  if (view === 'classic') {
+    // Render the original single-page form directly
+    return <ClassicRegisterPage />;
+  }
+
+  // By default, render the new multi-step experience inside the shared layout
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-screen w-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>}>
-      <RegisterPage />
+    <LoginLayout>
+      <NewRegisterPage />
+    </LoginLayout>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterViewSwitcher />
     </Suspense>
   );
 }
