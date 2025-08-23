@@ -7,6 +7,7 @@ import jwt from 'jsonwebtoken';
 import { UAParser } from 'ua-parser-js';
 import crypto from 'crypto';
 import DOMPurify from 'isomorphic-dompurify'; // --- (1) IMPORT THE SANITIZER ---
+import { generateAndSendOtp } from '@/lib/otp';
 
 // --- (2) STRENGTHEN THE ZOD SCHEMA ---
 // Add .trim() to automatically remove leading/trailing whitespace.
@@ -109,12 +110,8 @@ export async function POST(request: NextRequest) {
     );
 
     if (!user.emailVerified) {
-      await fetch(`${process.env.FRONTEND_URL || `http://localhost:3000`}/api/auth/send-otp`, {
-        method: "POST",
-        body: JSON.stringify({
-          email: user.email
-        })
-      });
+      // Call the logic directly instead of using fetch
+      await generateAndSendOtp(new ObjectId(user._id), user.email, user.username);
     }
 
     response.cookies.set('auth-token', token, {

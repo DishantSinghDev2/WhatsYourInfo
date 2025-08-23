@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateToken } from '@/lib/auth';
+import { generateToken, getUserFromToken } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
 import { z } from 'zod';
 import DOMPurify from 'isomorphic-dompurify'; // --- (1) IMPORT THE SANITIZER ---
@@ -7,18 +7,22 @@ import DOMPurify from 'isomorphic-dompurify'; // --- (1) IMPORT THE SANITIZER --
 // --- (2) STRENGTHEN THE ZOD SCHEMA ---
 // Add .trim() to both fields to handle extraneous whitespace
 const verifyOtpSchema = z.object({
-  email: z.string().trim().email('Valid email is required'),
   otp: z.string().trim().length(6, 'OTP must be 6 digits'),
 });
 
 export async function POST(request: NextRequest) {
   try {
+
+    const userFromToken = await getUserFromToken(request);
+        if (!userFromToken || !userFromToken._id) {
+          return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
     const body = await request.json();
     const validatedData = verifyOtpSchema.parse(body);
 
     // --- (3) SANITIZE THE INPUTS ---
     // Sanitize the email with DOMPurify
-    const sanitizedEmail = DOMPurify.sanitize(validatedData.email);
+    const sanitizedEmail = DOMPurify.sanitize(userFromToken.email);
 
     // Sanitize the OTP by removing any non-digit characters.
     // This ensures only a clean numeric string is used for the query.

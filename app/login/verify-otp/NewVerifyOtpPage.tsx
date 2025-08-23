@@ -17,17 +17,10 @@ export default function NewVerifyOtpPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [isResending, setIsResending] = useState(false);
     const [error, setError] = useState('');
-    const [email, setEmail] = useState('');
     const [callbackUrl, setCallbackUrl] = useState<string | null>(null);
 
     // --- All original logic is preserved ---
     useEffect(() => {
-        const emailFromQuery = searchParams.get('email');
-        if (emailFromQuery) setEmail(emailFromQuery);
-        else {
-            toast.error('Email not found. Please try again.');
-            router.push('/register');
-        }
         const callback = searchParams.get('callbackUrl');
         if (callback) setCallbackUrl(callback);
     }, [searchParams, router]);
@@ -44,7 +37,7 @@ export default function NewVerifyOtpPage() {
             const response = await fetch('/api/auth/verify-otp', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, otp: code }),
+                body: JSON.stringify({ otp: code }),
             });
             const data = await response.json();
             if (response.ok) {
@@ -78,7 +71,7 @@ export default function NewVerifyOtpPage() {
             const response = await fetch('/api/auth/send-otp', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email }),
+                body: JSON.stringify({  }),
             });
             const data = await response.json();
             if (response.ok) toast.success('A new OTP has been sent!');
@@ -90,7 +83,7 @@ export default function NewVerifyOtpPage() {
         }
     };
 
-    const classicViewUrl = `/login/verify-otp?view=classic&email=${email}${callbackUrl ? `&callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`;
+    const classicViewUrl = `/login/verify-otp?view=classic${callbackUrl ? `&callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`;
 
     return (
         <>
@@ -105,7 +98,7 @@ export default function NewVerifyOtpPage() {
                         <CardTitle className="mt-4 text-2xl font-bold">Check your email</CardTitle>
                         <CardDescription>
                             We sent a 6-digit code to <br />
-                            <span className="font-medium text-gray-800">{email}</span>
+                            <span className="font-medium text-gray-800">your email</span>
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
