@@ -7,7 +7,7 @@ export async function middleware(request: NextRequest) {
   const url = request.nextUrl.clone();
   const { pathname, searchParams } = url;
 
-  // --- 1. Rewrite .card URLs to /card/:username ---
+  // --- 1. Rewrite .card URLs (Unchanged) ---
   const cardMatch = pathname.match(/^\/([\w-]+)\.card$/);
   if (cardMatch) {
     const username = cardMatch[1];
@@ -15,7 +15,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.rewrite(url);
   }
 
-  // --- 2. Skip non-page requests ---
+  // --- 2. Skip non-page requests (Unchanged) ---
   const isStaticOrApi =
     pathname.startsWith('/api/') ||
     pathname.startsWith('/_next/') ||
@@ -23,81 +23,87 @@ export async function middleware(request: NextRequest) {
     /\.\w+$/.test(pathname);
   if (isStaticOrApi) return NextResponse.next();
 
-  // --- 3. Public routes (allow without login) ---
+  // --- 3. Public routes (UPDATED) ---
+  // Simplified because `/login` and `/register` now cover their sub-routes.
   const publicRoutes = [
     '/', '/login', '/register', '/pricing', '/contact',
-    '/verify-email', '/verify-otp', '/verify-2fa',
     '/terms', '/privacy', '/blog', '/docs', '/tools', '/go', '/deleted', '/qr'
   ];
 
+  // The `startsWith` check correctly handles paths like `/login/2fa` and `/login/verify-otp`
   const isPublicRoute = publicRoutes.some(route =>
     pathname === route || pathname.startsWith(`${route}/`)
   );
-  // --- 3.1: Allow public user profile paths like /dishant ---
-  const isRootLevelUsername = /^\/[\w-]+$/.test(pathname) && !isPublicRoute;
 
+  // --- 3.1: Allow public user profile paths (Unchanged) ---
+  const isRootLevelUsername = /^\/[\w-]+$/.test(pathname) && !isPublicRoute;
   if (isRootLevelUsername) {
-    return NextResponse.next(); // Allow access to public profiles without auth
+    return NextResponse.next();
   }
 
-
-  // --- 4. Auth Verification ---
+  // --- 4. Auth Verification (Unchanged) ---
   const decodedToken = await verifyAuthInEdge(request);
   const isLoggedIn = !!decodedToken?.userId;
   const isEmailVerified = decodedToken?.emailVerified === true;
   const isTFAEnabled = decodedToken?.tfa_enabled === true;
   const isTFAPassed = decodedToken?.tfa_passed === true;
 
-  // --- 5. Unauthenticated & Private Route → Redirect to Login ---
+  // --- 5. Unauthenticated & Private Route → Redirect to Login (Unchanged) ---
   if (!isLoggedIn && !isPublicRoute) {
     url.pathname = '/login';
     url.searchParams.set('callbackUrl', pathname);
     return NextResponse.redirect(url);
   }
 
-  // --- 6. Logged in but Email Not Verified ---
-  if (isLoggedIn && !isEmailVerified && pathname !== '/verify-otp') {
-    url.pathname = '/verify-otp';
+  // --- 6. Logged in but Email Not Verified (UPDATED) ---
+  // Redirects to the new OTP path and checks against it to prevent a redirect loop.
+  if (isLoggedIn && !isEmailVerified && pathname !== '/login/verify-otp') {
+    url.pathname = '/login/verify-otp'; // <-- Changed path
     url.searchParams.set('callbackUrl', pathname);
-    url.searchParams.set('email', decodedToken.email)
+    if (decodedToken?.email) {
+      url.searchParams.set('email', decodedToken.email);
+    }
     return NextResponse.redirect(url);
   }
 
-  // --- 7. Logged in, TFA Enabled, But Not Passed ---
-  if (isLoggedIn && isEmailVerified && isTFAEnabled && !isTFAPassed && pathname !== '/verify-2fa') {
-    url.pathname = '/verify-2fa';
+  // --- 7. Logged in, TFA Enabled, But Not Passed (UPDATED) ---
+  // Redirects to the new 2FA path and checks against it.
+  if (isLoggedIn && isEmailVerified && isTFAEnabled && !isTFAPassed && pathname !== '/login/2fa') {
+    url.pathname = '/login/2fa'; // <-- Changed path
 
     if (decodedToken?.preAuthToken) {
       url.searchParams.set('token', decodedToken.preAuthToken);
     }
 
-    const callback = searchParams.get('callbackUrl');
+    // Preserve the original callbackUrl if it exists
+    const callback = searchParams.get('callbackUrl') || pathname;
     if (callback && callback.startsWith('/')) {
-      url.searchParams.set('callbackUrl', callback);
+        url.searchParams.set('callbackUrl', callback);
     }
 
     return NextResponse.redirect(url);
   }
 
-  // --- 8. User fully authenticated, but visiting public route like /login ---
+  // --- 8. User fully authenticated, but visiting auth routes (UPDATED) ---
+  // Now checks if the path starts with `/login` or `/register`.
+  const authFlowRoutes = ['/login', '/register'];
   if (
     isLoggedIn &&
     isEmailVerified &&
     (!isTFAEnabled || isTFAPassed) &&
-    ['/login', '/register', '/', '/verify-otp', '/verify-2fa'].includes(pathname)
+    (pathname === '/' || authFlowRoutes.some(p => pathname.startsWith(p)))
   ) {
     const callback = searchParams.get('callbackUrl');
-    url.pathname = callback ? callback : '/profile';
+    url.pathname = callback && callback.startsWith('/') ? callback : '/profile';
+    url.search = ''; // Clear search params on redirect to profile
     return NextResponse.redirect(url);
   }
 
+  // --- Subdomain and Security Headers (Unchanged) ---
   if (hostname.endsWith('.whatsyour.info') && !hostname.startsWith('www.')) {
-    const subdomain = hostname.split('.')[0]; // extract `username` from `username.whatsyour.info`
-
-    // Rewriting to: /[username]/[original pathname]
+    const subdomain = hostname.split('.')[0];
     const newPath = `/${subdomain}${url.pathname}`;
     url.pathname = newPath;
-
     return NextResponse.rewrite(url);
   }
 
@@ -115,7 +121,6 @@ export async function middleware(request: NextRequest) {
     form-action 'self';
   `.replace(/\s+/g, ' ').trim();
 
-  // put nonce into request headers so Next renderer can apply it to internal inline scripts
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-nonce', nonce);
   requestHeaders.set('Content-Security-Policy', csp);
@@ -126,7 +131,6 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  // also add headers to response (browser must see CSP)
   res.headers.set('Content-Security-Policy', csp);
   res.headers.set('x-nonce', nonce);
   res.headers.set('X-Frame-Options', 'DENY');
