@@ -10,7 +10,7 @@ export default function LoginLayout({
       {/* --- Left Side: Banner (Shared across login and 2FA) --- */}
       <div className="hidden lg:flex flex-col items-center justify-center bg-blue-600 p-12 text-white text-center">
         <Image
-          src="/logo.png"
+          src="/logo-login.png"
           alt="WhatsYour.Info Logo"
           width={80}
           height={80}
