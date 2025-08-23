@@ -13,15 +13,18 @@ function RegisterViewSwitcher() {
 
   // if (view === 'classic') {
     // Render the original single-page form directly
-    return <ClassicRegisterPage />;
-  // }
-
-  // // By default, render the new multi-step experience inside the shared layout
-  // return (
-  //   <LoginLayout>
-  //     <NewRegisterPage />
-  //   </LoginLayout>
-  // );
+    // }
+    
+    // // By default, render the new multi-step experience inside the shared layout
+    if (view == 'new'){
+      
+    return (
+      <LoginLayout>
+        <NewRegisterPage />
+      </LoginLayout>
+    );
+  }
+  return <ClassicRegisterPage />;
 }
 
 export default function RegisterPage() {

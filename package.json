@@ -47,7 +47,7 @@
     "clsx": "^2.1.1",
     "eslint-config-next": "^15.4.5",
     "file-saver": "^2.0.5",
-    "framer-motion": "^11.15.0",
+    "framer-motion": "^12.23.12",
     "html-to-image": "^1.11.13",
     "input-otp": "^1.4.2",
     "install": "^0.13.0",
