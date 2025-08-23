@@ -111,54 +111,48 @@ export default function NewLoginPage() {
   }
 
   return (
-    <div className="min-h-screen w-full grid grid-cols-1 lg:grid-cols-2">
-      <div className="hidden lg:flex flex-col items-center justify-center bg-blue-600 p-12 text-white text-center">
-        <Image src="/logo.svg" alt="WhatsYour.Info Logo" width={80} height={80} className="filter brightness-0 invert"/>
-        <h1 className="mt-8 text-4xl font-bold tracking-tight">Your Digital Identity, Perfected.</h1>
-        <p className="mt-4 max-w-lg text-lg text-blue-100">Sign in to seamlessly manage your profile, connect with others, and control your information with privacy you can trust.</p>
+    <>
+      {view === 'login' ? (
+        <Card className="border-gray-200 shadow-xl">
+          <CardHeader className="text-center">
+            <CardTitle className="text-3xl font-bold tracking-tight text-gray-900">Welcome Back</CardTitle>
+            <CardDescription>Sign in to continue to your dashboard</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* --- Form inputs and buttons --- */}
+              <div>
+                 <label htmlFor="email">Email Address</label>
+                 <Input id="email" value={formData.email} onChange={(e) => handleInputChange('email', e.target.value)} />
+              </div>
+              <div>
+                 <label htmlFor="password">Password</label>
+                 <Input id="password" type="password" value={formData.password} onChange={(e) => handleInputChange('password', e.target.value)} />
+              </div>
+              <div className="text-sm text-right">
+                <button type="button" onClick={() => setView('forgot-password')} className="font-medium text-blue-600 hover:text-blue-500">Forgot your password?</button>
+              </div>
+              <Button type="submit" className="w-full text-base py-3" disabled={isLoading}>
+                {isLoading ? 'Signing In...' : 'Sign In'}
+              </Button>
+            </form>
+            <div className="mt-6 text-center text-sm">
+              <span className="text-gray-500">Don't have an account? </span>
+              <Link href={`/register${callbackUrl ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`} className="font-medium text-blue-600 hover:text-blue-500">
+                Create one
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <ForgotPasswordForm onBackToLogin={() => setView('login')} />
+      )}
+
+      <div className="text-center mt-8">
+        <Link href={`/login?view=classic${callbackUrl ? `&callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+          Switch to classic view
+        </Link>
       </div>
-      <div className="flex flex-col items-center justify-center w-full bg-gray-50 p-6 sm:p-8">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8 lg:hidden">
-            <Image src="/logo.svg" alt="WhatsYour.Info" width={42} height={42} className="mx-auto" />
-          </div>
-          {view === 'login' ? (
-            <Card className="border-gray-200 shadow-xl">
-              <CardHeader className="text-center"><CardTitle className="text-3xl font-bold tracking-tight text-gray-900">Welcome Back</CardTitle><CardDescription>Sign in to continue to your dashboard</CardDescription></CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                    <Input id="email" type="email" value={formData.email} onChange={(e) => handleInputChange('email', e.target.value)} className={`text-base p-3 ${errors.email ? 'border-red-500' : ''}`} placeholder="john@example.com"/>
-                    {errors.email && (<p className="mt-1 text-sm text-red-600 flex items-center"><X className="h-4 w-4 mr-1" />{errors.email}</p>)}
-                  </div>
-                  <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                    <div className="relative">
-                      <Input id="password" type={showPassword ? 'text' : 'password'} value={formData.password} onChange={(e) => handleInputChange('password', e.target.value)} className={`text-base p-3 ${errors.password ? 'border-red-500' : ''}`} placeholder="••••••••"/>
-                      <button type="button" className="absolute inset-y-0 right-0 flex items-center pr-3" onClick={() => setShowPassword(!showPassword)}>
-                        {showPassword ? <EyeOff className="h-5 w-5 text-gray-400" /> : <Eye className="h-5 w-5 text-gray-400" />}
-                      </button>
-                    </div>
-                    {errors.password && (<p className="mt-1 text-sm text-red-600 flex items-center"><X className="h-4 w-4 mr-1" />{errors.password}</p>)}
-                  </div>
-                  <div className="text-sm text-right">
-                    <button type="button" onClick={() => setView('forgot-password')} className="font-medium text-blue-600 hover:text-blue-500">Forgot your password?</button>
-                  </div>
-                  <Button type="submit" className="w-full text-base py-3" disabled={isLoading}>{isLoading ? 'Signing In...' : 'Sign In'}</Button>
-                </form>
-                <div className="mt-6 text-center text-sm">
-                  <span className="text-gray-500">Don't have an account? </span>
-                  <Link href={`/register${callbackUrl ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`} className="font-medium text-blue-600 hover:text-blue-500">Create one</Link>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (<ForgotPasswordForm onBackToLogin={() => setView('login')} />)}
-          <div className="text-center mt-8">
-            <Link href="/login?view=classic" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">Switch to classic view</Link>
-          </div>
-        </div>
-      </div>
-    </div>
+    </>
   );
 }
