@@ -194,12 +194,9 @@ export default function NewRegisterPage() {
     exit: (direction: number) => ({ opacity: 0, x: direction * -100 }),
   };
 
-  const stepComponents = [
-    <StepOneContent key={1} formData={formData} handleInputChange={handleInputChange} errors={errors} handleNextStep={handleNextStep} />,
-    <StepTwoContent key={2} formData={formData} handleInputChange={handleInputChange} errors={errors} usernameStatus={usernameStatus} isCheckingUsername={isCheckingUsername} usernameSuggestions={usernameSuggestions} setFormData={setFormData} handleNextStep={handleNextStep} handlePrevStep={handlePrevStep} />,
-    <StepThreeContent key={3} formData={formData} handleInputChange={handleInputChange} errors={errors} showPassword={showPassword} setShowPassword={setShowPassword} showConfirmPassword={showConfirmPassword} setShowConfirmPassword={setShowConfirmPassword} handleNextStep={handleNextStep} handlePrevStep={handlePrevStep} />,
-    <StepFourContent key={4} formData={formData} handleSubmit={handleSubmit} isLoading={isLoading} handlePrevStep={handlePrevStep} />,
-  ];
+  // --- START OF FIX ---
+  // We remove the `stepComponents` array and will render conditionally below.
+  // const stepComponents = [ ... ]; // DELETED
 
   return (
     <Card className="w-full shadow-xl border-gray-200 overflow-hidden">
@@ -209,14 +206,21 @@ export default function NewRegisterPage() {
 
       <AnimatePresence initial={false} custom={direction} mode="wait">
         <motion.div key={step} custom={direction} variants={formVariants} initial="hidden" animate="visible" exit="exit" transition={{ duration: 0.3, ease: 'easeInOut' }}>
-          {stepComponents[step - 1]}
+          
+          {/* Conditionally render the correct component directly */}
+          {step === 1 && <StepOneContent formData={formData} handleInputChange={handleInputChange} errors={errors} handleNextStep={handleNextStep} />}
+          {step === 2 && <StepTwoContent formData={formData} handleInputChange={handleInputChange} errors={errors} usernameStatus={usernameStatus} isCheckingUsername={isCheckingUsername} usernameSuggestions={usernameSuggestions} setFormData={setFormData} handleNextStep={handleNextStep} handlePrevStep={handlePrevStep} />}
+          {step === 3 && <StepThreeContent formData={formData} handleInputChange={handleInputChange} errors={errors} showPassword={showPassword} setShowPassword={setShowPassword} showConfirmPassword={showConfirmPassword} setShowConfirmPassword={setShowConfirmPassword} handleNextStep={handleNextStep} handlePrevStep={handlePrevStep} />}
+          {step === 4 && <StepFourContent formData={formData} handleSubmit={handleSubmit} isLoading={isLoading} handlePrevStep={handlePrevStep} />}
+
         </motion.div>
       </AnimatePresence>
+      {/* --- END OF FIX --- */}
       
       <div className="text-center p-4 bg-gray-50 border-t">
         <p className="text-sm text-gray-600">
             Already have an account?{' '}
-            <Link href={`/login${callbackUrl ? `?callbackUrl=${callbackUrl}` : ''}`} className="font-medium text-blue-600 hover:underline">
+            <Link href={`/login${callbackUrl ? `?callbackUrl=${encodeURIComponent(callbackUrl)}` : ''}`} className="font-medium text-blue-600 hover:underline">
               Sign In
             </Link>
         </p>
@@ -224,6 +228,7 @@ export default function NewRegisterPage() {
     </Card>
   );
 }
+
 
 // --- Step Component Types & Implementations ---
 

@@ -33,6 +33,8 @@ const RESERVED_USERNAMES = new Set([
 
   // Generic & Potentially Confusing
   'assets', 'static', 'media', 'download', 'search', 'explore', 'root', 'user', 'users',
+
+  // our own branding
   'whatsyourinfo', 'info', 'whatsyour', 'dit', 'ditmail', 'ditblogs', 'dishistech', 'dishistechnologies', 'dishistechnology', 'dishis-tech', 'dishis-technologies', 'dishis-technology', 'fce', 'git'
 ]);
 
