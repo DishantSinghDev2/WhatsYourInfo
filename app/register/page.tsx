@@ -11,17 +11,17 @@ function RegisterViewSwitcher() {
   const searchParams = useSearchParams();
   const view = searchParams.get('view');
 
-  if (view === 'classic') {
+  // if (view === 'classic') {
     // Render the original single-page form directly
     return <ClassicRegisterPage />;
-  }
+  // }
 
-  // By default, render the new multi-step experience inside the shared layout
-  return (
-    <LoginLayout>
-      <NewRegisterPage />
-    </LoginLayout>
-  );
+  // // By default, render the new multi-step experience inside the shared layout
+  // return (
+  //   <LoginLayout>
+  //     <NewRegisterPage />
+  //   </LoginLayout>
+  // );
 }
 
 export default function RegisterPage() {
