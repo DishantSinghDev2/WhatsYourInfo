@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   const sessions = await db.collection('sessions').find(
     { userId: new ObjectId(user._id), expiresAt: { $gt: new Date() } },
     { sort: { lastUsedAt: -1 } }
-  );
+  ).toArray();
   console.log(sessions, user.sessionId)
 
   // Identify the current session

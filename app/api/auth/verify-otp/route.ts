@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       userId: user._id,
       emailVerified: true,
       tfa_enabled: user.twoFactorEnabled,
-      // Consider adding a session token here as well for consistency
+      sessionId: userFromToken.sessionId,
     });
 
     // Create response with user data (Unchanged)
