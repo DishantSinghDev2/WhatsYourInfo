@@ -4,6 +4,8 @@ import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
+// Import the layout and page components
+import LoginLayout from '../LoginLayout'; // Note the path is up one level
 import NewVerifyOtpPage from './NewVerifyOtpPage';
 import ClassicVerifyOtpPage from './ClassicVerifyOtpPage';
 
@@ -12,17 +14,21 @@ function OtpViewSwitcher() {
   const view = searchParams.get('view');
 
   if (view === 'classic') {
+    // Render classic view directly
     return <ClassicVerifyOtpPage />;
   }
 
-  // Render the new, animated component by default
-  return <NewVerifyOtpPage />;
+  // Render new view inside the layout
+  return (
+    <LoginLayout>
+      <NewVerifyOtpPage />
+    </LoginLayout>
+  );
 }
 
 export default function VerifyOtpPage() {
   return (
-    // Suspense is required when using useSearchParams at the page level
-    <Suspense fallback={<Loader2 className="h-12 w-12 animate-spin text-blue-600" />}>
+    <Suspense fallback={<div className="flex items-center justify-center h-screen"><Loader2 className="h-12 w-12 animate-spin" /></div>}>
       <OtpViewSwitcher />
     </Suspense>
   );

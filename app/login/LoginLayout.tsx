@@ -1,5 +1,6 @@
 import Image from 'next/image';
 
+// This is now a regular component, not a special Next.js layout file.
 export default function LoginLayout({
   children,
 }: {
@@ -7,10 +8,10 @@ export default function LoginLayout({
 }) {
   return (
     <div className="min-h-screen w-full grid grid-cols-1 lg:grid-cols-2">
-      {/* --- Left Side: Banner (Shared across login and 2FA) --- */}
+      {/* --- Left Side: Banner --- */}
       <div className="hidden lg:flex flex-col items-center justify-center bg-blue-600 p-12 text-white text-center">
         <Image
-          src="/logo-login.png"
+          src="/logo-login.png" // Using your updated logo path
           alt="WhatsYour.Info Logo"
           width={80}
           height={80}
@@ -24,7 +25,7 @@ export default function LoginLayout({
         </p>
       </div>
 
-      {/* --- Right Side: Form Area (Renders the specific page) --- */}
+      {/* --- Right Side: Form Area --- */}
       <div className="flex flex-col items-center justify-center w-full bg-gray-50 p-6 sm:p-8">
         <div className="w-full max-w-md">
           <div className="text-center mb-8 lg:hidden">

@@ -1,13 +1,34 @@
-// app/register/page.tsx
-import { Suspense } from 'react';
-import LoginPage from './LoginClient';
+'use client';
 
-export default function Register() {
+import { Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+
+// Import the new layout component and the page components
+import LoginLayout from './LoginLayout'; 
+import NewLoginPage from './NewLoginPage';
+import ClassicLoginPage from './ClassicLoginPage';
+
+function LoginViewSwitcher() {
+  const searchParams = useSearchParams();
+  const view = searchParams.get('view');
+
+  if (view === 'classic') {
+    // Render the classic page directly, WITHOUT the layout wrapper.
+    return <ClassicLoginPage />;
+  }
+
+  // Render the new page explicitly wrapped in our LoginLayout component.
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-screen w-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>}>
-      <LoginPage />
+    <LoginLayout>
+      <NewLoginPage />
+    </LoginLayout>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginViewSwitcher />
     </Suspense>
   );
 }
