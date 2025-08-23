@@ -307,3 +307,46 @@ export async function sendLeadNotificationEmail({ to, profileOwnerName, leadName
     html: createEmailTemplate(subject, content),
   });
 }
+
+
+export async function sendPasswordResetEmail(to: string, name: string) {
+  // 1. Generate a secure, URL-safe token for the user
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  const passwordResetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/login/reset-password?token=${resetToken}`;
+
+  // 2. Hash the token before storing it in the database
+  // This is a crucial security step. If the DB is compromised, attackers can't use the raw tokens.
+  const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+  // 3. Set a 1-hour expiry for the token
+  const tokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+
+  // 4. Update the user record in the database with the hashed token and expiry
+  await clientPromise.then(client => client.db('whatsyourinfo').collection('users').updateOne(
+      { email: to },
+      { $set: { 
+          passwordResetToken: hashedToken,
+          passwordResetExpires: tokenExpiry 
+        } 
+      }
+  ));
+
+  // 5. Send the email with the un-hashed token in the link
+  const subject = 'Reset Your Password';
+  const content = `
+    <h1>Hi, ${escapeHTML(name)}</h1>
+    <p>We received a request to reset your password. If you didn't make this request, you can safely ignore this email.</p>
+    <p>To create a new password, click the button below:</p>
+    <div class="button-container">
+      <a href="${passwordResetUrl}" class="button" target="_blank">Reset Password</a>
+    </div>
+    <p>This link is valid for 1 hour.</p>
+  `;
+
+  await transporter.sendMail({
+    from: `"WhatsYour.Info" <${process.env.EMAIL_FROM}>`,
+    to,
+    subject,
+    html: createEmailTemplate(subject, content),
+  });
+}
