@@ -9,11 +9,10 @@ import { Card, CardContent } from '@/components/ui/Card';
 import { Eye, EyeOff, CheckCircle, XCircle, X, Loader2, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { isValidEmail, isValidUsername } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
+// --- FIX: Import LayoutGroup ---
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 
-// --- Helper Hook & Types ---
-
-// Debounce hook (Unchanged)
+// --- Helper Hook & Types (Unchanged) ---
 function useDebounce(value: string, delay: number) {
   const [debouncedValue, setDebouncedValue] = useState(value);
   useEffect(() => {
@@ -23,7 +22,6 @@ function useDebounce(value: string, delay: number) {
   return debouncedValue;
 }
 
-// Define a type for the form data for reusability
 type FormData = {
     firstName: string; lastName: string; username: string; profileVisibility: 'public' | 'private';
     email: string; password: string; confirmPassword: string;
@@ -31,9 +29,9 @@ type FormData = {
 
 const TOTAL_STEPS = 4;
 
-// --- Main Component ---
-
+// --- Main Component (No changes here) ---
 export default function NewRegisterPage() {
+    // ... all of your existing main component logic is correct and remains unchanged ...
   const router = useRouter();
   const searchParams = useSearchParams();
   const [step, setStep] = useState(1);
@@ -194,29 +192,19 @@ export default function NewRegisterPage() {
     exit: (direction: number) => ({ opacity: 0, x: direction * -100 }),
   };
 
-  // --- START OF FIX ---
-  // We remove the `stepComponents` array and will render conditionally below.
-  // const stepComponents = [ ... ]; // DELETED
-
   return (
     <Card className="w-full shadow-xl border-gray-200 overflow-hidden">
         <div className="w-full bg-gray-200 h-1.5">
           <motion.div className="bg-blue-600 h-1.5" animate={{ width: `${(step / TOTAL_STEPS) * 100}%` }} transition={{ ease: "easeInOut", duration: 0.5 }} />
         </div>
-
       <AnimatePresence initial={false} custom={direction} mode="wait">
         <motion.div key={step} custom={direction} variants={formVariants} initial="hidden" animate="visible" exit="exit" transition={{ duration: 0.3, ease: 'easeInOut' }}>
-          
-          {/* Conditionally render the correct component directly */}
           {step === 1 && <StepOneContent formData={formData} handleInputChange={handleInputChange} errors={errors} handleNextStep={handleNextStep} />}
           {step === 2 && <StepTwoContent formData={formData} handleInputChange={handleInputChange} errors={errors} usernameStatus={usernameStatus} isCheckingUsername={isCheckingUsername} usernameSuggestions={usernameSuggestions} setFormData={setFormData} handleNextStep={handleNextStep} handlePrevStep={handlePrevStep} />}
           {step === 3 && <StepThreeContent formData={formData} handleInputChange={handleInputChange} errors={errors} showPassword={showPassword} setShowPassword={setShowPassword} showConfirmPassword={showConfirmPassword} setShowConfirmPassword={setShowConfirmPassword} handleNextStep={handleNextStep} handlePrevStep={handlePrevStep} />}
           {step === 4 && <StepFourContent formData={formData} handleSubmit={handleSubmit} isLoading={isLoading} handlePrevStep={handlePrevStep} />}
-
         </motion.div>
       </AnimatePresence>
-      {/* --- END OF FIX --- */}
-      
       <div className="text-center p-4 bg-gray-50 border-t">
         <p className="text-sm text-gray-600">
             Already have an account?{' '}
@@ -229,9 +217,9 @@ export default function NewRegisterPage() {
   );
 }
 
-
 // --- Step Component Types & Implementations ---
 
+// StepOneContent (Unchanged)
 interface StepOneProps {
     formData: Pick<FormData, 'firstName' | 'lastName'>;
     handleInputChange: (field: keyof FormData, value: string) => void;
@@ -250,6 +238,8 @@ const StepOneContent: FC<StepOneProps> = ({ formData, handleInputChange, errors,
     </CardContent>
 );
 
+
+// StepTwoContent (FIXED)
 interface StepTwoProps {
     formData: Pick<FormData, 'username' | 'profileVisibility'>;
     handleInputChange: (field: keyof FormData, value: string) => void;
@@ -271,12 +261,27 @@ const StepTwoContent: FC<StepTwoProps> = ({ formData, handleInputChange, errors,
             {errors.username && <p className="text-red-600 text-sm mt-1 flex items-center"><X className="h-4 w-4 mr-1"/>{errors.username}</p>}
             {usernameStatus === 'taken' && usernameSuggestions.length > 0 && <div className="mt-2 text-sm"><span className="text-gray-600">Suggestions:</span><div className="flex flex-wrap gap-2 mt-1">{usernameSuggestions.map(s => (<button type="button" key={s} onClick={() => setFormData(p => ({...p, username: s}))} className="px-2.5 py-1 text-xs bg-gray-100 border rounded-full hover:bg-gray-200">{s}</button>))}</div></div>}
         </div>
-        <div><label className="block text-sm font-medium text-gray-700 mb-2">Profile Visibility</label><div className="flex w-fit items-center space-x-1 rounded-md bg-gray-100 p-1"><button type="button" onClick={() => setFormData(p=>({...p, profileVisibility: 'public'}))} className={`relative rounded-md px-2 py-1 text-sm font-medium transition-colors ${formData.profileVisibility === 'public' ? 'text-gray-900' : 'text-gray-500'}`}>{formData.profileVisibility === 'public' && <motion.div layoutId="visibility-pill" className="absolute inset-0 z-0 rounded-md bg-white shadow" /> }<span className="relative z-10">Public</span></button><button type="button" onClick={() => setFormData(p=>({...p, profileVisibility: 'private'}))} className={`relative rounded-md px-2 py-1 text-sm font-medium transition-colors ${formData.profileVisibility === 'private' ? 'text-gray-900' : 'text-gray-500'}`}>{formData.profileVisibility === 'private' && <motion.div layoutId="visibility-pill" className="absolute inset-0 z-0 rounded-md bg-white shadow" /> }<span className="relative z-10">Private</span></button></div></div>
+        <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Profile Visibility</label>
+            {/* --- FIX: Wrap the container in LayoutGroup --- */}
+            <LayoutGroup>
+                <div className="flex w-fit items-center space-x-1 rounded-md bg-gray-100 p-1">
+                    <button type="button" onClick={() => setFormData(p=>({...p, profileVisibility: 'public'}))} className={`relative rounded-md px-2 py-1 text-sm font-medium transition-colors ${formData.profileVisibility === 'public' ? 'text-gray-900' : 'text-gray-500'}`}>
+                        {formData.profileVisibility === 'public' && <motion.div layoutId="visibility-pill" className="absolute inset-0 z-0 rounded-md bg-white shadow" transition={{ type: 'spring', stiffness: 400, damping: 35 }} /> }
+                        <span className="relative z-10">Public</span>
+                    </button>
+                    <button type="button" onClick={() => setFormData(p=>({...p, profileVisibility: 'private'}))} className={`relative rounded-md px-2 py-1 text-sm font-medium transition-colors ${formData.profileVisibility === 'private' ? 'text-gray-900' : 'text-gray-500'}`}>
+                        {formData.profileVisibility === 'private' && <motion.div layoutId="visibility-pill" className="absolute inset-0 z-0 rounded-md bg-white shadow" transition={{ type: 'spring', stiffness: 400, damping: 35 }}/> }
+                        <span className="relative z-10">Private</span>
+                    </button>
+                </div>
+            </LayoutGroup>
+        </div>
         <div className="flex justify-between gap-4 pt-4"><Button variant="outline" onClick={handlePrevStep} className="w-full"><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button><Button onClick={handleNextStep} className="w-full">Next</Button></div>
     </CardContent>
 );
 
-
+// StepThreeContent (Unchanged)
 interface StepThreeProps {
     formData: Pick<FormData, 'email' | 'password' | 'confirmPassword'>;
     handleInputChange: (field: keyof FormData, value: string) => void;
@@ -298,6 +303,7 @@ const StepThreeContent: FC<StepThreeProps> = ({ formData, handleInputChange, err
     </CardContent>
 );
 
+// StepFourContent (Unchanged)
 interface StepFourProps {
     formData: Pick<FormData, 'firstName' | 'lastName' | 'username' | 'email' | 'profileVisibility'>;
     handleSubmit: (e: React.FormEvent) => void;
