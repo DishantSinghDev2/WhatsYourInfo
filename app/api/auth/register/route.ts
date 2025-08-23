@@ -6,6 +6,9 @@ import { z } from 'zod';
 import { UAParser } from 'ua-parser-js';
 import crypto from 'crypto';
 import DOMPurify from 'isomorphic-dompurify'; // --- (1) IMPORT THE SANITIZER ---
+import { generateAndSendOtp } from '@/lib/otp'; // --- (1) IMPORT THE NEW FUNCTION ---
+import { ObjectId } from 'mongodb';
+
 
 // --- (2) STRENGTHEN THE ZOD SCHEMA ---
 // We can add .trim() to automatically remove leading/trailing whitespace
@@ -98,15 +101,11 @@ export async function POST(request: NextRequest) {
       sessionId: sessionToken
     });
 
+    // --- (2) REPLACE THE FETCH CALL ---
     if (!user.emailVerified) {
-      await fetch(`${process.env.FRONTEND_URL || `http://localhost:3000`}/api/auth/send-otp`, {
-        method: "POST",
-        body: JSON.stringify({
-          email: user.email
-        })
-      });
+      // Call the logic directly instead of using fetch
+      await generateAndSendOtp(new ObjectId(user._id), user.email, user.username);
     }
-
     const { ...userResponse } = user as User;
 
     const response = NextResponse.json(

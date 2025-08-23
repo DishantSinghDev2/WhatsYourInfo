@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import clientPromise from '@/lib/mongodb';
 import { z } from 'zod';
-import crypto from 'crypto';
-import { sendOtpEmail } from '@/lib/email';
 import { getUserFromToken } from '@/lib/auth';
+import { generateAndSendOtp } from '@/lib/otp';
+import { ObjectId } from 'mongodb';
 
 const sendOtpSchema = z.object({
   email: z.string().email('Valid email is required'),
@@ -12,48 +11,20 @@ const sendOtpSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const userFromToken = await getUserFromToken(request);
-
     if (!userFromToken || !userFromToken._id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const body = await request.json();
-    const { email } = sendOtpSchema.parse(body);
+    
+    // We already have the user's data from the token, no need to query again
+    const { _id, email, username } = userFromToken;
 
-    const client = await clientPromise;
-    const db = client.db('whatsyourinfo');
+    const result = await generateAndSendOtp(new ObjectId(_id), email, username);
 
-    // Check if user exists
-    const user = await db.collection('users').findOne({ email });
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    // Generate OTP
-    const otp = crypto.randomInt(100000, 999999).toString();
-    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-    // Store OTP in database
-    await db.collection('users').updateOne(
-      { _id: user._id },
-      {
-        $set: {
-          loginOtp: otp,
-          loginOtpExpires: otpExpires,
-          updatedAt: new Date()
-        }
-      }
-    );
-
-    await sendOtpEmail({ to: email, otp, name: user.username });
-
-
-    return NextResponse.json({
-      message: 'OTP sent successfully'
-    });
+    return NextResponse.json({ message: 'OTP sent successfully' });
 
   } catch (error) {
     if (error instanceof z.ZodError) {
