@@ -23,7 +23,7 @@ export default function ClassicVerify2FAPage() {
         e.preventDefault();
         if (!preAuthToken) {
             toast.error("Session expired. Please log in again.");
-            router.push('/login');
+            router.push('/login?view=classic');
             return;
         }
         setIsLoading(true);
