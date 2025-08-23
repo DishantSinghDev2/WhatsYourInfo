@@ -60,9 +60,7 @@ export async function middleware(request: NextRequest) {
   if (isLoggedIn && !isEmailVerified && pathname !== '/login/verify-otp') {
     url.pathname = '/login/verify-otp'; // <-- Changed path
     url.searchParams.set('callbackUrl', pathname);
-    if (decodedToken?.email) {
-      url.searchParams.set('email', decodedToken.email);
-    }
+    url.searchParams.set('email', decodedToken.email);
     return NextResponse.redirect(url);
   }
 
@@ -78,7 +76,7 @@ export async function middleware(request: NextRequest) {
     // Preserve the original callbackUrl if it exists
     const callback = searchParams.get('callbackUrl') || pathname;
     if (callback && callback.startsWith('/')) {
-        url.searchParams.set('callbackUrl', callback);
+      url.searchParams.set('callbackUrl', callback);
     }
 
     return NextResponse.redirect(url);
