@@ -15,10 +15,11 @@ export async function GET(request: NextRequest) {
   const db = client.db('whatsyourinfo');
 
   const sessions = await db.collection('sessions').find(
-    { userId: new ObjectId(user._id), expiresAt: { $gt: new Date() } },
+    { userId: user._id, expiresAt: { $gt: new Date() } },
     { sort: { lastUsedAt: -1 } }
   ).toArray();
-  console.log(sessions, user.sessionId)
+
+  console.log(new ObjectId(user._id), user._id)
 
   // Identify the current session
   const currentSessionId = user.sessionId ? crypto.createHash('sha256').update(user.sessionId).digest('hex') : null;
