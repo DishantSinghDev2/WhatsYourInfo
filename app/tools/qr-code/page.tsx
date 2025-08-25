@@ -7,10 +7,11 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
-import { Download, Link as LinkIcon } from 'lucide-react';
+import { Download, Link as LinkIcon, Loader2 } from 'lucide-react'; // Import Loader2 for the spinner
 import { User } from '@/lib/auth';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function QrCodeGeneratorPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -21,7 +22,15 @@ export default function QrCodeGeneratorPage() {
     const fetchUser = async () => {
       try {
         const res = await fetch('/api/auth/user');
-        if (res.ok) setUser((await res.json()).user);
+        if (res.ok) {
+          setUser((await res.json()).user);
+        } else {
+          // If response is not OK, it means user is likely not authenticated
+          setUser(null);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user:", error);
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
@@ -29,8 +38,38 @@ export default function QrCodeGeneratorPage() {
     fetchUser();
   }, []);
 
-  if (isLoading || !user) {
-    return <div>Loading...</div>; // Add a proper loading state
+  // Display a loading spinner in the center while fetching user data
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="h-16 w-16 animate-spin text-gray-700" />
+      </div>
+    );
+  }
+
+  // If the user is not authenticated, prompt them to log in
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <main className="max-w-md mx-auto px-4 py-20 text-center">
+          <Card>
+            <CardHeader>
+              <CardTitle>Please Log In</CardTitle>
+              <CardDescription>
+                You need to be logged in to generate a QR code.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/login">
+                <Button>Go to Login Page</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </main>
+        <Footer />
+      </div>
+    );
   }
 
   const qrCodeUrl = `/qr/${user.username}?type=${qrType}&t=${new Date().getTime()}`;
