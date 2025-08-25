@@ -60,7 +60,6 @@ export async function POST(request: NextRequest) {
       {
         $set: {
           email: internalClaims.newEmail,
-          recoveryEmail: internalClaims.email,
         },
       },
       { returnDocument: "after" }
