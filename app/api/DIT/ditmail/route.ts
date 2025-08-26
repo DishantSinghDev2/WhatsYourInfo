@@ -65,14 +65,14 @@ export async function POST(request: NextRequest) {
       { returnDocument: "after" }
     )
 
-    if (!res?.value) {
+    if (!res?._id) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
     return NextResponse.json({
       success: true,
       message: "User email updated successfully",
-      updatedUser: res.value,
+      updatedUser: res._id,
     })
   } catch (error) {
     console.error("Registration error:", error)
