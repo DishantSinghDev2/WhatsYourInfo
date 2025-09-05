@@ -30,7 +30,7 @@ const quickStartSteps = [
     step: 3,
     title: 'Make Your First Call',
     description: 'Fetch public profile data using our REST API',
-    code: 'fetch("https://whatsyour.info/api/public/profile/username")',
+    code: 'fetch("https://whatsyour.info/api/v1/profile/username")',
   },
 ];
 
@@ -43,7 +43,7 @@ const apiEndpoints = [
   },
   {
     method: 'GET',
-    endpoint: '/api/v1/avatars/{username}',
+    endpoint: '/api/v1/avatars/{username or email}',
     description: 'Get user avatar image',
     auth: 'None',
   },
