@@ -27,7 +27,7 @@ const updatePayloadSchema = z.object({
     firstName: z.string().trim().min(1).optional(),
     lastName: z.string().trim().min(1).optional(),
     username: z.string().trim().min(3).regex(/^[a-zA-Z0-9_.-]+$/).optional(),
-  }).min(1, { message: "Updates object cannot be empty" })
+  })
 });
 
 const deletePayloadSchema = z.object({
