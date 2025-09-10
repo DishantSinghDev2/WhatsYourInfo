@@ -60,6 +60,8 @@ export async function createUser(userData: {
   username: string;
   firstName: string;
   lastName: string;
+  emailVerified?: boolean;
+  emailVerifiedAt?: Date;
 }): Promise<User> {
   const client = await clientPromise;
   const db = client.db('whatsyourinfo');
@@ -72,7 +74,7 @@ export async function createUser(userData: {
     bio: 'Under development...',
     avatar: '',
     isProUser: false,
-    emailVerified: false,
+    emailVerified: userData.emailVerified || false,
     socialLinks: {},
     verifiedAccounts: [],
     interests: [],

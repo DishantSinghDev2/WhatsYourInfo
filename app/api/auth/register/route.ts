@@ -1,3 +1,4 @@
+// /home/dit/WhatsYourInfo/app/api/auth/register/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { createUser, generateToken, User } from '@/lib/auth';
 import clientPromise from '@/lib/mongodb';
