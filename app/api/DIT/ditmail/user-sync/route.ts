@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken"
 import { z } from "zod"
 import DOMPurify from "isomorphic-dompurify"
 import clientPromise from "@/lib/mongodb"
-import { createUser } from "@/lib/auth" // Reusing your existing user creation logic
+import { createUser } from "@/lib/auth"
 
 // --- Environment Variables ---
 const INTERNAL_SECRET = process.env.INTERNAL_JWT_SECRET as string
@@ -11,83 +11,130 @@ if (!INTERNAL_SECRET) {
   throw new Error("INTERNAL_JWT_SECRET is not defined in environment variables")
 }
 
-// --- Zod Schema for Validation (consistent with your public registration) ---
-const userSyncSchema = z.object({
+// --- Zod Schemas for Action-Specific Payloads ---
+const createPayloadSchema = z.object({
   email: z.string().trim().email(),
-  password: z.string().min(8), // Password will be sent from DITMail
+  password: z.string().min(8),
   firstName: z.string().trim().min(1),
   lastName: z.string().trim().min(1),
-  // The username can be derived from the email if not provided
   username: z.string().trim().min(3).regex(/^[a-zA-Z0-9_.-]+$/),
-})
+});
 
-// --- Type for the JWT payload ---
-type UserSyncPayload = z.infer<typeof userSyncSchema>
+const updatePayloadSchema = z.object({
+  currentEmail: z.string().email(),
+  updates: z.object({
+    email: z.string().email().optional(),
+    firstName: z.string().trim().min(1).optional(),
+    lastName: z.string().trim().min(1).optional(),
+    username: z.string().trim().min(3).regex(/^[a-zA-Z0-9_.-]+$/).optional(),
+  }).min(1, { message: "Updates object cannot be empty" })
+});
+
+const deletePayloadSchema = z.object({
+  email: z.string().email(),
+});
+
+// --- Main Schema for the Request Body ---
+const manageUserSchema = z.object({
+  action: z.enum(["create", "update", "delete"]),
+  payload: z.any(),
+});
 
 /**
- * API Route to create a user in WhatsYour.Info from an internal service call (e.g., DITMail)
+ * API Route to create, update, or delete a user in WhatsYour.Info from an internal service.
  */
 export async function POST(request: NextRequest) {
   try {
-    // 1. Verify the Internal JWT from the Authorization header
+    // 1. Verify the Internal JWT
     const authHeader = request.headers.get("authorization")
     if (!authHeader?.startsWith("Bearer ")) {
       return NextResponse.json({ error: "Forbidden: Missing authorization token" }, { status: 403 })
     }
-
     const token = authHeader.split(" ")[1]
-    let payload: UserSyncPayload
-
+    let decoded: any
     try {
-      // Decode the token and validate its structure
-      const decoded = jwt.verify(token, INTERNAL_SECRET)
-      payload = userSyncSchema.parse(decoded)
+      decoded = jwt.verify(token, INTERNAL_SECRET)
     } catch (err) {
-      if (err instanceof z.ZodError) {
-        return NextResponse.json({ error: "Validation error in token payload", details: err.errors }, { status: 400 })
-      }
       return NextResponse.json({ error: "Forbidden: Invalid or expired token" }, { status: 403 })
     }
 
-    // 2. Sanitize all string inputs from the payload
-    const { email, password, username, firstName, lastName } = payload
-    const sanitizedEmail = DOMPurify.sanitize(email)
-    const sanitizedUsername = DOMPurify.sanitize(username)
-    const sanitizedFirstName = DOMPurify.sanitize(firstName)
-    const sanitizedLastName = DOMPurify.sanitize(lastName)
+    // 2. Validate the overall structure (action and payload)
+    const body = manageUserSchema.parse(decoded);
+    const { action, payload } = body;
 
-    // 3. Connect to the database and check for existing users
     const client = await clientPromise
     const db = client.db("whatsyourinfo")
+    const usersCollection = db.collection("users")
 
-    const existingUser = await db.collection("users").findOne({
-      $or: [{ email: sanitizedEmail }, { username: sanitizedUsername }],
-    })
+    // 3. Process the request based on the action
+    switch (action) {
+      case "create": {
+        const createData = createPayloadSchema.parse(payload);
+        // Sanitize all inputs
+        const sanitized = {
+            email: DOMPurify.sanitize(createData.email),
+            username: DOMPurify.sanitize(createData.username),
+            firstName: DOMPurify.sanitize(createData.firstName),
+            lastName: DOMPurify.sanitize(createData.lastName),
+        }
 
-    if (existingUser) {
-      // If user already exists, it's not an error. It means they are already synced.
-      // We return a success response to prevent the calling service from retrying.
-      return NextResponse.json({ message: "User already exists and is in sync" }, { status: 200 })
+        const existingUser = await usersCollection.findOne({ $or: [{ email: sanitized.email }, { username: sanitized.username }] });
+        if (existingUser) {
+            return NextResponse.json({ message: "User already exists" }, { status: 409 }); // Use 409 Conflict
+        }
+
+        await createUser({
+            type: "personal",
+            profileVisibility: "private",
+            ...sanitized,
+            password: createData.password, // Let createUser handle hashing
+            emailVerified: true,
+            emailVerifiedAt: new Date(),
+        });
+        return NextResponse.json({ success: true, message: "User created successfully" }, { status: 201 });
+      }
+
+      case "update": {
+        const { currentEmail, updates } = updatePayloadSchema.parse(payload);
+        
+        // Sanitize the updates object
+        const sanitizedUpdates: { [key: string]: string } = {};
+        for (const [key, value] of Object.entries(updates)) {
+            if (typeof value === 'string') {
+                sanitizedUpdates[key] = DOMPurify.sanitize(value);
+            }
+        }
+        
+        const result = await usersCollection.updateOne(
+            { email: currentEmail },
+            { $set: sanitizedUpdates }
+        );
+
+        if (result.matchedCount === 0) {
+            return NextResponse.json({ error: "User to update not found" }, { status: 404 });
+        }
+        return NextResponse.json({ success: true, message: "User updated successfully" });
+      }
+
+      case "delete": {
+        const { email } = deletePayloadSchema.parse(payload);
+        const result = await usersCollection.deleteOne({ email });
+
+        if (result.deletedCount === 0) {
+            // Not an error; the user might have already been deleted.
+            return NextResponse.json({ success: true, message: "User not found or already deleted" });
+        }
+        return NextResponse.json({ success: true, message: "User deleted successfully" });
+      }
+
+      default:
+        return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }
-
-    // 4. Create the new user using the sanitized data and existing business logic
-    await createUser({
-      type: "personal",
-      profileVisibility: "private", // Default visibility for synced users
-      email: sanitizedEmail,
-      password, // The createUser function will handle hashing
-      username: sanitizedUsername,
-      firstName: sanitizedFirstName,
-      lastName: sanitizedLastName,
-      // Assume email is pre-verified as it comes from a trusted source
-      emailVerified: true, 
-      emailVerifiedAt: new Date(),
-    })
-
-    return NextResponse.json({ success: true, message: "User synced successfully" }, { status: 201 })
-
   } catch (error) {
-    console.error("User sync error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    if (error instanceof z.ZodError) {
+        return NextResponse.json({ error: "Validation error", details: error.errors }, { status: 400 });
+    }
+    console.error("User management sync error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
