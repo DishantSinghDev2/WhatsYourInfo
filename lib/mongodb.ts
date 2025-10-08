@@ -1,4 +1,4 @@
-import { MongoClient, ServerApiVersion } from 'mongodb';
+import { MongoClient } from 'mongodb';
 
 const uri = process.env.MONGODB_URI;
 
@@ -6,16 +6,17 @@ if (!uri) {
   throw new Error('Please define the MONGODB_URI environment variable');
 }
 
+// Only include options that are compatible with your server
 const options = {
-  tls: true,
-  serverApi: ServerApiVersion.v1,
+  tls: uri.startsWith('mongodb+srv'), // TLS only if using SRV / cloud
+  useUnifiedTopology: true,
 };
 
 let client: MongoClient;
 let clientPromise: Promise<MongoClient>;
 
 declare global {
-  var _mongoClientPromise: Promise<MongoClient>; // eslint-disable-line no-var
+  var _mongoClientPromise: Promise<MongoClient>;
 }
 
 if (process.env.NODE_ENV === 'development') {
